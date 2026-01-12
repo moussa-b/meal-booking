@@ -19,6 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import type { BookingFormData } from "./booking-wizard";
 
@@ -180,6 +182,28 @@ export function StepChildren() {
         <Plus className="h-4 w-4 mr-2" />
         Ajouter un autre enfant
       </Button>
+
+      <div className="mt-6 pt-4">
+        <FormField
+          control={control}
+          name="saveChildrenInfo"
+          render={({ field }) => (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="saveChildrenInfo"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+              <Label
+                htmlFor="saveChildrenInfo"
+                className="text-sm font-normal cursor-pointer text-slate-700"
+              >
+                Enregistrer ces informations pour les prochaines réservations
+              </Label>
+            </div>
+          )}
+        />
+      </div>
     </div>
   );
 }

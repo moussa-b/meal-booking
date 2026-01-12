@@ -46,6 +46,7 @@ const formSchema = z.object({
         message: "Veuillez sélectionner au moins un jour pour au moins un enfant",
       }
     ),
+  saveChildrenInfo: z.boolean().optional(),
 });
 
 export type BookingFormData = z.infer<typeof formSchema>;
@@ -71,6 +72,7 @@ export function BookingWizard() {
         },
       ],
       menuSelections: {},
+      saveChildrenInfo: false,
     },
   });
 
