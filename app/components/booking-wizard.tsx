@@ -50,7 +50,7 @@ const formSchema = z.object({
 
 export type BookingFormData = z.infer<typeof formSchema>;
 
-type Step = 1 | 2 | 3 | "confirmation";
+type Step = 1 | 2 | 3 | 100;
 
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -88,7 +88,7 @@ export function BookingWizard() {
 
     if (isValid) {
       if (currentStep === 3) {
-        setCurrentStep("confirmation");
+        setCurrentStep(100);
       } else {
         setCurrentStep((currentStep + 1) as Step);
       }
@@ -96,7 +96,7 @@ export function BookingWizard() {
   };
 
   const handleBack = () => {
-    if (currentStep === "confirmation") {
+    if (currentStep === 100) {
       setCurrentStep(3);
     } else if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as Step);
@@ -111,7 +111,7 @@ export function BookingWizard() {
         return <StepChildren />;
       case 3:
         return <StepMenuSelection />;
-      case "confirmation":
+      case 100:
         return <ConfirmationScreen />;
       default:
         return null;
@@ -126,7 +126,7 @@ export function BookingWizard() {
         return "Informations des enfants";
       case 3:
         return "Sélection des repas";
-      case "confirmation":
+      case 100:
         return "Confirmation";
       default:
         return "";
@@ -142,9 +142,14 @@ export function BookingWizard() {
               <CardTitle className="text-2xl font-bold text-center">
                 Réservation des repas
               </CardTitle>
-              {currentStep !== "confirmation" && (
-                <div className="text-center text-sm opacity-90 mt-2">
+              {currentStep !== 100 && (
+                <div className="text-center text-sm opacity-90 my-1">
                   Étape {currentStep} sur 3
+                </div>
+              )}
+              {currentStep === 100 && (
+                <div className="text-center text-sm opacity-90 my-1">
+                  Confirmation
                 </div>
               )}
             </CardHeader>
@@ -165,7 +170,7 @@ export function BookingWizard() {
                 )}
 
               <div className="flex gap-3 mt-8">
-                {(currentStep > 1 || currentStep === "confirmation") && (
+                {(currentStep > 1 || currentStep === 100) && (
                   <Button
                     type="button"
                     variant="outline"
@@ -176,7 +181,7 @@ export function BookingWizard() {
                   </Button>
                 )}
 
-                {currentStep !== "confirmation" && (
+                {currentStep !== 100 && (
                   <Button
                     type="button"
                     onClick={handleNext}

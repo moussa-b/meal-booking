@@ -75,12 +75,12 @@ export function StepMenuSelection() {
             key={childKey}
             className="border-2 border-blue-200 bg-blue-50/30 pt-0 gap-1"
           >
-            <CardHeader className="bg-blue-100/50">
+            <CardHeader className="bg-blue-100/50 gap-1 rounded-t-xl">
               <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2">
                 Menu pour {child.firstName} {child.lastName}
               </CardTitle>
               {child.feedingRegime && (
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-sm text-blue-700 my-1 text-center">
                   Régime alimentaire: {child.feedingRegime}
                 </p>
               )}

@@ -43,7 +43,7 @@ export function ConfirmationScreen() {
 
       {/* School Information */}
       <Card className="border-2 border-slate-200 pt-0">
-        <CardHeader className="bg-slate-50">
+        <CardHeader className="bg-slate-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <School className="h-5 w-5 text-blue-600" />
             Informations de l'école
@@ -74,7 +74,7 @@ export function ConfirmationScreen() {
 
       {/* Children and Menu Selections */}
       <Card className="border-2 border-blue-200 pt-0">
-        <CardHeader className="bg-blue-50">
+        <CardHeader className="bg-blue-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
             Enfants inscrits
