@@ -15,7 +15,11 @@ const DAYS_FRENCH: Record<string, string> = {
   vendredi: "Vendredi",
 };
 
-export function ConfirmationScreen() {
+interface ConfirmationScreenProps {
+  onSubmitted?: () => void;
+}
+
+export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   const { watch } = useFormContext<BookingFormData>();
   const formData = watch();
 
@@ -26,6 +30,7 @@ export function ConfirmationScreen() {
       description: "Vous recevrez une confirmation par email.",
       duration: 5000,
     });
+    onSubmitted?.();
   };
 
   return (
