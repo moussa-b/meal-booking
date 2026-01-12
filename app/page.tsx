@@ -1,10 +1,9 @@
-import { Button } from '@/components/ui/button';
+import { BookingWizard } from "./components/booking-wizard";
 
 export default function Home() {
   return (
     <main>
-      <h1>Meal Booking</h1>
-      <Button>Click me</Button>
+      <BookingWizard />
     </main>
   );
 }
