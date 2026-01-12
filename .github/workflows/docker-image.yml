@@ -1,0 +1,85 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Get and update version from package.json
+        id: version
+        run: |
+          # Extract version from package.json
+          VERSION=$(jq -r '.version' package.json)
+          DATE_PART=$(echo $VERSION | cut -d'.' -f1-3)  # Extract yyyy.mm.dd
+          LAST_PUSH=$(echo $VERSION | cut -d'.' -f4)    # Extract last 2 digits
+          
+          # Get current date in yyyy.mm.dd format
+          TODAY=$(date +'%Y.%m.%d')
+          
+          # Check if version format is valid (should be yyyy.mm.dd.XX)
+          # If not in correct format or date doesn't match, reset to today with .01
+          if [ -z "$LAST_PUSH" ] || [ "$TODAY" != "$DATE_PART" ]; then
+            NEW_VERSION="$TODAY.01"
+          else
+            NEW_PUSH_NUMBER=$(printf "%02d" $((10#$LAST_PUSH + 1)))  # Increment last push count
+            NEW_VERSION="$DATE_PART.$NEW_PUSH_NUMBER"
+          fi
+          
+          # Update package.json with new version
+          jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > temp.json && mv temp.json package.json
+          
+          # Output new version for later steps
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "New version: $NEW_VERSION"
+
+      - name: Commit updated package.json
+        env:
+          GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+          GIT_USER_NAME: ${{ secrets.GIT_USER_NAME }}
+        run: |
+          git config --global user.email "$GIT_USER_EMAIL"
+          git config --global user.name "$GIT_USER_NAME"
+          git add package.json
+          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
+          git push origin ${{ github.ref_name }}
+
+      - name: Create and push git tag
+        run: |
+          git fetch --tags
+          git tag v${{ env.NEW_VERSION }}
+          git push origin v${{ env.NEW_VERSION }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to DockerHub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/meal-booking:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/meal-booking:${{ env.NEW_VERSION }}
+
+      - name: Redeploy service on Coolify
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.COOLIFY_WEBHOOK }}
+          method: GET
+          bearerToken: ${{ secrets.COOLIFY_API_TOKEN }}
+
