@@ -26,6 +26,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   const handleSubmit = () => {
     // Placeholder for future implementation
     console.log("Form data to submit:", formData);
+    console.log("Form data to submit:", JSON.stringify(formData));
     toast.success("Réservation enregistrée avec succès!", {
       description: "Vous recevrez une confirmation par email.",
       duration: 5000,
