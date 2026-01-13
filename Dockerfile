@@ -34,15 +34,30 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Install production dependencies needed for migrations and seed script
+RUN npm install -g db-migrate db-migrate-mysql tsx
+
 # Copy necessary files from builder
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
+
+# Install production dependencies (including mysql2, dotenv, bcryptjs for seed script)
+RUN npm ci --only=production
+
+# Copy migration files and configuration
+COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
+COPY --from=builder --chown=nextjs:nodejs /app/database.json ./database.json
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 # Copy Next.js build output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Switch to non-root user
-USER nextjs
+# Copy lib/db for database connection (needed for seed script)
+COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
+
+# Make entrypoint script executable (before switching user)
+RUN chmod +x scripts/docker-entrypoint.sh
 
 # Expose the port
 EXPOSE 3000
@@ -50,5 +65,9 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the application
+# Switch to non-root user (after making script executable)
+USER nextjs
+
+# Use entrypoint script to run migrations before starting the app
+ENTRYPOINT ["scripts/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

@@ -78,6 +78,52 @@ docker-compose -f docker-compose.prod.yml logs -f
 
 **Note:** The production configuration (`docker-compose.prod.yml`) uses a pre-built image from a container registry and is configured for production environments with `NODE_ENV=production` and automatic restart policy. The `platform: linux/amd64` setting ensures compatibility when running on ARM-based systems (like Apple Silicon Macs) by using emulation.
 
+#### Option 4: Using Docker Compose for MySQL Only
+
+To run only the MySQL 9.5.0 database container:
+
+Start the MySQL container:
+```bash
+docker-compose -f docker-compose-mysql.yml up -d
+```
+
+Stop the MySQL container:
+```bash
+docker-compose -f docker-compose-mysql.yml down
+```
+
+View MySQL logs:
+```bash
+docker-compose -f docker-compose-mysql.yml logs -f
+```
+
+Check MySQL health status:
+```bash
+docker-compose -f docker-compose-mysql.yml ps
+```
+
+**MySQL Configuration:**
+- **Version:** MySQL 9.5.0
+- **Port:** 3306 (mapped to host port 3306)
+- **Root Password:** `rootpassword`
+- **Database:** `meal_booking`
+- **User:** `mealuser`
+- **Password:** `mealpassword`
+- **Data Persistence:** Data is stored in a Docker volume named `mysql_data`
+
+**Connecting to MySQL:**
+You can connect to the MySQL instance using:
+```bash
+mysql -h 127.0.0.1 -P 3306 -u mealuser -pmealpassword meal_booking
+```
+
+Or using the root user:
+```bash
+mysql -h 127.0.0.1 -P 3306 -u root -prootpassword
+```
+
+**Note:** For production use, it's recommended to change the default passwords by setting environment variables or using a `.env` file. The MySQL container includes a health check to ensure it's ready before other services depend on it.
+
 ### Deleting Docker Images
 
 To remove the built Docker images:
