@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   meal-booking:
     image: bdzapps/meal-booking:latest

@@ -57,6 +57,27 @@ Rebuild after changes:
 docker-compose up -d --build
 ```
 
+#### Option 3: Using Docker Compose with Production Configuration
+
+To run the application using the production docker-compose file:
+
+Start the container:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Stop the container:
+```bash
+docker-compose -f docker-compose.prod.yml down
+```
+
+View logs:
+```bash
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+**Note:** The production configuration (`docker-compose.prod.yml`) uses a pre-built image from a container registry and is configured for production environments with `NODE_ENV=production` and automatic restart policy. The `platform: linux/amd64` setting ensures compatibility when running on ARM-based systems (like Apple Silicon Macs) by using emulation.
+
 ### Deleting Docker Images
 
 To remove the built Docker images:
