@@ -9,3 +9,4 @@ export * from './day-menu';
 export * from './student';
 export * from './menu-selection';
 export * from './booking-submission';
+export * from './meal';

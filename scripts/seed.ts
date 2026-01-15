@@ -29,7 +29,10 @@ async function seedAdminUser() {
     console.log(`Checking if admin user '${username}' already exists...`);
 
     // Check if admin user already exists
-    const existingUsers = await query<any[]>(
+    interface UserIdRow {
+      id: number;
+    }
+    const existingUsers = await query<UserIdRow[]>(
       'SELECT id FROM users WHERE username = ? OR email = ?',
       [username, email]
     );

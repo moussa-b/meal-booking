@@ -48,5 +48,30 @@
     },
     "multipleStatements": true,
     "migrations-dir": "./migrations"
+  },
+  "test": {
+    "driver": "mysql",
+    "host": {
+      "ENV": "DB_HOST",
+      "default": "localhost"
+    },
+    "port": {
+      "ENV": "DB_PORT",
+      "default": 3306
+    },
+    "user": {
+      "ENV": "DB_USER",
+      "default": "mealuser"
+    },
+    "password": {
+      "ENV": "DB_PASSWORD",
+      "default": ""
+    },
+    "database": {
+      "ENV": "DB_NAME",
+      "default": "meal_booking_test"
+    },
+    "multipleStatements": true,
+    "migrations-dir": "./migrations"
   }
 }

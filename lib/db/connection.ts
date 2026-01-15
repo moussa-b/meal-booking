@@ -2,6 +2,13 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 // Load environment variables
+// In test environment, .env.test should already be loaded by test setup
+// This loads .env as fallback for non-test environments
+if (process.env.VITEST && !process.env.DB_NAME) {
+  // In test environment, try .env.test first if DB_NAME not set
+  dotenv.config({ path: '.env.test' });
+}
+// Always load .env as fallback (won't override existing vars)
 dotenv.config();
 
 /**
@@ -33,9 +40,26 @@ export async function getConnection() {
 }
 
 /**
+ * MySQL result types for different operations
+ */
+export interface MysqlInsertResult {
+  insertId: number;
+  affectedRows: number;
+}
+
+export interface MysqlUpdateResult {
+  affectedRows: number;
+  changedRows: number;
+}
+
+export interface MysqlDeleteResult {
+  affectedRows: number;
+}
+
+/**
  * Execute a query using the connection pool
  */
-export async function query<T = any>(sql: string, params?: any[]): Promise<T> {
+export async function query<T = unknown>(sql: string, params?: (string | number | null | boolean)[]): Promise<T> {
   const [rows] = await pool.execute(sql, params);
   return rows as T;
 }
