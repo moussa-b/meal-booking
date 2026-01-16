@@ -1,19 +1,32 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAllMeals } from "@/lib/services/meal.service";
+import type { Meal } from "@/lib/models/meal";
+import { MealsTable } from "./meals-table";
+import {
+  createMealAction,
+  updateMealAction,
+  deleteMealAction,
+} from "./actions";
 
-export default function MealsPage() {
+export default async function MealsPage() {
+  let meals: Meal[] = [];
+  let error: string | null = null;
+
+  try {
+    meals = await getAllMeals();
+  } catch (err) {
+    console.error("Error fetching meals:", err);
+    error = "Erreur lors du chargement des repas";
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestion des repas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Cette section permettra de gérer les repas disponibles : créer,
-            modifier, supprimer et consulter les informations des repas.
-          </p>
-        </CardContent>
-      </Card>
+      <MealsTable
+        meals={meals}
+        createMealAction={createMealAction}
+        updateMealAction={updateMealAction}
+        deleteMealAction={deleteMealAction}
+        error={error}
+      />
     </div>
   );
 }

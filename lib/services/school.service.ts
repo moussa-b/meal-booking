@@ -52,16 +52,52 @@ export async function getSchoolById(id: number): Promise<School | null> {
 }
 
 /**
+ * Generate a random 6-character code containing numbers and letters
+ */
+function generateSchoolCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+/**
  * Create a new school
+ * The code is automatically generated on the server side
  */
 export async function createSchool(data: {
   name: string;
-  code: string;
   description?: string;
 }): Promise<School> {
+  // Fetch all existing codes once at the beginning
+  const existingSchools = await query<SchoolRow[]>(
+    'SELECT code FROM schools'
+  );
+  const existingCodes = new Set(existingSchools.map((row: SchoolRow) => row.code));
+  
+  // Generate a unique code
+  let code: string;
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  do {
+    code = generateSchoolCode();
+    // Check if code already exists in the set
+    if (!existingCodes.has(code)) {
+      break; // Code is unique
+    }
+    
+    attempts++;
+    if (attempts >= maxAttempts) {
+      throw new Error('Failed to generate unique school code');
+    }
+  } while (true);
+  
   const result = await query<MysqlInsertResult>(
     'INSERT INTO schools (name, code, description) VALUES (?, ?, ?)',
-    [data.name, data.code, data.description || null]
+    [data.name, code, data.description || null]
   );
   
   const insertedId: number = result.insertId;
@@ -76,12 +112,12 @@ export async function createSchool(data: {
 
 /**
  * Update a school
+ * Note: code cannot be updated as it is auto-generated and readonly
  */
 export async function updateSchool(
   id: number,
   data: {
     name?: string;
-    code?: string;
     description?: string;
   }
 ): Promise<School> {
@@ -91,10 +127,6 @@ export async function updateSchool(
   if (data.name !== undefined) {
     updates.push('name = ?');
     values.push(data.name);
-  }
-  if (data.code !== undefined) {
-    updates.push('code = ?');
-    values.push(data.code);
   }
   if (data.description !== undefined) {
     updates.push('description = ?');

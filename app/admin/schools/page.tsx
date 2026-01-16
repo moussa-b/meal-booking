@@ -1,20 +1,32 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAllSchools } from "@/lib/services/school.service";
+import type { School } from "@/lib/models/school";
+import { SchoolsTable } from "./schools-table";
+import {
+  createSchoolAction,
+  updateSchoolAction,
+  deleteSchoolAction,
+} from "./actions";
 
-export default function SchoolsPage() {
+export default async function SchoolsPage() {
+  let schools: School[] = [];
+  let error: string | null = null;
+
+  try {
+    schools = await getAllSchools();
+  } catch (err) {
+    console.error("Error fetching schools:", err);
+    error = "Erreur lors du chargement des établissements";
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestion des établissements scolaires</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Cette section permettra de gérer les établissements scolaires :
-            ajouter, modifier, supprimer et consulter les informations des
-            établissements.
-          </p>
-        </CardContent>
-      </Card>
+      <SchoolsTable
+        schools={schools}
+        createSchoolAction={createSchoolAction}
+        updateSchoolAction={updateSchoolAction}
+        deleteSchoolAction={deleteSchoolAction}
+        error={error}
+      />
     </div>
   );
 }
