@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { isMonday } from '@/lib/utils/date.utils';
 import { MenuDayForm } from './menu-day-form';
 
-const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY];
+const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface EditMenuDialogProps {
   menu: WeeklyMenu | null;
@@ -42,7 +42,7 @@ interface EditMenuDialogProps {
   updateWeeklyMenuAction: (
     id: number,
     data: UpdateWeeklyMenuInput
-  ) => Promise<ActionResult<any>>;
+  ) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -193,9 +193,9 @@ export function EditMenuDialog({
                       mainDishes={mainDishes}
                       appetizers={appetizers}
                       desserts={desserts}
-                      mainDishFieldName={`days.${finalIndex}.mainDishId` as any}
-                      appetizerFieldName={`days.${finalIndex}.appetizerId` as any}
-                      dessertFieldName={`days.${finalIndex}.dessertId` as any}
+                      mainDishFieldName={`days.${finalIndex}.mainDishId`}
+                      appetizerFieldName={`days.${finalIndex}.appetizerId`}
+                      dessertFieldName={`days.${finalIndex}.dessertId`}
                     />
                   );
                 })}

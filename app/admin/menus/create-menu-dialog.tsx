@@ -33,11 +33,11 @@ import { cn } from '@/lib/utils';
 import { getMonday, isMonday } from '@/lib/utils/date.utils';
 import { MenuDayForm } from './menu-day-form';
 
-const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY];
+const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface CreateMenuDialogProps {
   meals: Meal[];
-  createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult<any>>;
+  createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -174,9 +174,9 @@ export function CreateMenuDialog({
                     mainDishes={mainDishes}
                     appetizers={appetizers}
                     desserts={desserts}
-                    mainDishFieldName={`days.${index}.mainDishId` as any}
-                    appetizerFieldName={`days.${index}.appetizerId` as any}
-                    dessertFieldName={`days.${index}.dessertId` as any}
+                    mainDishFieldName={`days.${index}.mainDishId`}
+                    appetizerFieldName={`days.${index}.appetizerId`}
+                    dessertFieldName={`days.${index}.dessertId`}
                   />
                 ))}
               </div>

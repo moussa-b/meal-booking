@@ -57,7 +57,7 @@ export function MenuDayForm<T extends FieldValues>({
                 value={field.value?.toString()}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger fullWidth>
                     <SelectValue placeholder="Sélectionner un plat principal" />
                   </SelectTrigger>
                 </FormControl>
@@ -86,7 +86,7 @@ export function MenuDayForm<T extends FieldValues>({
                 value={field.value?.toString() || "none"}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger fullWidth>
                     <SelectValue placeholder="Aucune" />
                   </SelectTrigger>
                 </FormControl>
@@ -116,7 +116,7 @@ export function MenuDayForm<T extends FieldValues>({
                 value={field.value?.toString() || "none"}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger fullWidth>
                     <SelectValue placeholder="Aucun" />
                   </SelectTrigger>
                 </FormControl>
