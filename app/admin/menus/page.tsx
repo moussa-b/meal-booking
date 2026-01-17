@@ -1,20 +1,39 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAllWeeklyMenus } from "@/lib/services/weekly-menu.service";
+import { getAllMeals } from "@/lib/services/meal.service";
+import type { WeeklyMenu } from "@/lib/models/weekly-menu";
+import type { Meal } from "@/lib/models/meal";
+import { MenusTable } from "./menus-table";
+import {
+  createWeeklyMenuAction,
+  updateWeeklyMenuAction,
+  deleteWeeklyMenuAction,
+} from "./actions";
 
-export default function MenusPage() {
+export default async function MenusPage() {
+  let menus: WeeklyMenu[] = [];
+  let meals: Meal[] = [];
+  let error: string | null = null;
+
+  try {
+    [menus, meals] = await Promise.all([
+      getAllWeeklyMenus(),
+      getAllMeals(),
+    ]);
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    error = "Erreur lors du chargement des données";
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestion des menus</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Cette section permettra de gérer les menus : créer des menus pour
-            chaque jour, modifier les menus existants et consulter les menus
-            planifiés.
-          </p>
-        </CardContent>
-      </Card>
+      <MenusTable
+        menus={menus}
+        meals={meals}
+        createWeeklyMenuAction={createWeeklyMenuAction}
+        updateWeeklyMenuAction={updateWeeklyMenuAction}
+        deleteWeeklyMenuAction={deleteWeeklyMenuAction}
+        error={error}
+      />
     </div>
   );
 }

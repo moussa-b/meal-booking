@@ -41,7 +41,8 @@ describe('School Service', () => {
       expect(school).toBeDefined();
       expect(school?.id).toBe(created.id);
       expect(school?.name).toBe(testData.name);
-      expect(school?.code).toBe(testData.code);
+      expect(school?.code).toBe(created.code); // Code is auto-generated
+      expect(school?.code).toMatch(/^[A-Z0-9]{6}$/); // Verify code format
       expect(school?.description).toBe(testData.description);
       expect(school?.created).toBeInstanceOf(Date);
     });
@@ -62,7 +63,8 @@ describe('School Service', () => {
       expect(school).not.toBeNull();
       expect(school?.id).toBe(created.id);
       expect(school?.name).toBe(testData.name);
-      expect(school?.code).toBe(testData.code);
+      expect(school?.code).toBe(created.code); // Code is auto-generated
+      expect(school?.code).toMatch(/^[A-Z0-9]{6}$/); // Verify code format
       expect(school?.description).toBe(testData.description);
       expect(school?.created).toBeInstanceOf(Date);
     });
@@ -76,16 +78,20 @@ describe('School Service', () => {
 
       expect(school.id).toBeGreaterThan(0);
       expect(school.name).toBe(testData.name);
-      expect(school.code).toBe(testData.code);
+      expect(school.code).toMatch(/^[A-Z0-9]{6}$/); // Code is auto-generated, verify format
       expect(school.description).toBe(testData.description);
       expect(school.created).toBeInstanceOf(Date);
     });
 
-    it('should throw error if duplicate code is used', async () => {
+    it('should generate unique codes for multiple schools', async () => {
       const testData = createTestSchoolData();
-      await createSchool(testData);
+      const school1 = await createSchool(testData);
+      const school2 = await createSchool(testData);
 
-      await expect(createSchool(testData)).rejects.toThrow();
+      // Codes should be different (auto-generated)
+      expect(school1.code).not.toBe(school2.code);
+      expect(school1.code).toMatch(/^[A-Z0-9]{6}$/);
+      expect(school2.code).toMatch(/^[A-Z0-9]{6}$/);
     });
   });
 
@@ -102,17 +108,6 @@ describe('School Service', () => {
       expect(updated.description).toBe(created.description);
     });
 
-    it('should update school code', async () => {
-      const created = await createSchool(createTestSchoolData());
-      const newCode = 'UPDATED123';
-
-      const updated = await updateSchool(created.id, { code: newCode });
-
-      expect(updated.id).toBe(created.id);
-      expect(updated.code).toBe(newCode);
-      expect(updated.name).toBe(created.name);
-    });
-
     it('should update school description', async () => {
       const created = await createSchool(createTestSchoolData());
       const newDescription = 'Updated description';
@@ -127,7 +122,6 @@ describe('School Service', () => {
       const created = await createSchool(createTestSchoolData());
       const updates = {
         name: 'Updated Name',
-        code: 'UPDATED456',
         description: 'Updated Description',
       };
 
@@ -135,7 +129,7 @@ describe('School Service', () => {
 
       expect(updated.id).toBe(created.id);
       expect(updated.name).toBe(updates.name);
-      expect(updated.code).toBe(updates.code);
+      expect(updated.code).toBe(created.code); // Code should remain unchanged
       expect(updated.description).toBe(updates.description);
     });
 
@@ -169,15 +163,17 @@ describe('School Service', () => {
       await expect(deleteSchool(99999)).rejects.toThrow('School not found');
     });
 
-    it('should allow creating school with same code after deletion', async () => {
+    it('should allow creating school after deletion', async () => {
       const testData = createTestSchoolData();
       const created = await createSchool(testData);
 
       await deleteSchool(created.id);
 
-      // Should be able to create with same code after deletion
+      // Should be able to create a new school after deletion
       const newSchool = await createSchool(testData);
-      expect(newSchool.code).toBe(testData.code);
+      expect(newSchool.id).toBeGreaterThan(0);
+      expect(newSchool.name).toBe(testData.name);
+      expect(newSchool.code).toMatch(/^[A-Z0-9]{6}$/); // Code is auto-generated
     });
   });
 });

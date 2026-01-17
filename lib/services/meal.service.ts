@@ -126,8 +126,23 @@ export async function updateMeal(
 
 /**
  * Delete a meal
+ * Note: This will also delete any weekly_menu_days that reference this meal as mainDishId
  */
 export async function deleteMeal(id: number): Promise<void> {
+  // First, check if meal exists
+  const meal = await getMealById(id);
+  if (!meal) {
+    throw new Error('Meal not found');
+  }
+
+  // Delete any weekly_menu_days that reference this meal as mainDishId
+  // (appetizerId and dessertId have ON DELETE SET NULL, so they don't need to be handled)
+  await query(
+    'DELETE FROM weekly_menu_days WHERE mainDishId = ?',
+    [id]
+  );
+
+  // Now delete the meal
   const result = await query<MysqlDeleteResult>(
     'DELETE FROM meals WHERE id = ?',
     [id]
