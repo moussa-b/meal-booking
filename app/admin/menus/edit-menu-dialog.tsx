@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { startOfDay } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
 import { DayOfWeek } from '@/lib/models/weekly-menu';
@@ -108,6 +109,9 @@ export function EditMenuDialog({
     return !isMonday(date);
   };
 
+  // Set minimum date to today
+  const minDate = startOfDay(new Date());
+
   if (!menu) return null;
 
   return (
@@ -155,6 +159,7 @@ export function EditMenuDialog({
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={isDateDisabled}
+                        minDate={minDate}
                         initialFocus
                       />
                     </PopoverContent>
