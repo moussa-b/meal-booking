@@ -13,7 +13,7 @@ import { ConfirmationScreen } from "./confirmation-screen";
 
 // Define the complete form schema
 const formSchema = z.object({
-  schoolCode: z.string().min(1, "Le code école est requis"),
+  schoolId: z.number().min(1, "L'école est requise"),
   email: z.string().email("Email invalide"),
   children: z
     .array(
@@ -61,7 +61,7 @@ export function BookingWizard() {
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
-      schoolCode: "",
+      schoolId: 0,
       email: "",
       children: [
         {
@@ -80,7 +80,7 @@ export function BookingWizard() {
     let fieldsToValidate: (keyof BookingFormData)[] = [];
 
     if (currentStep === 1) {
-      fieldsToValidate = ["schoolCode", "email"];
+      fieldsToValidate = ["schoolId", "email"];
     } else if (currentStep === 2) {
       fieldsToValidate = ["children"];
     } else if (currentStep === 3) {
