@@ -5,16 +5,72 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { weeklyMenu } from "@/lib/mock-menu-data";
 import type { BookingFormData } from "./booking-wizard";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
+import { DayOfWeek } from "@/lib/models/weekly-menu";
 
 const DAYS = ["lundi", "mardi", "jeudi", "vendredi"] as const;
+
+// Map day of week (0-6) to French day names
+const DAY_NAMES: Record<number, string> = {
+  [DayOfWeek.MONDAY]: "Lundi",
+  [DayOfWeek.TUESDAY]: "Mardi",
+  [DayOfWeek.WEDNESDAY]: "Mercredi",
+  [DayOfWeek.THURSDAY]: "Jeudi",
+  [DayOfWeek.FRIDAY]: "Vendredi",
+  [DayOfWeek.SATURDAY]: "Samedi",
+  [DayOfWeek.SUNDAY]: "Dimanche",
+};
+
+// Map day of week to lowercase key for form
+const DAY_KEYS: Record<number, (typeof DAYS)[number] | null> = {
+  [DayOfWeek.MONDAY]: "lundi",
+  [DayOfWeek.TUESDAY]: "mardi",
+  [DayOfWeek.THURSDAY]: "jeudi",
+  [DayOfWeek.FRIDAY]: "vendredi",
+  [DayOfWeek.WEDNESDAY]: null,
+  [DayOfWeek.SATURDAY]: null,
+  [DayOfWeek.SUNDAY]: null,
+};
+
+// Format date to French format
+function formatDateFrench(date: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
 
 export function StepMenuSelection() {
   const { watch, setValue } = useFormContext<BookingFormData>();
   const children = watch("children");
   const menuSelections = watch("menuSelections");
+  const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch weekly menu from API
+  useEffect(() => {
+    async function fetchMenu() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch("/api/weekly-menus?current=true");
+        if (!response.ok) {
+          throw new Error("Impossible de charger le menu");
+        }
+        const result = await response.json();
+        setWeeklyMenu(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchMenu();
+  }, []);
 
   // Initialize menu selections for all children if not already set
   useEffect(() => {
@@ -58,6 +114,51 @@ export function StepMenuSelection() {
     if (!selection) return false;
     return DAYS.every((day) => selection[day]);
   };
+
+  // Get menu days filtered to only show Monday, Tuesday, Thursday, Friday
+  const menuDays = weeklyMenu?.days?.filter(
+    (day) => DAY_KEYS[day.dayOfWeek] !== null
+  ) || [];
+
+  // Calculate date for each day based on weekStartDate
+  const getDayDate = (dayOfWeek: number): Date => {
+    if (!weeklyMenu) return new Date();
+    const date = new Date(weeklyMenu.weekStartDate);
+    date.setDate(date.getDate() + dayOfWeek);
+    return date;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <p className="text-slate-600">Chargement du menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+          <p className="text-red-700 font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!weeklyMenu || menuDays.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+          <p className="text-yellow-700 font-medium">
+            Aucun menu disponible pour le moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -107,12 +208,16 @@ export function StepMenuSelection() {
 
               {/* Individual Days */}
               <div className="grid gap-3">
-                {weeklyMenu.map((dayMenu) => {
-                  const dayKey = dayMenu.jour.toLowerCase() as (typeof DAYS)[number];
+                {menuDays.map((dayMenu: WeeklyMenuDay) => {
+                  const dayKey = DAY_KEYS[dayMenu.dayOfWeek];
+                  if (!dayKey) return null;
+
+                  const dayName = DAY_NAMES[dayMenu.dayOfWeek];
+                  const dayDate = getDayDate(dayMenu.dayOfWeek);
 
                   return (
                     <Card
-                      key={dayMenu.jour}
+                      key={dayMenu.id}
                       className="border border-slate-200 bg-white hover:shadow-md transition-shadow gap-1"
                     >
                       <CardHeader className="p-4 pb-3 pt-0">
@@ -131,29 +236,56 @@ export function StepMenuSelection() {
                           />
                           <div className="flex-1 flex-row flex items-center gap-2">
                             <div className="font-semibold text-slate-900 text-base">
-                              {dayMenu.jour}
+                              {dayName}
                             </div>
                             <div className="text-sm text-slate-500">
-                              {dayMenu.date}
+                              {formatDateFrench(dayDate)}
                             </div>
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0 px-4 pb-4">
+                      <CardContent className="pt-0 px-4">
                         <div className="space-y-1 text-sm">
-                          <div className="text-slate-700">
-                            <span className="font-medium">Plat:</span>{" "}
-                            {dayMenu.menu.plat}
-                          </div>
-                          <div className="text-slate-700">
-                            <span className="font-medium">
-                              Accompagnement:
-                            </span>{" "}
-                            {dayMenu.menu.accompagnement}
-                          </div>
-                          <div className="text-slate-700">
-                            <span className="font-medium">Dessert:</span>{" "}
-                            {dayMenu.menu.dessert}
+                          {dayMenu.appetizer && (
+                            <div className="text-slate-700">
+                              <span className="font-medium underline">Entrée:</span>{" "}
+                              {dayMenu.appetizer.name}
+                              {dayMenu.appetizer.description && (
+                                <span className="text-slate-500">
+                                  {" "}
+                                  - {dayMenu.appetizer.description}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {dayMenu.mainDish && (
+                            <div className="text-slate-700">
+                              <span className="font-medium underline">Plat:</span>{" "}
+                              {dayMenu.mainDish.name}
+                              {dayMenu.mainDish.description && (
+                                <span className="text-slate-500">
+                                  {" "}
+                                  - {dayMenu.mainDish.description}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {dayMenu.dessert && (
+                            <div className="text-slate-700">
+                              <span className="font-medium underline">Dessert:</span>{" "}
+                              {dayMenu.dessert.name}
+                              {dayMenu.dessert.description && (
+                                <span className="text-slate-500">
+                                  {" "}
+                                  - {dayMenu.dessert.description}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <div className="text-lg font-bold text-slate-900">
+                            Prix: {dayMenu.price.toFixed(2)} €
                           </div>
                         </div>
                       </CardContent>

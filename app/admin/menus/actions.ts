@@ -38,7 +38,15 @@ export async function createWeeklyMenuAction(
       };
     }
 
-    const menu = await createWeeklyMenu(validationResult.data);
+    const menuData = {
+      ...validationResult.data,
+      days: validationResult.data.days.map(day => ({
+        ...day,
+        price: typeof day.price === 'string' ? parseFloat(day.price) : day.price,
+      })),
+    };
+
+    const menu = await createWeeklyMenu(menuData);
 
     // Revalidate the menus page
     revalidatePath("/admin/menus");
@@ -76,7 +84,17 @@ export async function updateWeeklyMenuAction(
       };
     }
 
-    const menu = await updateWeeklyMenu(id, validationResult.data);
+    const menuData = {
+      ...validationResult.data,
+      days: validationResult.data.days
+        ? validationResult.data.days.map(day => ({
+            ...day,
+            price: typeof day.price === 'string' ? parseFloat(day.price) : day.price,
+          }))
+        : undefined,
+    };
+
+    const menu = await updateWeeklyMenu(id, menuData);
 
     // Revalidate the menus page
     revalidatePath("/admin/menus");

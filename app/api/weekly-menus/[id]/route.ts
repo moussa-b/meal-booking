@@ -98,7 +98,17 @@ export async function PUT(
       );
     }
 
-    const menu = await updateWeeklyMenu(id, validationResult.data);
+    const menuData = {
+      ...validationResult.data,
+      days: validationResult.data.days
+        ? validationResult.data.days.map(day => ({
+            ...day,
+            price: typeof day.price === 'string' ? parseFloat(day.price) : day.price,
+          }))
+        : undefined,
+    };
+
+    const menu = await updateWeeklyMenu(id, menuData);
 
     return NextResponse.json({
       data: menu,

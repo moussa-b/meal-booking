@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getAllWeeklyMenus,
   createWeeklyMenu,
+  getCurrentWeeklyMenuWithMeals,
 } from '@/lib/services/weekly-menu.service';
 import {
   createWeeklyMenuSchema,
@@ -10,9 +11,30 @@ import {
 /**
  * GET /api/weekly-menus
  * Get all weekly menus
+ * Query params:
+ *   - current: if true, returns the current week's menu with full meal details
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const current = searchParams.get('current');
+
+    if (current === 'true') {
+      const menu = await getCurrentWeeklyMenuWithMeals();
+      if (!menu) {
+        return NextResponse.json(
+          {
+            error: 'Not Found',
+            message: 'No weekly menu found',
+          },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        data: menu,
+      });
+    }
+
     const menus = await getAllWeeklyMenus();
     return NextResponse.json({
       data: menus,
@@ -55,7 +77,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const menu = await createWeeklyMenu(validationResult.data);
+    const menuData = {
+      ...validationResult.data,
+      days: validationResult.data.days.map(day => ({
+        ...day,
+        price: typeof day.price === 'string' ? parseFloat(day.price) : day.price,
+      })),
+    };
+
+    const menu = await createWeeklyMenu(menuData);
 
     return NextResponse.json(
       {

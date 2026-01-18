@@ -2,6 +2,8 @@ import { query, getConnection, type MysqlInsertResult, type MysqlDeleteResult } 
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
 import { getWeekNumber, getYear, formatDateLocal } from '@/lib/utils/date.utils';
 import type { FieldPacket } from 'mysql2/promise';
+import { getMealById } from '@/lib/services/meal.service';
+import type { Meal } from '@/lib/models/meal';
 
 /**
  * Database row type for WeeklyMenu (as returned from MySQL)
@@ -262,4 +264,73 @@ export async function deleteWeeklyMenu(id: number): Promise<void> {
   if (result.affectedRows === 0) {
     throw new Error('Weekly menu not found');
   }
+}
+
+/**
+ * Get a weekly menu by ID with full meal details (mainDish, appetizer, dessert)
+ */
+export async function getWeeklyMenuWithMeals(id: number): Promise<WeeklyMenu | null> {
+  const menu = await getWeeklyMenuById(id);
+  
+  if (!menu || !menu.days) {
+    return menu;
+  }
+
+  // Get all unique meal IDs
+  const mealIds = new Set<number>();
+  menu.days.forEach(day => {
+    mealIds.add(day.mainDishId);
+    if (day.appetizerId) mealIds.add(day.appetizerId);
+    if (day.dessertId) mealIds.add(day.dessertId);
+  });
+
+  // Fetch all meals
+  const meals = await Promise.all(
+    Array.from(mealIds).map(id => getMealById(id))
+  );
+  const mealsMap = new Map<number, Meal>();
+  meals.forEach(meal => {
+    if (meal) mealsMap.set(meal.id, meal);
+  });
+
+  // Attach meal details to days
+  const daysWithMeals: WeeklyMenuDay[] = menu.days.map(day => ({
+    ...day,
+    mainDish: mealsMap.get(day.mainDishId),
+    appetizer: day.appetizerId ? mealsMap.get(day.appetizerId) ?? null : null,
+    dessert: day.dessertId ? mealsMap.get(day.dessertId) ?? null : null,
+  }));
+
+  return {
+    ...menu,
+    days: daysWithMeals,
+  };
+}
+
+/**
+ * Get the current week's menu with full meal details
+ * Returns the most recent menu if no menu exists for the current week
+ */
+export async function getCurrentWeeklyMenuWithMeals(): Promise<WeeklyMenu | null> {
+  const today = new Date();
+  const currentWeekStart = new Date(today);
+  currentWeekStart.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1)); // Monday
+  currentWeekStart.setHours(0, 0, 0, 0);
+
+  // Try to get menu for current week
+  let menu = await getWeeklyMenuByWeekStart(currentWeekStart);
+  
+  // If no menu for current week, get the most recent one
+  if (!menu) {
+    const allMenus = await getAllWeeklyMenus();
+    if (allMenus.length > 0) {
+      menu = allMenus[0]; // Most recent (ordered by weekStartDate DESC)
+    }
+  }
+
+  if (!menu) {
+    return null;
+  }
+
+  return getWeeklyMenuWithMeals(menu.id);
 }
