@@ -81,11 +81,13 @@ export function EditMenuDialog({
           mainDishId: day.mainDishId,
           appetizerId: day.appetizerId ?? null,
           dessertId: day.dessertId ?? null,
+          price: day.price ?? 0.0,
         })) : DEFAULT_DAYS.map(dayOfWeek => ({
           dayOfWeek,
           mainDishId: 0,
           appetizerId: null,
           dessertId: null,
+          price: 0.0,
         })),
       });
     }
@@ -182,6 +184,7 @@ export function EditMenuDialog({
                       mainDishId: 0,
                       appetizerId: null,
                       dessertId: null,
+                      price: 0.0,
                     };
                     const newDays = [...currentDays, dayData];
                     form.setValue('days', newDays);
@@ -201,6 +204,7 @@ export function EditMenuDialog({
                       mainDishFieldName={`days.${finalIndex}.mainDishId`}
                       appetizerFieldName={`days.${finalIndex}.appetizerId`}
                       dessertFieldName={`days.${finalIndex}.dessertId`}
+                      priceFieldName={`days.${finalIndex}.price`}
                     />
                   );
                 })}

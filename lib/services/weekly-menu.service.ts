@@ -24,6 +24,7 @@ interface WeeklyMenuDayRow {
   mainDishId: number;
   appetizerId: number | null;
   dessertId: number | null;
+  price: number;
 }
 
 /**
@@ -42,7 +43,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
   const placeholders = menuIds.map(() => '?').join(',');
 
   const days = await query<WeeklyMenuDayRow[]>(
-    `SELECT id, weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId 
+    `SELECT id, weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId, price 
      FROM weekly_menu_days 
      WHERE weeklyMenuId IN (${placeholders})
      ORDER BY weeklyMenuId, dayOfWeek`,
@@ -61,6 +62,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
       mainDishId: day.mainDishId,
       appetizerId: day.appetizerId,
       dessertId: day.dessertId,
+      price: day.price,
     });
   });
 
@@ -89,7 +91,7 @@ export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> 
 
   const menu = menus[0];
   const days = await query<WeeklyMenuDayRow[]>(
-    'SELECT id, weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId FROM weekly_menu_days WHERE weeklyMenuId = ? ORDER BY dayOfWeek',
+    'SELECT id, weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId, price FROM weekly_menu_days WHERE weeklyMenuId = ? ORDER BY dayOfWeek',
     [id]
   );
 
@@ -106,6 +108,7 @@ export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> 
       mainDishId: day.mainDishId,
       appetizerId: day.appetizerId,
       dessertId: day.dessertId,
+      price: day.price,
     })),
   };
 }
@@ -137,6 +140,7 @@ export async function createWeeklyMenu(data: {
     mainDishId: number;
     appetizerId?: number | null;
     dessertId?: number | null;
+    price: number;
   }>;
 }): Promise<WeeklyMenu> {
   const connection = await getConnection();
@@ -159,8 +163,8 @@ export async function createWeeklyMenu(data: {
     // Insert all days
     for (const day of data.days) {
       await connection.execute(
-        'INSERT INTO weekly_menu_days (weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId) VALUES (?, ?, ?, ?, ?)',
-        [weeklyMenuId, day.dayOfWeek, day.mainDishId, day.appetizerId ?? null, day.dessertId ?? null]
+        'INSERT INTO weekly_menu_days (weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId, price) VALUES (?, ?, ?, ?, ?, ?)',
+        [weeklyMenuId, day.dayOfWeek, day.mainDishId, day.appetizerId ?? null, day.dessertId ?? null, day.price]
       );
     }
 
@@ -192,6 +196,7 @@ export async function updateWeeklyMenu(
       mainDishId: number;
       appetizerId?: number | null;
       dessertId?: number | null;
+      price: number;
     }>;
   }
 ): Promise<WeeklyMenu> {
@@ -223,8 +228,8 @@ export async function updateWeeklyMenu(
       // Insert new days
       for (const day of data.days) {
         await connection.execute(
-          'INSERT INTO weekly_menu_days (weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId) VALUES (?, ?, ?, ?, ?)',
-          [id, day.dayOfWeek, day.mainDishId, day.appetizerId ?? null, day.dessertId ?? null]
+          'INSERT INTO weekly_menu_days (weeklyMenuId, dayOfWeek, mainDishId, appetizerId, dessertId, price) VALUES (?, ?, ?, ?, ?, ?)',
+          [id, day.dayOfWeek, day.mainDishId, day.appetizerId ?? null, day.dessertId ?? null, day.price]
         );
       }
     }

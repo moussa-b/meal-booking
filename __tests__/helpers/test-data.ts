@@ -42,6 +42,7 @@ export function createTestWeeklyMenuData(overrides?: {
     mainDishId: number;
     appetizerId?: number | null;
     dessertId?: number | null;
+    price: number;
   }>;
 }) {
   // Get next Monday if no date provided
@@ -59,6 +60,7 @@ export function createTestWeeklyMenuData(overrides?: {
         mainDishId: 1,
         appetizerId: null,
         dessertId: null,
+        price: 0.0,
       },
     ],
   };

@@ -4,6 +4,7 @@ import { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupText } from '@/components/ui/input-group';
 import type { Meal } from '@/lib/models/meal';
 import { DayOfWeek } from '@/lib/models/weekly-menu';
 
@@ -27,6 +28,7 @@ interface MenuDayFormProps<T extends FieldValues> {
   mainDishFieldName: FieldPath<T>;
   appetizerFieldName: FieldPath<T>;
   dessertFieldName: FieldPath<T>;
+  priceFieldName: FieldPath<T>;
 }
 
 export function MenuDayForm<T extends FieldValues>({
@@ -39,6 +41,7 @@ export function MenuDayForm<T extends FieldValues>({
   mainDishFieldName,
   appetizerFieldName,
   dessertFieldName,
+  priceFieldName,
 }: MenuDayFormProps<T>) {
   return (
     <Card className="gap-3">
@@ -129,6 +132,35 @@ export function MenuDayForm<T extends FieldValues>({
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={priceFieldName}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Prix *</FormLabel>
+              <FormControl>
+                <InputGroup>
+                  <InputGroupInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === '' ? undefined : parseFloat(value) || 0);
+                    }}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>€</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

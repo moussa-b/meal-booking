@@ -74,6 +74,7 @@ export function CreateMenuDialog({
         mainDishId: 0,
         appetizerId: null,
         dessertId: null,
+        price: 0.0,
       })),
     },
   });
@@ -89,6 +90,7 @@ export function CreateMenuDialog({
           mainDishId: 0,
           appetizerId: null,
           dessertId: null,
+          price: 0.0,
         })),
       });
       onOpenChange(false);
@@ -182,6 +184,7 @@ export function CreateMenuDialog({
                     mainDishFieldName={`days.${index}.mainDishId`}
                     appetizerFieldName={`days.${index}.appetizerId`}
                     dessertFieldName={`days.${index}.dessertId`}
+                    priceFieldName={`days.${index}.price`}
                   />
                 ))}
               </div>

@@ -9,6 +9,7 @@ const weeklyMenuDaySchema = z.object({
   mainDishId: z.number().int().positive('Le plat principal est requis'),
   appetizerId: z.number().int().positive().nullable().optional(),
   dessertId: z.number().int().positive().nullable().optional(),
+  price: z.number().nonnegative('Le prix doit être un nombre positif ou zéro'),
 });
 
 /**

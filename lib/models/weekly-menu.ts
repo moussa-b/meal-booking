@@ -39,6 +39,7 @@ export interface WeeklyMenuDay {
   mainDishId: number; // REQUIRED - Référence à meals.id
   appetizerId?: number | null; // OPTIONAL - Référence à meals.id
   dessertId?: number | null; // OPTIONAL - Référence à meals.id
+  price: number; // REQUIRED - Prix du menu du jour
 
   // Relations optionnelles pour les requêtes avec JOIN
   mainDish?: Meal;
