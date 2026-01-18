@@ -64,6 +64,8 @@ export function EditMenuDialog({
 
   const form = useForm<UpdateWeeklyMenuInput>({
     resolver: zodResolver(updateWeeklyMenuSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
     defaultValues: {
       weekStartDate: undefined,
       days: undefined,

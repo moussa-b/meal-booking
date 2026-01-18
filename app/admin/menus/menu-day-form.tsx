@@ -139,31 +139,39 @@ export function MenuDayForm<T extends FieldValues>({
         <FormField
           control={control}
           name={priceFieldName}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Prix *</FormLabel>
-              <FormControl>
-                <InputGroup>
-                  <InputGroupInput
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? undefined : parseFloat(value) || 0);
-                    }}
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupText>€</InputGroupText>
-                  </InputGroupAddon>
-                </InputGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            // Format value to show 2 decimal places when it's a number
+            const formatDisplayValue = (val: string | number | undefined | null): string => {
+              if (val === 0 || val === undefined || val === null || val === '') return '';
+              if (typeof val === 'number') {
+                return val.toFixed(2);
+              }
+              return val.toString();
+            };
+
+            return (
+              <FormItem>
+                <FormLabel>Prix *</FormLabel>
+                <FormControl>
+                  <InputGroup>
+                    <InputGroupInput
+                      type="text"
+                      placeholder="0.00"
+                      value={formatDisplayValue(field.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value);
+                      }}
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupText>€</InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       </CardContent>
     </Card>

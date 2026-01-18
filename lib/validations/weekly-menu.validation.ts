@@ -9,7 +9,21 @@ const weeklyMenuDaySchema = z.object({
   mainDishId: z.number().int().positive('Le plat principal est requis'),
   appetizerId: z.number().int().positive().nullable().optional(),
   dessertId: z.number().int().positive().nullable().optional(),
-  price: z.number().nonnegative('Le prix doit être un nombre positif ou zéro'),
+  price: z.union([
+    z.string().min(1, 'Le prix est requis').refine(
+      (val) => {
+        const trimmed = val.trim();
+        if (trimmed === '') return false;
+        if (!/^[\d]*\.?[\d]*$/.test(trimmed)) return false;
+        const num = parseFloat(trimmed);
+        return !isNaN(num) && num >= 0;
+      },
+      {
+        message: 'Le prix doit être un nombre positif ou zéro',
+      }
+    ),
+    z.number().nonnegative('Le prix doit être un nombre positif ou zéro')
+  ]),
 });
 
 /**

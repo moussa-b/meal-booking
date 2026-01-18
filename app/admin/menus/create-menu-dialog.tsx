@@ -67,6 +67,8 @@ export function CreateMenuDialog({
 
   const form = useForm<CreateWeeklyMenuInput>({
     resolver: zodResolver(createWeeklyMenuSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
     defaultValues: {
       weekStartDate: getDefaultMonday(),
       days: DEFAULT_DAYS.map(dayOfWeek => ({
