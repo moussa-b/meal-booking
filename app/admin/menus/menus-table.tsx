@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 import { EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { WeeklyMenu, WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
+import type { WeeklyMenu } from '@/lib/models/weekly-menu';
 import { DayOfWeek } from '@/lib/models/weekly-menu';
 import type { Meal } from '@/lib/models/meal';
+import type { School } from '@/lib/models/school';
 import { type ActionResult } from './actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,16 +26,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CreateMenuDialog } from './create-menu-dialog';
 import { EditMenuDialog } from './edit-menu-dialog';
+import type { CreateWeeklyMenuInput, UpdateWeeklyMenuInput } from '@/lib/validations/weekly-menu.validation';
 
 const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface MenusTableProps {
   menus: WeeklyMenu[];
   meals: Meal[];
-  createWeeklyMenuAction: (data: { weekStartDate: string; schoolId: number; days: WeeklyMenuDayInput[] }) => Promise<ActionResult>;
+  schools: School[];
+  createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult>;
   updateWeeklyMenuAction: (
     id: number,
-    data: { weekStartDate?: string; schoolId?: number; days?: WeeklyMenuDayInput[] }
+    data: UpdateWeeklyMenuInput
   ) => Promise<ActionResult>;
   deleteWeeklyMenuAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
@@ -44,6 +47,7 @@ interface MenusTableProps {
 export function MenusTable({
   menus: initialMenus,
   meals,
+  schools,
   createWeeklyMenuAction,
   updateWeeklyMenuAction,
   deleteWeeklyMenuAction,
@@ -113,6 +117,13 @@ export function MenusTable({
     return meal?.name || '—';
   };
 
+  // Helper function to get school name by ID
+  const getSchoolName = (schoolId: number | null | undefined): string => {
+    if (!schoolId) return '—';
+    const school = schools.find((s) => s.id === schoolId);
+    return school?.name || '—';
+  };
+
   // Helper function to get day name by dayOfWeek
   const DAY_LABELS: Record<number, string> = {
     [DayOfWeek.MONDAY]: 'Lundi',
@@ -179,6 +190,7 @@ export function MenusTable({
               <TableHeader>
                 <TableRow>
                   <TableHead>Période</TableHead>
+                  <TableHead>École</TableHead>
                   <TableHead>Semaine</TableHead>
                   <TableHead>Année</TableHead>
                   <TableHead>Nombre de jours</TableHead>
@@ -191,6 +203,7 @@ export function MenusTable({
                     <TableCell className="font-medium">
                       {formatWeekRange(menu)}
                     </TableCell>
+                    <TableCell>{getSchoolName(menu.schoolId)}</TableCell>
                     <TableCell>{menu.weekNumber || '—'}</TableCell>
                     <TableCell>{menu.year || '—'}</TableCell>
                     <TableCell>{menu.days?.length || 0}</TableCell>
@@ -236,7 +249,7 @@ export function MenusTable({
                   isMenuExpanded(menu.id)
                     ? [
                         <TableRow key={`${menu.id}-details`}>
-                          <TableCell colSpan={5} className="bg-muted/30 p-4">
+                          <TableCell colSpan={6} className="bg-muted/30 p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                               {menu.days
                                 .filter((day) => {

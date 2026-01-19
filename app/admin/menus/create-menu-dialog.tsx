@@ -13,7 +13,7 @@ import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import type { School } from '@/lib/models/school';
 import { type ActionResult } from './actions';
-import { createWeeklyMenuSchema, } from '@/lib/validations/weekly-menu.validation';
+import { type CreateWeeklyMenuInput, createWeeklyMenuSchema, } from '@/lib/validations/weekly-menu.validation';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, D
 
 interface CreateMenuDialogProps {
   meals: Meal[];
-  createWeeklyMenuAction: (data: { weekStartDate: string; schoolId: number; days: WeeklyMenuDayInput[] }) => Promise<ActionResult>;
+  createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

@@ -14,7 +14,7 @@ import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import type { School } from '@/lib/models/school';
 import { type ActionResult } from './actions';
-import { updateWeeklyMenuSchema } from '@/lib/validations/weekly-menu.validation';
+import { type UpdateWeeklyMenuInput, updateWeeklyMenuSchema } from '@/lib/validations/weekly-menu.validation';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ interface EditMenuDialogProps {
   meals: Meal[];
   updateWeeklyMenuAction: (
     id: number,
-    data: { weekStartDate?: string; schoolId?: number; days?: WeeklyMenuDayInput[] }
+    data: UpdateWeeklyMenuInput
   ) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
