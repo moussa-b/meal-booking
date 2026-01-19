@@ -14,6 +14,15 @@ dotenv.config();
 /**
  * Database connection configuration from environment variables
  */
+// Log environment variables for debugging
+console.log('[DB Config] Environment variables:', {
+  DB_HOST: process.env.DB_HOST,
+  DB_PORT: process.env.DB_PORT,
+  DB_USER: process.env.DB_USER,
+  DB_NAME: process.env.DB_NAME,
+  DB_PASSWORD: process.env.DB_PASSWORD ? '***' : undefined,
+});
+
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306', 10),
@@ -26,6 +35,13 @@ const dbConfig = {
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
 };
+
+console.log('[DB Config] Final connection config:', {
+  host: dbConfig.host,
+  port: dbConfig.port,
+  user: dbConfig.user,
+  database: dbConfig.database,
+});
 
 /**
  * Create MySQL connection pool
