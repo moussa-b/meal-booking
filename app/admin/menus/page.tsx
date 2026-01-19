@@ -9,6 +9,8 @@ import {
   deleteWeeklyMenuAction,
 } from "./actions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function MenusPage() {
   let menus: WeeklyMenu[] = [];
   let meals: Meal[] = [];

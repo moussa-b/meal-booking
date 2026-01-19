@@ -7,6 +7,8 @@ import {
   deleteMealAction,
 } from "./actions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function MealsPage() {
   let meals: Meal[] = [];
   let error: string | null = null;

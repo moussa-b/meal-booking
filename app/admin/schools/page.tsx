@@ -7,6 +7,8 @@ import {
   deleteSchoolAction,
 } from "./actions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function SchoolsPage() {
   let schools: School[] = [];
   let error: string | null = null;
