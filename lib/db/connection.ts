@@ -1,52 +1,66 @@
 import mysql from 'mysql2/promise';
+import type { PoolOptions } from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 // Load environment variables
 // In test environment, .env.test should already be loaded by test setup
 // This loads .env as fallback for non-test environments
-if (process.env.VITEST && !process.env.DB_NAME) {
-  // In test environment, try .env.test first if DB_NAME not set
+if (process.env.VITEST && !process.env.DATABASE_URL) {
+  // In test environment, try .env.test first if DATABASE_URL not set
   dotenv.config({ path: '.env.test' });
 }
 // Always load .env as fallback (won't override existing vars)
 dotenv.config();
 
 /**
- * Database connection configuration from environment variables
+ * Parse MySQL connection URL into PoolOptions
  */
-// Log environment variables for debugging
-console.log('[DB Config] Environment variables:', {
-  DB_HOST: process.env.DB_HOST,
-  DB_PORT: process.env.DB_PORT,
-  DB_USER: process.env.DB_USER,
-  DB_NAME: process.env.DB_NAME,
-  DB_PASSWORD: process.env.DB_PASSWORD ? '***' : undefined,
-});
+function parseDatabaseUrl(url: string): PoolOptions {
+  try {
+    const parsedUrl = new URL(url);
+    
+    if (!parsedUrl.protocol.startsWith('mysql')) {
+      throw new Error(`Unsupported protocol "${parsedUrl.protocol}". Expected "mysql:"`);
+    }
 
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  user: process.env.DB_USER || 'mealuser',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'meal_booking',
+    const config: PoolOptions = {
+      host: parsedUrl.hostname,
+      port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : 3306,
+      user: parsedUrl.username || undefined,
+      password: parsedUrl.password || undefined,
+      database: parsedUrl.pathname ? parsedUrl.pathname.slice(1) : undefined,
+    };
+
+    return config;
+  } catch (error) {
+    throw new Error(`Invalid DATABASE_URL: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Database connection configuration from DATABASE_URL
+ */
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
+// Log DATABASE_URL (masked) for debugging
+const maskedUrl = process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@');
+console.log('[DB Config] DATABASE_URL:', maskedUrl);
+
+/**
+ * Create MySQL connection pool with DATABASE_URL and pool options
+ * Parse the URL and combine with pool-specific options
+ */
+const connectionConfig = parseDatabaseUrl(process.env.DATABASE_URL);
+export const pool = mysql.createPool({
+  ...connectionConfig,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-};
-
-console.log('[DB Config] Final connection config:', {
-  host: dbConfig.host,
-  port: dbConfig.port,
-  user: dbConfig.user,
-  database: dbConfig.database,
 });
-
-/**
- * Create MySQL connection pool
- */
-export const pool = mysql.createPool(dbConfig);
 
 /**
  * Get a connection from the pool

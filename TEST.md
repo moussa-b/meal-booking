@@ -72,16 +72,14 @@ You should see privileges for both `meal_booking` and `meal_booking_test` databa
 **Create a `.env.test` file in the project root** with your test database configuration:
 
 ```bash
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=mealuser
-DB_PASSWORD=mealpassword
-DB_NAME=meal_booking_test
+DATABASE_URL=mysql://mealuser:mealpassword@localhost:3306/meal_booking_test
 ```
 
 **Important:** The `.env.test` file is automatically loaded by the test setup before any database connections are made. This ensures tests always use the test database and prevents accidental deletion of production/development data.
 
-**Note:** Make sure `.env.test` is in your `.gitignore` if it contains sensitive credentials, or use a `.env.test.example` template file.
+**Note:** 
+- The `DATABASE_URL` format is: `mysql://[user[:password]@]host[:port]/[database]`
+- Make sure `.env.test` is in your `.gitignore` if it contains sensitive credentials, or use a `.env.test.example` template file.
 
 ### 4. Run Migrations
 
@@ -89,14 +87,14 @@ Ensure the test database has all required tables by running migrations:
 
 ```bash
 # Load .env.test and run migrations
-# The migrate:up script will use DB_NAME from .env.test if it's loaded
-DB_NAME=meal_booking_test npm run migrate:up
+# The migrate:up script will use DATABASE_URL from .env.test if it's loaded
+npm run migrate:up:test
 ```
 
 Or manually set the environment variable:
 ```bash
-export DB_NAME=meal_booking_test
-npm run migrate:up
+export DATABASE_URL=mysql://mealuser:mealpassword@localhost:3306/meal_booking_test
+npm run migrate:up:test
 ```
 
 ## Running Tests
@@ -194,8 +192,7 @@ If you see connection errors:
 
 2. **Check environment variables:**
    ```bash
-   echo $DB_NAME
-   echo $DB_HOST
+   echo $DATABASE_URL
    ```
 
 3. **Verify test database exists:**
@@ -216,8 +213,8 @@ If you see "table doesn't exist" errors:
 
 1. **Run migrations on test database:**
    ```bash
-   export DB_NAME=meal_booking_test
-   npm run migrate:up
+   export DATABASE_URL=mysql://mealuser:mealpassword@localhost:3306/meal_booking_test
+   npm run migrate:up:test
    ```
 
 2. **Verify tables exist:**
@@ -246,7 +243,7 @@ If tests fail due to duplicate data:
 1. **Use Test Database**: Always use a separate test database, never use production or development databases
 2. **Clean State**: Tests should be independent and not rely on data from other tests
 3. **Real Database**: These are integration tests using real database queries, not unit tests with mocks
-4. **Environment Variables**: Use `.env.test` or environment variables to configure test database
+4. **Environment Variables**: Use `.env.test` with `DATABASE_URL` or set the `DATABASE_URL` environment variable to configure test database
 5. **Run Before Committing**: Always run `npm run test:run` before committing code
 
 ## Continuous Integration
@@ -254,15 +251,11 @@ If tests fail due to duplicate data:
 For CI/CD pipelines, use:
 
 ```bash
-# Set test database environment variables
-export DB_NAME=meal_booking_test
-export DB_HOST=localhost
-export DB_PORT=3306
-export DB_USER=mealuser
-export DB_PASSWORD=mealpassword
+# Set test database environment variable
+export DATABASE_URL=mysql://mealuser:mealpassword@localhost:3306/meal_booking_test
 
 # Run migrations
-npm run migrate:up
+npm run migrate:up:test
 
 # Run tests
 npm run test:run

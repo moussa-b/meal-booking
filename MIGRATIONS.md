@@ -10,11 +10,7 @@ Create a `.env` file in the root directory with the following variables:
 
 ```env
 # Database Connection Configuration
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=mealuser
-DB_PASSWORD=mealpassword
-DB_NAME=meal_booking
+DATABASE_URL=mysql://mealuser:mealpassword@localhost:3306/meal_booking
 
 # Admin User Configuration (for seed script)
 ADMIN_USERNAME=admin
@@ -23,6 +19,8 @@ ADMIN_PASSWORD=admin123
 ADMIN_FIRSTNAME=Admin
 ADMIN_LASTNAME=User
 ```
+
+**Note:** The `DATABASE_URL` format is: `mysql://[user[:password]@]host[:port]/[database]`
 
 ## Running Migrations
 
@@ -91,4 +89,4 @@ When running in Docker, migrations are automatically executed on container start
 
 ## Database Connection
 
-The database connection is configured in `lib/db/connection.ts` and uses environment variables for all connection details. The connection pool is available for use throughout the application.
+The database connection is configured in `lib/db/connection.ts` and uses the `DATABASE_URL` environment variable. The connection pool is available for use throughout the application. The `DATABASE_URL` must be in the format: `mysql://user:password@host:port/database`

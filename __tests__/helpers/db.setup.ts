@@ -19,6 +19,23 @@ const TABLES_TO_CLEAN = [
 ];
 
 /**
+ * Extract database name from DATABASE_URL
+ */
+function extractDatabaseName(url?: string): string | null {
+  if (!url) {
+    return null;
+  }
+  try {
+    const parsedUrl = new URL(url);
+    // Remove leading slash from pathname
+    const dbName = parsedUrl.pathname.replace(/^\//, '');
+    return dbName || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * Get current database name from connection
  */
 async function getCurrentDatabase(): Promise<string> {
@@ -54,13 +71,20 @@ export async function setupTestDb(): Promise<void> {
 
     // Verify we're using the test database from .env.test
     const currentDb = await getCurrentDatabase();
-    const expectedDb = process.env.DB_NAME || 'meal_booking_test';
+    const expectedDb = extractDatabaseName(process.env.DATABASE_URL) || 'meal_booking_test';
+
+    if (!process.env.DATABASE_URL) {
+      throw new Error(
+        `CRITICAL: DATABASE_URL environment variable is required. ` +
+        `Please ensure .env.test file exists with DATABASE_URL=mysql://.../meal_booking_test`
+      );
+    }
 
     if (currentDb !== expectedDb) {
       throw new Error(
         `CRITICAL: Tests are using database "${currentDb}" instead of test database "${expectedDb}". ` +
         `This would delete production/development data! Aborting tests. ` +
-        `Please ensure .env.test file exists with DB_NAME=meal_booking_test`
+        `Please ensure .env.test file exists with DATABASE_URL pointing to meal_booking_test`
       );
     }
 
@@ -68,7 +92,7 @@ export async function setupTestDb(): Promise<void> {
       throw new Error(
         `CRITICAL: Tests are attempting to use production/development database "meal_booking". ` +
         `This would delete production data! Aborting tests. ` +
-        `Please create .env.test file with DB_NAME=meal_booking_test`
+        `Please create .env.test file with DATABASE_URL pointing to meal_booking_test`
       );
     }
 
@@ -88,19 +112,26 @@ export async function setupTestDb(): Promise<void> {
 export async function truncateTables(): Promise<void> {
   // Safety check: Verify we're using the test database before truncating
   const currentDb = await getCurrentDatabase();
-  const expectedDb = process.env.DB_NAME || 'meal_booking_test';
+  const expectedDb = extractDatabaseName(process.env.DATABASE_URL) || 'meal_booking_test';
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      `CRITICAL: DATABASE_URL environment variable is required. ` +
+      `Please ensure .env.test file exists with DATABASE_URL=mysql://.../meal_booking_test`
+    );
+  }
 
   if (currentDb !== expectedDb) {
     throw new Error(
       `CRITICAL: Attempted to truncate tables in database "${currentDb}" instead of test database "${expectedDb}". ` +
-      `Aborting to prevent data loss. Please ensure .env.test file has DB_NAME=meal_booking_test`
+      `Aborting to prevent data loss. Please ensure .env.test file has DATABASE_URL pointing to meal_booking_test`
     );
   }
 
   if (currentDb === 'meal_booking') {
     throw new Error(
       `CRITICAL: Attempted to truncate production/development database "meal_booking". ` +
-      `Aborting to prevent data loss. Please ensure .env.test file has DB_NAME=meal_booking_test`
+      `Aborting to prevent data loss. Please ensure .env.test file has DATABASE_URL pointing to meal_booking_test`
     );
   }
 

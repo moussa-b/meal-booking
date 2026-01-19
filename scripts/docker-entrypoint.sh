@@ -10,15 +10,11 @@ RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
   if node -e "
     const mysql = require('mysql2/promise');
-    const config = {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '3306', 10),
-      user: process.env.DB_USER || 'mealuser',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'meal_booking',
-      connectTimeout: 2000
-    };
-    mysql.createConnection(config)
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL environment variable is required');
+      process.exit(1);
+    }
+    mysql.createConnection(process.env.DATABASE_URL)
       .then(conn => {
         conn.end();
         process.exit(0);
