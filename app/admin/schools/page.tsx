@@ -10,12 +10,14 @@ import {
 export default async function SchoolsPage() {
   let schools: School[] = [];
   let error: string | null = null;
+  let errorDetail: string | null = null;
 
   try {
     schools = await getAllSchools();
   } catch (err) {
     console.error("Error fetching schools:", err);
     error = "Erreur lors du chargement des établissements";
+    errorDetail = err instanceof Error ? err.message : String(err);
   }
 
   return (
@@ -26,6 +28,7 @@ export default async function SchoolsPage() {
         updateSchoolAction={updateSchoolAction}
         deleteSchoolAction={deleteSchoolAction}
         error={error}
+        errorDetail={errorDetail}
       />
     </div>
   );

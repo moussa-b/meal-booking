@@ -36,6 +36,7 @@ interface MealsTableProps {
   ) => Promise<ActionResult>;
   deleteMealAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
+  errorDetail?: string | null;
 }
 
 export function MealsTable({
@@ -44,6 +45,7 @@ export function MealsTable({
   updateMealAction,
   deleteMealAction,
   error,
+  errorDetail,
 }: MealsTableProps) {
   const router = useRouter();
   const [meals, setMeals] = useState(initialMeals);
@@ -124,6 +126,11 @@ export function MealsTable({
           {error && (
             <div className="mb-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
               {error}
+              {errorDetail && (
+                <div className="mt-2 text-xs font-mono opacity-75">
+                  {errorDetail}
+                </div>
+              )}
             </div>
           )}
           {meals.length === 0 ? (

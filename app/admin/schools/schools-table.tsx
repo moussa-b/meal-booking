@@ -35,6 +35,7 @@ interface SchoolsTableProps {
   ) => Promise<ActionResult>;
   deleteSchoolAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
+  errorDetail?: string | null;
 }
 
 export function SchoolsTable({
@@ -43,6 +44,7 @@ export function SchoolsTable({
   updateSchoolAction,
   deleteSchoolAction,
   error,
+  errorDetail,
 }: SchoolsTableProps) {
   const router = useRouter();
   const [schools, setSchools] = useState(initialSchools);
@@ -117,6 +119,11 @@ export function SchoolsTable({
           {error && (
             <div className="mb-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
               {error}
+              {errorDetail && (
+                <div className="mt-2 text-xs font-mono opacity-75">
+                  {errorDetail}
+                </div>
+              )}
             </div>
           )}
           {schools.length === 0 ? (

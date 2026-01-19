@@ -13,6 +13,7 @@ export default async function MenusPage() {
   let menus: WeeklyMenu[] = [];
   let meals: Meal[] = [];
   let error: string | null = null;
+  let errorDetail: string | null = null;
 
   try {
     [menus, meals] = await Promise.all([
@@ -22,6 +23,7 @@ export default async function MenusPage() {
   } catch (err) {
     console.error("Error fetching data:", err);
     error = "Erreur lors du chargement des données";
+    errorDetail = err instanceof Error ? err.message : String(err);
   }
 
   return (
@@ -33,6 +35,7 @@ export default async function MenusPage() {
         updateWeeklyMenuAction={updateWeeklyMenuAction}
         deleteWeeklyMenuAction={deleteWeeklyMenuAction}
         error={error}
+        errorDetail={errorDetail}
       />
     </div>
   );
