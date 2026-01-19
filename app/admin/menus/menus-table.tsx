@@ -6,11 +6,10 @@ import { toast } from 'sonner';
 import { EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { WeeklyMenu } from '@/lib/models/weekly-menu';
+import type { WeeklyMenu, WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
 import { DayOfWeek } from '@/lib/models/weekly-menu';
 import type { Meal } from '@/lib/models/meal';
 import { type ActionResult } from './actions';
-import { type CreateWeeklyMenuInput, type UpdateWeeklyMenuInput, } from '@/lib/validations/weekly-menu.validation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -32,11 +31,11 @@ const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, D
 interface MenusTableProps {
   menus: WeeklyMenu[];
   meals: Meal[];
-  createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult<WeeklyMenu>>;
+  createWeeklyMenuAction: (data: { weekStartDate: string; schoolId: number; days: WeeklyMenuDayInput[] }) => Promise<ActionResult>;
   updateWeeklyMenuAction: (
     id: number,
-    data: UpdateWeeklyMenuInput
-  ) => Promise<ActionResult<WeeklyMenu>>;
+    data: { weekStartDate?: string; schoolId?: number; days?: WeeklyMenuDayInput[] }
+  ) => Promise<ActionResult>;
   deleteWeeklyMenuAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
   errorDetail?: string | null;

@@ -21,6 +21,7 @@ export enum DayOfWeek {
 export interface WeeklyMenu {
   id: number;
   created: Date;
+  schoolId: number; // Référence à l'école
   weekStartDate: Date; // Date du lundi de début de semaine
   weekNumber?: number; // Numéro de semaine dans l'année
   year?: number; // Année
@@ -46,4 +47,17 @@ export interface WeeklyMenuDay {
   appetizer?: Meal | null;
   dessert?: Meal | null;
   weeklyMenu?: WeeklyMenu;
+}
+
+/**
+ * WeeklyMenuDayInput interface
+ * Represents the input structure for a day in a weekly menu form
+ * Used in create/update operations (without id and weeklyMenuId)
+ */
+export interface WeeklyMenuDayInput {
+  dayOfWeek: number; // 0 = Lundi, 1 = Mardi, 2 = Mercredi, etc.
+  mainDishId: number; // REQUIRED - Référence à meals.id
+  appetizerId?: number | null; // OPTIONAL - Référence à meals.id
+  dessertId?: number | null; // OPTIONAL - Référence à meals.id
+  price: number | string; // REQUIRED - Prix du menu du jour (peut être string depuis le formulaire)
 }

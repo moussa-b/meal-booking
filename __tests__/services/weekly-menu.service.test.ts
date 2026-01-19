@@ -10,8 +10,9 @@ import {
 import { DayOfWeek } from '@/lib/models/weekly-menu';
 import { MealType } from '@/lib/models/meal';
 import { setupTestIsolation } from '../helpers/db.setup';
-import { createTestMealData, createTestWeeklyMenuData } from '../helpers/test-data';
+import { createTestMealData, createTestWeeklyMenuData, createTestSchoolData } from '../helpers/test-data';
 import { createMeal } from '@/lib/services/meal.service';
+import { createSchool } from '@/lib/services/school.service';
 import { getMonday, formatDateLocal } from '@/lib/utils/date.utils';
 
 // Setup test isolation (clean tables before each test)
@@ -26,6 +27,11 @@ describe('Weekly Menu Service', () => {
     return { mainDish, appetizer, dessert };
   }
 
+  // Helper to create test school
+  async function createTestSchool() {
+    return await createSchool(createTestSchoolData());
+  }
+
   describe('getAllWeeklyMenus', () => {
     it('should return empty array when no menus exist', async () => {
       const menus = await getAllWeeklyMenus();
@@ -34,6 +40,7 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should return all menus ordered by weekStartDate DESC', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const monday1 = getMonday(new Date());
       monday1.setDate(monday1.getDate() + 7);
@@ -41,11 +48,13 @@ describe('Weekly Menu Service', () => {
       monday2.setDate(monday2.getDate() + 7);
 
       const menu1 = await createWeeklyMenu({
+        schoolId: school.id,
         weekStartDate: monday1,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
       const menu2 = await createWeeklyMenu({
+        schoolId: school.id,
         weekStartDate: monday2,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
       });
@@ -59,8 +68,10 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should return menus with their days', async () => {
+      const school = await createTestSchool();
       const { mainDish, appetizer, dessert } = await createTestMeals();
       const testData = createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [
           { dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, appetizerId: appetizer.id, dessertId: dessert.id, price: 8.50 },
           { dayOfWeek: DayOfWeek.TUESDAY, mainDishId: mainDish.id, price: 7.00 },
@@ -90,8 +101,10 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should return menu when it exists', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const testData = createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       });
       const created = await createWeeklyMenu(testData);
@@ -110,22 +123,25 @@ describe('Weekly Menu Service', () => {
 
   describe('getWeeklyMenuByWeekStart', () => {
     it('should return null when menu does not exist for date', async () => {
+      const school = await createTestSchool();
       const monday = getMonday(new Date());
-      const menu = await getWeeklyMenuByWeekStart(monday);
+      const menu = await getWeeklyMenuByWeekStart(monday, school.id);
       expect(menu).toBeNull();
     });
 
     it('should return menu when it exists for date', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const monday = getMonday(new Date());
       monday.setDate(monday.getDate() + 7);
       const testData = createTestWeeklyMenuData({
+        schoolId: school.id,
         weekStartDate: monday,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
       });
       const created = await createWeeklyMenu(testData);
 
-      const menu = await getWeeklyMenuByWeekStart(monday);
+      const menu = await getWeeklyMenuByWeekStart(monday, school.id);
 
       expect(menu).not.toBeNull();
       expect(menu?.id).toBe(created.id);
@@ -134,8 +150,10 @@ describe('Weekly Menu Service', () => {
 
   describe('createWeeklyMenu', () => {
     it('should create a new menu and return it', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const testData = createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       });
 
@@ -151,8 +169,10 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should create menu with multiple days', async () => {
+      const school = await createTestSchool();
       const { mainDish, appetizer, dessert } = await createTestMeals();
       const testData = createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [
           { dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, appetizerId: appetizer.id, price: 9.50 },
           { dayOfWeek: DayOfWeek.TUESDAY, mainDishId: mainDish.id, dessertId: dessert.id, price: 8.00 },
@@ -176,12 +196,67 @@ describe('Weekly Menu Service', () => {
       expect(menu.days?.[2].price).toBe(7.50);
       expect(menu.days?.[3].price).toBe(10.00);
     });
+
+    it('should throw error when menu exists for same school and date', async () => {
+      const school = await createTestSchool();
+      const { mainDish } = await createTestMeals();
+      const monday = getMonday(new Date());
+      monday.setDate(monday.getDate() + 7);
+
+      const testData1 = createTestWeeklyMenuData({
+        schoolId: school.id,
+        weekStartDate: monday,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
+      });
+
+      await createWeeklyMenu(testData1);
+
+      // Try to create another menu with the same school and date
+      const testData2 = createTestWeeklyMenuData({
+        schoolId: school.id,
+        weekStartDate: monday,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
+      });
+
+      await expect(createWeeklyMenu(testData2)).rejects.toThrow('Un menu existe déjà pour cette école et cette date');
+    });
+
+    it('should allow creating menu for same date but different school', async () => {
+      const school1 = await createTestSchool();
+      const school2 = await createTestSchool();
+      const { mainDish } = await createTestMeals();
+      const monday = getMonday(new Date());
+      monday.setDate(monday.getDate() + 7);
+
+      const testData1 = createTestWeeklyMenuData({
+        schoolId: school1.id,
+        weekStartDate: monday,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
+      });
+
+      const menu1 = await createWeeklyMenu(testData1);
+
+      // Create menu for same date but different school - should succeed
+      const testData2 = createTestWeeklyMenuData({
+        schoolId: school2.id,
+        weekStartDate: monday,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
+      });
+
+      const menu2 = await createWeeklyMenu(testData2);
+
+      expect(menu1.id).not.toBe(menu2.id);
+      expect(menu1.schoolId).toBe(school1.id);
+      expect(menu2.schoolId).toBe(school2.id);
+    });
   });
 
   describe('updateWeeklyMenu', () => {
     it('should update menu weekStartDate', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       }));
 
@@ -198,8 +273,10 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should update menu days', async () => {
+      const school = await createTestSchool();
       const { mainDish, appetizer } = await createTestMeals();
       const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       }));
 
@@ -218,8 +295,10 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should update both weekStartDate and days', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       }));
 
@@ -245,12 +324,85 @@ describe('Weekly Menu Service', () => {
         updateWeeklyMenu(99999, { weekStartDate: getMonday(new Date()) })
       ).rejects.toThrow('Weekly menu not found');
     });
+
+    it('should throw error when updating to existing school+date combination', async () => {
+      const school = await createTestSchool();
+      const { mainDish } = await createTestMeals();
+      const monday1 = getMonday(new Date());
+      monday1.setDate(monday1.getDate() + 7);
+      const monday2 = new Date(monday1);
+      monday2.setDate(monday2.getDate() + 7);
+
+      // Create two menus with different dates for the same school
+      const menu1 = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
+        weekStartDate: monday1,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
+      }));
+
+      const menu2 = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
+        weekStartDate: monday2,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
+      }));
+
+      // Try to update menu1 with menu2's date - should fail
+      await expect(
+        updateWeeklyMenu(menu1.id, { weekStartDate: monday2 })
+      ).rejects.toThrow('Un menu existe déjà pour cette école et cette date');
+    });
+
+    it('should allow update when school+date combination is unchanged', async () => {
+      const school = await createTestSchool();
+      const { mainDish, appetizer } = await createTestMeals();
+      const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
+      }));
+
+      // Update only days (without changing schoolId or weekStartDate) - should succeed
+      const updated = await updateWeeklyMenu(created.id, {
+        days: [
+          { dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, appetizerId: appetizer.id, price: 9.00 },
+          { dayOfWeek: DayOfWeek.TUESDAY, mainDishId: mainDish.id, price: 8.50 },
+        ],
+      });
+
+      expect(updated.id).toBe(created.id);
+      expect(updated.schoolId).toBe(created.schoolId);
+      expect(formatDateLocal(updated.weekStartDate)).toBe(formatDateLocal(created.weekStartDate));
+      expect(updated.days?.length).toBe(2);
+    });
+
+    it('should allow updating schoolId to a different school with same date if that combination does not exist', async () => {
+      const school1 = await createTestSchool();
+      const school2 = await createTestSchool();
+      const { mainDish } = await createTestMeals();
+      const monday = getMonday(new Date());
+      monday.setDate(monday.getDate() + 7);
+
+      const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school1.id,
+        weekStartDate: monday,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
+      }));
+
+      // Update schoolId to school2 - should succeed since school2 doesn't have a menu for this date
+      const updated = await updateWeeklyMenu(created.id, {
+        schoolId: school2.id,
+      });
+
+      expect(updated.id).toBe(created.id);
+      expect(updated.schoolId).toBe(school2.id);
+    });
   });
 
   describe('deleteWeeklyMenu', () => {
     it('should delete an existing menu', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 }],
       }));
 
@@ -265,8 +417,10 @@ describe('Weekly Menu Service', () => {
     });
 
     it('should cascade delete menu days', async () => {
+      const school = await createTestSchool();
       const { mainDish } = await createTestMeals();
       const created = await createWeeklyMenu(createTestWeeklyMenuData({
+        schoolId: school.id,
         days: [
           { dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 5.50 },
           { dayOfWeek: DayOfWeek.TUESDAY, mainDishId: mainDish.id, price: 6.00 },

@@ -127,6 +127,16 @@ export async function PUT(
       );
     }
 
+    if (error instanceof Error && error.message.includes('Un menu existe déjà pour cette école et cette date')) {
+      return NextResponse.json(
+        {
+          error: 'Conflict',
+          message: error.message,
+        },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Internal Server Error',

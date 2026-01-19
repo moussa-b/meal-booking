@@ -13,6 +13,7 @@ import {
  * Get all weekly menus
  * Query params:
  *   - current: if true, returns the current week's menu with full meal details
+ *   - schoolId: required when current=true, the school ID to get the menu for
  */
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +21,34 @@ export async function GET(request: NextRequest) {
     const current = searchParams.get('current');
 
     if (current === 'true') {
-      const menu = await getCurrentWeeklyMenuWithMeals();
+      const schoolIdParam = searchParams.get('schoolId');
+      if (!schoolIdParam) {
+        return NextResponse.json(
+          {
+            error: 'Bad Request',
+            message: 'schoolId is required when current=true',
+          },
+          { status: 400 }
+        );
+      }
+
+      const schoolId = parseInt(schoolIdParam, 10);
+      if (isNaN(schoolId) || schoolId <= 0) {
+        return NextResponse.json(
+          {
+            error: 'Bad Request',
+            message: 'schoolId must be a positive number',
+          },
+          { status: 400 }
+        );
+      }
+
+      const menu = await getCurrentWeeklyMenuWithMeals(schoolId);
       if (!menu) {
         return NextResponse.json(
           {
             error: 'Not Found',
-            message: 'No weekly menu found',
+            message: 'No weekly menu found for the current week',
           },
           { status: 404 }
         );
@@ -96,6 +119,16 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error creating weekly menu:', error);
+
+    if (error instanceof Error && error.message.includes('Un menu existe déjà pour cette école et cette date')) {
+      return NextResponse.json(
+        {
+          error: 'Conflict',
+          message: error.message,
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json(
       {

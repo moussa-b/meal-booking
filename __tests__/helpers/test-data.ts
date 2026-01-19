@@ -36,6 +36,7 @@ export function createTestMealData(overrides?: {
  * Test data factory for creating weekly menu test data
  */
 export function createTestWeeklyMenuData(overrides?: {
+  schoolId?: number;
   weekStartDate?: Date;
   days?: Array<{
     dayOfWeek: number;
@@ -53,6 +54,7 @@ export function createTestWeeklyMenuData(overrides?: {
   }
 
   return {
+    schoolId: overrides?.schoolId ?? 1, // Default to schoolId 1, should be provided in tests
     weekStartDate: overrides?.weekStartDate || defaultDate,
     days: overrides?.days || [
       {

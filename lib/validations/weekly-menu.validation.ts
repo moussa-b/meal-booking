@@ -46,15 +46,9 @@ const weeklyMenuDaySchema = z.object({
 });
 
 /**
- * Validation schema for creating a weekly menu
+ * Base schema for weekly menu days
  */
-export const createWeeklyMenuSchema = z.object({
-  weekStartDate: z.date().refine(
-    (date) => validateMonday(date, 'createWeeklyMenuSchema'),
-    {
-      message: 'La date doit être un lundi',
-    }
-  ),
+const baseWeeklyMenuSchema = {
   days: z.array(weeklyMenuDaySchema)
     .min(1, 'Au moins un jour doit être défini')
     .refine(
@@ -67,13 +61,30 @@ export const createWeeklyMenuSchema = z.object({
         message: 'Chaque jour ne peut être défini qu\'une seule fois',
       }
     ),
+};
+
+/**
+ * Validation schema for creating a weekly menu (accepts string | Date)
+ * Can be used both in forms and server actions thanks to z.coerce.date()
+ */
+export const createWeeklyMenuSchema = z.object({
+  schoolId: z.number().int().positive('L\'école est requise'),
+  weekStartDate: z.coerce.date().refine(
+    (date) => validateMonday(date, 'createWeeklyMenuSchema'),
+    {
+      message: 'La date doit être un lundi',
+    }
+  ),
+  ...baseWeeklyMenuSchema,
 });
 
 /**
- * Validation schema for updating a weekly menu
+ * Validation schema for updating a weekly menu (accepts string | Date)
+ * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const updateWeeklyMenuSchema = z.object({
-  weekStartDate: z.date()
+  schoolId: z.number().int().positive('L\'école est requise').optional(),
+  weekStartDate: z.coerce.date()
     .refine(
       (date) => validateMonday(date, 'updateWeeklyMenuSchema'),
       {

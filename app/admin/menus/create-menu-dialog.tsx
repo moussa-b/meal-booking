@@ -1,21 +1,19 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { startOfDay } from 'date-fns';
 import { CalendarIcon, PlusIcon } from 'lucide-react';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek, type WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
+import type { School } from '@/lib/models/school';
 import { type ActionResult } from './actions';
-import {
-  type CreateWeeklyMenuInput,
-  createWeeklyMenuSchema,
-} from '@/lib/validations/weekly-menu.validation';
+import { createWeeklyMenuSchema, } from '@/lib/validations/weekly-menu.validation';
 import {
   Dialog,
   DialogContent,
@@ -26,10 +24,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { getMonday, isMonday } from '@/lib/utils/date.utils';
 import { MenuDayForm } from './menu-day-form';
@@ -38,7 +36,7 @@ const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, D
 
 interface CreateMenuDialogProps {
   meals: Meal[];
-  createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult>;
+  createWeeklyMenuAction: (data: { weekStartDate: string; schoolId: number; days: WeeklyMenuDayInput[] }) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -50,11 +48,34 @@ export function CreateMenuDialog({
   onOpenChange,
 }: CreateMenuDialogProps) {
   const router = useRouter();
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(true);
 
   // Filter meals by type
   const mainDishes = meals.filter(m => m.type === MealType.MAIN_COURSE);
   const appetizers = meals.filter(m => m.type === MealType.APPETIZER);
   const desserts = meals.filter(m => m.type === MealType.DESSERT);
+
+  // Fetch schools
+  useEffect(() => {
+    async function fetchSchools() {
+      try {
+        const response = await fetch('/api/schools');
+        if (response.ok) {
+          const result = await response.json();
+          setSchools(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+      } finally {
+        setLoadingSchools(false);
+      }
+    }
+
+    if (open) {
+      fetchSchools();
+    }
+  }, [open]);
 
   // Get next Monday as default
   const getDefaultMonday = () => {
@@ -65,11 +86,12 @@ export function CreateMenuDialog({
     return monday;
   };
 
-  const form = useForm<CreateWeeklyMenuInput>({
+  const form = useForm<any>({
     resolver: zodResolver(createWeeklyMenuSchema),
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     defaultValues: {
+      schoolId: undefined,
       weekStartDate: getDefaultMonday(),
       days: DEFAULT_DAYS.map(dayOfWeek => ({
         dayOfWeek,
@@ -81,11 +103,27 @@ export function CreateMenuDialog({
     },
   });
 
-  const handleSubmit = async (data: CreateWeeklyMenuInput) => {
-    const result = await createWeeklyMenuAction(data);
+  // Convert Date to ISO string in format "YYYY-MM-DDTHH:mm:ss.sssZ"
+  // This ensures the date is sent as a string without timezone conversion issues
+  const dateToISOString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T00:00:00.000Z`;
+  };
+
+  const handleSubmit = async (data: any) => {
+    // Convert Date to ISO string before sending
+    const dataWithStringDate = {
+      ...data,
+      weekStartDate: dateToISOString(data.weekStartDate),
+    };
+
+    const result = await createWeeklyMenuAction(dataWithStringDate);
     if (result.success && result.data) {
       toast.success("Menu créé avec succès");
       form.reset({
+        schoolId: undefined,
         weekStartDate: getDefaultMonday(),
         days: DEFAULT_DAYS.map(dayOfWeek => ({
           dayOfWeek,
@@ -130,46 +168,77 @@ export function CreateMenuDialog({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-6"
           >
-            <FormField
-              control={form.control}
-              name="weekStartDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date de début de semaine (Lundi)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="schoolId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>École</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      value={field.value?.toString() || ""}
+                      disabled={loadingSchools}
+                    >
                       <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: fr })
-                          ) : (
-                            <span>Sélectionner une date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une école" />
+                        </SelectTrigger>
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={isDateDisabled}
-                        minDate={minDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <SelectContent>
+                        {schools.map((school) => (
+                          <SelectItem key={school.id} value={school.id.toString()}>
+                            {school.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="weekStartDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date de début de semaine (Lundi)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl className="w-fit">
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: fr })
+                            ) : (
+                              <span>Sélectionner une date</span>
+                            )}
+                            <CalendarIcon className="h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={isDateDisabled}
+                          minDate={minDate}
+                          autoFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Composition des repas</h3>

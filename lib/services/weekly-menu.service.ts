@@ -11,6 +11,7 @@ import type { Meal } from '@/lib/models/meal';
 interface WeeklyMenuRow {
   id: number;
   created: string | Date;
+  schoolId: number;
   weekStartDate: string | Date;
   weekNumber: number | null;
   year: number | null;
@@ -34,7 +35,7 @@ interface WeeklyMenuDayRow {
  */
 export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, weekStartDate, weekNumber, year FROM weekly_menus ORDER BY weekStartDate DESC'
+    'SELECT id, created, schoolId, weekStartDate, weekNumber, year FROM weekly_menus ORDER BY weekStartDate DESC'
   );
 
   if (menus.length === 0) {
@@ -71,6 +72,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
   return menus.map((row: WeeklyMenuRow) => ({
     id: row.id,
     created: new Date(row.created),
+    schoolId: row.schoolId,
     weekStartDate: new Date(row.weekStartDate),
     weekNumber: row.weekNumber ?? undefined,
     year: row.year ?? undefined,
@@ -83,7 +85,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
  */
 export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> {
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, weekStartDate, weekNumber, year FROM weekly_menus WHERE id = ?',
+    'SELECT id, created, schoolId, weekStartDate, weekNumber, year FROM weekly_menus WHERE id = ?',
     [id]
   );
 
@@ -100,6 +102,7 @@ export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> 
   return {
     id: menu.id,
     created: new Date(menu.created),
+    schoolId: menu.schoolId,
     weekStartDate: new Date(menu.weekStartDate),
     weekNumber: menu.weekNumber ?? undefined,
     year: menu.year ?? undefined,
@@ -116,13 +119,13 @@ export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> 
 }
 
 /**
- * Get a weekly menu by week start date
+ * Get a weekly menu by school and week start date
  */
-export async function getWeeklyMenuByWeekStart(weekStartDate: Date): Promise<WeeklyMenu | null> {
+export async function getWeeklyMenuByWeekStart(weekStartDate: Date, schoolId: number): Promise<WeeklyMenu | null> {
   const dateStr = formatDateLocal(weekStartDate);
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, weekStartDate, weekNumber, year FROM weekly_menus WHERE weekStartDate = ?',
-    [dateStr]
+    'SELECT id, created, schoolId, weekStartDate, weekNumber, year FROM weekly_menus WHERE schoolId = ? AND weekStartDate = ?',
+    [schoolId, dateStr]
   );
 
   if (menus.length === 0) {
@@ -136,6 +139,7 @@ export async function getWeeklyMenuByWeekStart(weekStartDate: Date): Promise<Wee
  * Create a new weekly menu with its days
  */
 export async function createWeeklyMenu(data: {
+  schoolId: number;
   weekStartDate: Date;
   days: Array<{
     dayOfWeek: number;
@@ -154,10 +158,19 @@ export async function createWeeklyMenu(data: {
     const weekNum = getWeekNumber(data.weekStartDate);
     const year = getYear(data.weekStartDate);
 
+    // Check if a menu already exists for this school and date
+    const existing = await query<WeeklyMenuRow[]>(
+      'SELECT id FROM weekly_menus WHERE schoolId = ? AND weekStartDate = ?',
+      [data.schoolId, weekStartDateStr]
+    );
+    if (existing.length > 0) {
+      throw new Error('Un menu existe déjà pour cette école et cette date');
+    }
+
     // Insert the weekly menu
     const [menuResult] = await connection.execute(
-      'INSERT INTO weekly_menus (weekStartDate, weekNumber, year) VALUES (?, ?, ?)',
-      [weekStartDateStr, weekNum, year]
+      'INSERT INTO weekly_menus (schoolId, weekStartDate, weekNumber, year) VALUES (?, ?, ?, ?)',
+      [data.schoolId, weekStartDateStr, weekNum, year]
     ) as [MysqlInsertResult, FieldPacket[]];
 
     const weeklyMenuId = menuResult.insertId;
@@ -192,6 +205,7 @@ export async function createWeeklyMenu(data: {
 export async function updateWeeklyMenu(
   id: number,
   data: {
+    schoolId?: number;
     weekStartDate?: Date;
     days?: Array<{
       dayOfWeek: number;
@@ -207,16 +221,50 @@ export async function updateWeeklyMenu(
   try {
     await connection.beginTransaction();
 
-    // Update weekly menu if weekStartDate is provided
-    if (data.weekStartDate) {
-      const weekStartDateStr = formatDateLocal(data.weekStartDate);
-      const weekNum = getWeekNumber(data.weekStartDate);
-      const year = getYear(data.weekStartDate);
+    // Get current menu to check if schoolId or weekStartDate is being changed
+    const currentMenu = await getWeeklyMenuById(id);
+    if (!currentMenu) {
+      throw new Error('Weekly menu not found');
+    }
 
-      await connection.execute(
-        'UPDATE weekly_menus SET weekStartDate = ?, weekNumber = ?, year = ? WHERE id = ?',
-        [weekStartDateStr, weekNum, year, id]
+    const newSchoolId = data.schoolId ?? currentMenu.schoolId;
+    const newWeekStartDate = data.weekStartDate ?? currentMenu.weekStartDate;
+
+    // Check if schoolId or weekStartDate is being changed
+    const isSchoolOrDateChanging = 
+      (data.schoolId !== undefined && data.schoolId !== currentMenu.schoolId) ||
+      (data.weekStartDate !== undefined && 
+       formatDateLocal(data.weekStartDate) !== formatDateLocal(currentMenu.weekStartDate));
+
+    // If schoolId or weekStartDate is being changed, verify uniqueness
+    if (isSchoolOrDateChanging) {
+      const weekStartDateStr = formatDateLocal(newWeekStartDate);
+      const existing = await query<WeeklyMenuRow[]>(
+        'SELECT id FROM weekly_menus WHERE schoolId = ? AND weekStartDate = ? AND id != ?',
+        [newSchoolId, weekStartDateStr, id]
       );
+      if (existing.length > 0) {
+        throw new Error('Un menu existe déjà pour cette école et cette date');
+      }
+    }
+
+    // Update weekly menu if weekStartDate or schoolId is provided
+    if (data.weekStartDate || data.schoolId !== undefined) {
+      const weekStartDateStr = formatDateLocal(newWeekStartDate);
+      const weekNum = getWeekNumber(newWeekStartDate);
+      const year = getYear(newWeekStartDate);
+
+      if (data.schoolId !== undefined) {
+        await connection.execute(
+          'UPDATE weekly_menus SET schoolId = ?, weekStartDate = ?, weekNumber = ?, year = ? WHERE id = ?',
+          [newSchoolId, weekStartDateStr, weekNum, year, id]
+        );
+      } else {
+        await connection.execute(
+          'UPDATE weekly_menus SET weekStartDate = ?, weekNumber = ?, year = ? WHERE id = ?',
+          [weekStartDateStr, weekNum, year, id]
+        );
+      }
     }
 
     // Update days if provided
@@ -308,25 +356,23 @@ export async function getWeeklyMenuWithMeals(id: number): Promise<WeeklyMenu | n
 }
 
 /**
- * Get the current week's menu with full meal details
- * Returns the most recent menu if no menu exists for the current week
+ * Get the current week's menu with full meal details for a specific school
+ * @param schoolId - The school ID (required)
+ * @returns The current week's menu with meal details, or null if not found
+ * @throws Error if schoolId is not provided
  */
-export async function getCurrentWeeklyMenuWithMeals(): Promise<WeeklyMenu | null> {
+export async function getCurrentWeeklyMenuWithMeals(schoolId: number): Promise<WeeklyMenu | null> {
+  if (!schoolId || schoolId <= 0) {
+    throw new Error('schoolId is required and must be a positive number');
+  }
+
   const today = new Date();
   const currentWeekStart = new Date(today);
   currentWeekStart.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1)); // Monday
   currentWeekStart.setHours(0, 0, 0, 0);
 
-  // Try to get menu for current week
-  let menu = await getWeeklyMenuByWeekStart(currentWeekStart);
-  
-  // If no menu for current week, get the most recent one
-  if (!menu) {
-    const allMenus = await getAllWeeklyMenus();
-    if (allMenus.length > 0) {
-      menu = allMenus[0]; // Most recent (ordered by weekStartDate DESC)
-    }
-  }
+  // Get menu for current week and school
+  const menu = await getWeeklyMenuByWeekStart(currentWeekStart, schoolId);
 
   if (!menu) {
     return null;
