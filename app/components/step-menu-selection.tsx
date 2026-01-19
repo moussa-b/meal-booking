@@ -47,6 +47,7 @@ export function StepMenuSelection() {
   const { watch, setValue } = useFormContext<BookingFormData>();
   const children = watch("children");
   const menuSelections = watch("menuSelections");
+  const schoolId = watch("schoolId");
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +55,15 @@ export function StepMenuSelection() {
   // Fetch weekly menu from API
   useEffect(() => {
     async function fetchMenu() {
+      if (!schoolId || schoolId <= 0) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch("/api/weekly-menus?current=true");
+        const response = await fetch(`/api/weekly-menus?current=true&schoolId=${schoolId}`);
         if (!response.ok) {
           throw new Error("Impossible de charger le menu");
         }
@@ -70,7 +76,7 @@ export function StepMenuSelection() {
       }
     }
     fetchMenu();
-  }, []);
+  }, [schoolId]);
 
   // Initialize menu selections for all children if not already set
   useEffect(() => {

@@ -59,8 +59,12 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   // Fetch weekly menu to calculate total price
   useEffect(() => {
     async function fetchMenu() {
+      if (!formData.schoolId || formData.schoolId <= 0) {
+        return;
+      }
+
       try {
-        const response = await fetch("/api/weekly-menus?current=true");
+        const response = await fetch(`/api/weekly-menus?current=true&schoolId=${formData.schoolId}`);
         if (response.ok) {
           const result = await response.json();
           setWeeklyMenu(result.data);
@@ -70,7 +74,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       }
     }
     fetchMenu();
-  }, []);
+  }, [formData.schoolId]);
 
   // Find school name by id
   const school = schools.find((s) => s.id === formData.schoolId);
