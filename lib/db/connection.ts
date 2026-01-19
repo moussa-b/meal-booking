@@ -39,33 +39,36 @@ function parseDatabaseUrl(url: string): PoolOptions {
 
 /**
  * Database connection configuration from DATABASE_URL
- */
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required');
-}
-
-// Log DATABASE_URL (masked) for debugging
-const maskedUrl = process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@');
-console.log('[DB Config] DATABASE_URL:', maskedUrl);
-
-/**
  * Create MySQL connection pool with DATABASE_URL and pool options
  * Parse the URL and combine with pool-specific options
  */
-const connectionConfig = parseDatabaseUrl(process.env.DATABASE_URL);
-export const pool = mysql.createPool({
-  ...connectionConfig,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
-});
+let pool: ReturnType<typeof mysql.createPool> | null = null;
+
+if (process.env.DATABASE_URL) {
+  // Log DATABASE_URL (masked) for debugging
+  const maskedUrl = process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@');
+  console.log('[DB Config] DATABASE_URL:', maskedUrl);
+  
+  const connectionConfig = parseDatabaseUrl(process.env.DATABASE_URL);
+  pool = mysql.createPool({
+    ...connectionConfig,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+  });
+}
+
+export { pool };
 
 /**
  * Get a connection from the pool
  */
 export async function getConnection() {
+  if (!pool) {
+    throw new Error('DATABASE_URL environment variable is required. Pool not initialized.');
+  }
   return await pool.getConnection();
 }
 
@@ -90,6 +93,9 @@ export interface MysqlDeleteResult {
  * Execute a query using the connection pool
  */
 export async function query<T = unknown>(sql: string, params?: (string | number | null | boolean)[]): Promise<T> {
+  if (!pool) {
+    throw new Error('DATABASE_URL environment variable is required. Pool not initialized.');
+  }
   const [rows] = await pool.execute(sql, params);
   return rows as T;
 }
@@ -98,6 +104,9 @@ export async function query<T = unknown>(sql: string, params?: (string | number 
  * Test database connection with retry logic
  */
 export async function testConnection(maxRetries = 5, delayMs = 2000): Promise<boolean> {
+  if (!pool) {
+    throw new Error('DATABASE_URL environment variable is required. Pool not initialized.');
+  }
   for (let i = 0; i < maxRetries; i++) {
     try {
       await pool.query('SELECT 1');
@@ -117,5 +126,8 @@ export async function testConnection(maxRetries = 5, delayMs = 2000): Promise<bo
  * Close the connection pool
  */
 export async function closePool(): Promise<void> {
-  await pool.end();
+  if (pool) {
+    await pool.end();
+    pool = null;
+  }
 }
