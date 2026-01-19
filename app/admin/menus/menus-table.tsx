@@ -3,16 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { PencilIcon, TrashIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/models/weekly-menu';
 import type { Meal } from '@/lib/models/meal';
 import { type ActionResult } from './actions';
-import {
-  type CreateWeeklyMenuInput,
-  type UpdateWeeklyMenuInput,
-} from '@/lib/validations/weekly-menu.validation';
+import { type CreateWeeklyMenuInput, type UpdateWeeklyMenuInput, } from '@/lib/validations/weekly-menu.validation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -28,6 +26,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CreateMenuDialog } from './create-menu-dialog';
 import { EditMenuDialog } from './edit-menu-dialog';
+
+const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface MenusTableProps {
   menus: WeeklyMenu[];
@@ -58,6 +58,7 @@ export function MenusTable({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<WeeklyMenu | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
 
   // Update menus when initialMenus changes (after revalidation)
   useEffect(() => {
@@ -106,6 +107,43 @@ export function MenusTable({
     return `Semaine du ${formatDate(start)} au ${formatDate(end)}`;
   };
 
+  // Helper function to get meal name by ID
+  const getMealName = (mealId: number | null | undefined): string => {
+    if (!mealId) return '—';
+    const meal = meals.find((m) => m.id === mealId);
+    return meal?.name || '—';
+  };
+
+  // Helper function to get day name by dayOfWeek
+  const DAY_LABELS: Record<number, string> = {
+    [DayOfWeek.MONDAY]: 'Lundi',
+    [DayOfWeek.TUESDAY]: 'Mardi',
+    [DayOfWeek.WEDNESDAY]: 'Mercredi',
+    [DayOfWeek.THURSDAY]: 'Jeudi',
+    [DayOfWeek.FRIDAY]: 'Vendredi',
+    [DayOfWeek.SATURDAY]: 'Samedi',
+    [DayOfWeek.SUNDAY]: 'Dimanche',
+  };
+
+  const getDayName = (dayOfWeek: number): string => {
+    return DAY_LABELS[dayOfWeek] || `Jour ${dayOfWeek}`;
+  };
+
+  // Toggle menu details visibility
+  const toggleMenuDetails = (menuId: number) => {
+    setExpandedMenus((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(menuId)) {
+        newSet.delete(menuId);
+      } else {
+        newSet.add(menuId);
+      }
+      return newSet;
+    });
+  };
+
+  const isMenuExpanded = (menuId: number) => expandedMenus.has(menuId);
+
   const menuToDelete = deleteId ? menus.find((m) => m.id === deleteId) : null;
 
   return (
@@ -149,7 +187,7 @@ export function MenusTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {menus.map((menu) => (
+                {menus.flatMap((menu) => [
                   <TableRow key={menu.id}>
                     <TableCell className="font-medium">
                       {formatWeekRange(menu)}
@@ -159,6 +197,24 @@ export function MenusTable({
                     <TableCell>{menu.days?.length || 0}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleMenuDetails(menu.id)}
+                          className="gap-2"
+                        >
+                          {isMenuExpanded(menu.id) ? (
+                            <>
+                              <EyeOffIcon className="h-4 w-4" />
+                              Masquer le menu
+                            </>
+                          ) : (
+                            <>
+                              <EyeIcon className="h-4 w-4" />
+                              Voir le menu
+                            </>
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -175,8 +231,73 @@ export function MenusTable({
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>,
+                  ...(menu.days &&
+                  menu.days.length > 0 &&
+                  isMenuExpanded(menu.id)
+                    ? [
+                        <TableRow key={`${menu.id}-details`}>
+                          <TableCell colSpan={5} className="bg-muted/30 p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                              {menu.days
+                                .filter((day) => {
+                                  // Only show days that are in DEFAULT_DAYS (exclude Wednesday, Saturday, Sunday)
+                                  if (!DEFAULT_DAYS.includes(day.dayOfWeek)) {
+                                    return false;
+                                  }
+                                  // Filter out days with invalid mainDishId or if meal doesn't exist
+                                  const meal = meals.find((m) => m.id === day.mainDishId);
+                                  return meal !== undefined;
+                                })
+                                .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                                .map((day) => (
+                                  <Card key={day.id} className="gap-0 py-2">
+                                    <CardHeader className="pb-1">
+                                      <CardTitle className="text-base">
+                                        {getDayName(day.dayOfWeek)}
+                                      </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                      <div className="text-sm">
+                                        <span className="font-medium text-muted-foreground">
+                                          Entrée:
+                                        </span>{' '}
+                                        <span>
+                                          {day.appetizerId
+                                            ? getMealName(day.appetizerId)
+                                            : 'Aucun'}
+                                        </span>
+                                      </div>
+                                      <div className="text-sm">
+                                        <span className="font-medium text-muted-foreground">
+                                          Plat:
+                                        </span>{' '}
+                                        <span>{getMealName(day.mainDishId)}</span>
+                                      </div>
+                                      <div className="text-sm">
+                                        <span className="font-medium text-muted-foreground">
+                                          Dessert:
+                                        </span>{' '}
+                                        <span>
+                                          {day.dessertId
+                                            ? getMealName(day.dessertId)
+                                            : 'Aucun'}
+                                        </span>
+                                      </div>
+                                      <div className="pt-2 border-t">
+                                        <span className="font-semibold text-base">
+                                          {day.price.toFixed(2)}€
+                                        </span>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>,
+                      ]
+                    : []),
+                ])}
               </TableBody>
             </Table>
           )}

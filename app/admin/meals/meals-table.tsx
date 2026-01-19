@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { PencilIcon, TrashIcon } from 'lucide-react';
+import { PencilIcon, TrashIcon, PlusIcon } from 'lucide-react';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import { type ActionResult } from './actions';
@@ -13,7 +13,6 @@ import {
 } from '@/lib/validations/meal.validation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +48,7 @@ export function MealsTable({
 }: MealsTableProps) {
   const router = useRouter();
   const [meals, setMeals] = useState(initialMeals);
+  const [createDialogType, setCreateDialogType] = useState<MealType | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -91,14 +91,6 @@ export function MealsTable({
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   const mealToDelete = deleteId
     ? meals.find((m) => m.id === deleteId)
     : null;
@@ -109,77 +101,159 @@ export function MealsTable({
     [MealType.DESSERT]: "Dessert",
   };
 
+  // Filter meals by type
+  const mainCourseMeals = meals.filter((m) => m.type === MealType.MAIN_COURSE);
+  const dessertMeals = meals.filter((m) => m.type === MealType.DESSERT);
+  const appetizerMeals = meals.filter((m) => m.type === MealType.APPETIZER);
+
+  // Handle create dialog opening with specific type
+  const handleCreateClick = (type: MealType) => {
+    setCreateDialogType(type);
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateDialogClose = (open: boolean) => {
+    setIsCreateDialogOpen(open);
+    if (!open) {
+      setCreateDialogType(null);
+    }
+  };
+
+  // Render meal list for a column
+  const renderMealList = (mealsList: Meal[]) => {
+    if (mealsList.length === 0) {
+      return (
+        <p className="text-center text-sm text-muted-foreground py-4">
+          Aucun repas enregistré.
+        </p>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {mealsList.map((meal) => (
+          <div
+            key={meal.id}
+            className="rounded-lg border p-4 space-y-2 hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-1">
+                <h4 className="font-semibold text-sm">{meal.name}</h4>
+                {meal.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {meal.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-1 ml-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handleEditClick(meal)}
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handleDeleteClick(meal.id)}
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Gestion des repas</CardTitle>
-            <CreateMealDialog
-              createMealAction={createMealAction}
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
-            />
+      <div className="space-y-6">
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+            {error}
+            {errorDetail && (
+              <div className="mt-2 text-xs font-mono opacity-75">
+                {errorDetail}
+              </div>
+            )}
           </div>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="mb-4 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-              {errorDetail && (
-                <div className="mt-2 text-xs font-mono opacity-75">
-                  {errorDetail}
-                </div>
-              )}
-            </div>
-          )}
-          {meals.length === 0 ? (
-            <p className="text-center text-muted-foreground">
-              Aucun repas enregistré.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Date de création</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {meals.map((meal) => (
-                  <TableRow key={meal.id}>
-                    <TableCell className="font-medium">{meal.name}</TableCell>
-                    <TableCell>{mealTypeLabels[meal.type]}</TableCell>
-                    <TableCell>{meal.description}</TableCell>
-                    <TableCell>{formatDate(meal.created)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditClick(meal)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(meal.id)}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Column 1: Main Course */}
+          <Card className="bg-blue-50/30 dark:bg-blue-950/10">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Plats principaux</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={() => handleCreateClick(MealType.MAIN_COURSE)}
+                className="w-full"
+                variant="outline"
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Ajouter un plat principal
+              </Button>
+              {renderMealList(mainCourseMeals)}
+            </CardContent>
+          </Card>
+
+          {/* Column 2: Dessert */}
+          <Card className="bg-purple-50/30 dark:bg-purple-950/10">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Desserts</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={() => handleCreateClick(MealType.DESSERT)}
+                className="w-full"
+                variant="outline"
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Ajouter un dessert
+              </Button>
+              {renderMealList(dessertMeals)}
+            </CardContent>
+          </Card>
+
+          {/* Column 3: Appetizer */}
+          <Card className="bg-green-50/30 dark:bg-green-950/10">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Entrées</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={() => handleCreateClick(MealType.APPETIZER)}
+                className="w-full"
+                variant="outline"
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Ajouter une entrée
+              </Button>
+              {renderMealList(appetizerMeals)}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Create Dialog */}
+      <CreateMealDialog
+        createMealAction={createMealAction}
+        open={isCreateDialogOpen}
+        onOpenChange={handleCreateDialogClose}
+        initialType={createDialogType || MealType.MAIN_COURSE}
+      />
 
       {/* Edit Dialog */}
       <EditMealDialog

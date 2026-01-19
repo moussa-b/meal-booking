@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -29,12 +30,16 @@ interface CreateMealDialogProps {
   createMealAction: (data: CreateMealInput) => Promise<ActionResult<any>>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialType?: MealType;
+  trigger?: React.ReactNode;
 }
 
 export function CreateMealDialog({
   createMealAction,
   open,
   onOpenChange,
+  initialType = MealType.MAIN_COURSE,
+  trigger,
 }: CreateMealDialogProps) {
   const router = useRouter();
 
@@ -42,10 +47,21 @@ export function CreateMealDialog({
     resolver: zodResolver(createMealSchema),
     defaultValues: {
       name: "",
-      type: MealType.MAIN_COURSE,
+      type: initialType,
       description: "",
     },
   });
+
+  // Reset form when initialType changes and dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        type: initialType,
+        description: "",
+      });
+    }
+  }, [open, initialType, form]);
 
   const handleSubmit = async (data: CreateMealInput) => {
     const result = await createMealAction(data);
@@ -61,12 +77,11 @@ export function CreateMealDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Ajouter un repas
-        </Button>
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Créer un repas</DialogTitle>
