@@ -87,19 +87,16 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     let total = 0;
     formData.children.forEach((child, index) => {
       const childKey = `${child.firstName}-${child.lastName}-${index}`;
-      const selections = formData.menuSelections[childKey] || {};
+      const selectedIds = formData.menuSelections[childKey] || [];
+      
+      if (!Array.isArray(selectedIds)) return;
 
-      Object.entries(selections).forEach(([dayKey, isSelected]) => {
-        if (isSelected && weeklyMenu.days) {
-          // Find the corresponding day in the menu
-          const dayMenu = weeklyMenu.days.find((day: WeeklyMenuDay) => {
-            const dayKeyForMenu = DAY_KEYS[day.dayOfWeek];
-            return dayKeyForMenu === dayKey;
-          });
-
-          if (dayMenu) {
-            total += dayMenu.price;
-          }
+      selectedIds.forEach((weeklyMenuDayId: number) => {
+        const dayMenu = weeklyMenu.days?.find(
+          (day: WeeklyMenuDay) => day.id === weeklyMenuDayId
+        );
+        if (dayMenu) {
+          total += dayMenu.price;
         }
       });
     });
@@ -188,26 +185,27 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         <CardContent className="pt-4 space-y-6">
           {formData.children.map((child, index) => {
             const childKey = `${child.firstName}-${child.lastName}-${index}`;
-            const selections = formData.menuSelections[childKey] || {};
+            const selectedIds = formData.menuSelections[childKey] || [];
+            const selectedIdsArray = Array.isArray(selectedIds) ? selectedIds : [];
             
             // Create array of selected days with their prices
-            const selectedDaysWithPrices = Object.entries(selections)
-              .filter(([_, selected]) => selected)
-              .map(([dayKey]) => {
-                const dayName = DAYS_FRENCH[dayKey];
-                // Find the price for this day
-                let price = 0;
-                if (weeklyMenu?.days) {
-                  const dayMenu = weeklyMenu.days.find((day: WeeklyMenuDay) => {
-                    const dayKeyForMenu = DAY_KEYS[day.dayOfWeek];
-                    return dayKeyForMenu === dayKey;
-                  });
-                  if (dayMenu) {
-                    price = dayMenu.price;
-                  }
-                }
-                return { dayKey, dayName, price };
-              });
+            const selectedDaysWithPrices = selectedIdsArray
+              .map((weeklyMenuDayId: number) => {
+                const dayMenu = weeklyMenu?.days?.find(
+                  (day: WeeklyMenuDay) => day.id === weeklyMenuDayId
+                );
+                if (!dayMenu) return null;
+                
+                const dayKey = DAY_KEYS[dayMenu.dayOfWeek];
+                const dayName = dayKey ? DAYS_FRENCH[dayKey] : '';
+                return { 
+                  id: weeklyMenuDayId,
+                  dayKey: dayKey || '', 
+                  dayName, 
+                  price: dayMenu.price 
+                };
+              })
+              .filter((item): item is { id: number; dayKey: string; dayName: string; price: number } => item !== null);
 
             return (
               <div key={childKey}>
@@ -242,9 +240,9 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                     </div>
                     {selectedDaysWithPrices.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {selectedDaysWithPrices.map(({ dayKey, dayName, price }) => (
+                        {selectedDaysWithPrices.map(({ id, dayName, price }) => (
                           <span
-                            key={dayKey}
+                            key={id}
                             className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200"
                           >
                             {dayName} - {price.toFixed(2)} €

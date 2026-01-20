@@ -26,20 +26,12 @@ const formSchema = z.object({
     )
     .min(1, "Au moins un enfant est requis"),
   menuSelections: z
-    .record(
-      z.string(),
-      z.object({
-        lundi: z.boolean(),
-        mardi: z.boolean(),
-        jeudi: z.boolean(),
-        vendredi: z.boolean(),
-      })
-    )
+    .record(z.string(), z.array(z.number()))
     .refine(
       (menuSelections) => {
-        // Check if at least one day is selected for at least one child
-        return Object.values(menuSelections).some((selection) =>
-          Object.values(selection).some((daySelected) => daySelected === true)
+        // Check if at least one WeeklyMenuDay ID is selected for at least one child
+        return Object.values(menuSelections).some(
+          (selection) => Array.isArray(selection) && selection.length > 0
         );
       },
       {
@@ -167,7 +159,9 @@ export function BookingWizard() {
                 methods.formState.errors.menuSelections && (
                   <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg mt-6">
                     <p className="text-sm text-red-700 font-medium">
-                      {methods.formState.errors.menuSelections.message as string}
+                      {typeof methods.formState.errors.menuSelections.message === 'string'
+                        ? methods.formState.errors.menuSelections.message
+                        : 'Une erreur est survenue'}
                     </p>
                   </div>
                 )}

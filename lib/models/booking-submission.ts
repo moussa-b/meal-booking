@@ -1,5 +1,4 @@
 import { Student } from './student';
-import { MenuSelection } from './menu-selection';
 
 /**
  * Booking submission model interface
@@ -10,7 +9,7 @@ export interface BookingSubmission {
   menuId: number;
   email: string;
   children: Student[];
-  menuSelections: Record<string, MenuSelection>;
+  menuSelections: Record<string, number[]>; // Array of WeeklyMenuDay IDs
   saveChildrenInfo: boolean;
 }
 
@@ -33,8 +32,8 @@ export interface BookingSubmission {
 //     }
 //   ],
 //   'menuSelections': {
-//     'John-Doe-0': {'lundi': true, 'mardi': true, 'jeudi': true, 'vendredi': true},
-//     'Jane-Doe-1': {'lundi': false, 'mardi': true, 'jeudi': true, 'vendredi': false}
+//     'John-Doe-0': [1, 2, 4, 5],
+//     'Jane-Doe-1': [2, 4]
 //   },
 //   'saveChildrenInfo': false
 // }

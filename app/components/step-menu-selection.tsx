@@ -85,13 +85,8 @@ export function StepMenuSelection() {
 
     children.forEach((child, index) => {
       const childKey = `${child.firstName}-${child.lastName}-${index}`;
-      if (!selections[childKey]) {
-        selections[childKey] = {
-          lundi: false,
-          mardi: false,
-          jeudi: false,
-          vendredi: false,
-        };
+      if (!selections[childKey] || !Array.isArray(selections[childKey])) {
+        selections[childKey] = [];
         needsUpdate = true;
       }
     });
@@ -103,22 +98,40 @@ export function StepMenuSelection() {
 
   const handleDayChange = (
     childKey: string,
-    day: (typeof DAYS)[number],
+    weeklyMenuDayId: number,
     checked: boolean
   ) => {
-    setValue(`menuSelections.${childKey}.${day}`, checked);
+    const currentSelection = menuSelections[childKey] || [];
+    const newSelection = checked
+      ? [...currentSelection, weeklyMenuDayId]
+      : currentSelection.filter((id) => id !== weeklyMenuDayId);
+    setValue(`menuSelections.${childKey}`, newSelection);
   };
 
   const handleSelectAll = (childKey: string, checked: boolean) => {
-    DAYS.forEach((day) => {
-      setValue(`menuSelections.${childKey}.${day}`, checked);
-    });
+    if (!weeklyMenu || !weeklyMenu.days) return;
+    
+    const menuDays = weeklyMenu.days.filter(
+      (day) => DAY_KEYS[day.dayOfWeek] !== null
+    );
+    
+    if (checked) {
+      const allIds = menuDays.map((day) => day.id);
+      setValue(`menuSelections.${childKey}`, allIds);
+    } else {
+      setValue(`menuSelections.${childKey}`, []);
+    }
   };
 
   const isAllSelected = (childKey: string) => {
-    const selection = menuSelections[childKey];
-    if (!selection) return false;
-    return DAYS.every((day) => selection[day]);
+    if (!weeklyMenu || !weeklyMenu.days) return false;
+    const selection = menuSelections[childKey] || [];
+    if (!Array.isArray(selection)) return false;
+    
+    const menuDays = weeklyMenu.days.filter(
+      (day) => DAY_KEYS[day.dayOfWeek] !== null
+    );
+    return menuDays.every((day) => selection.includes(day.id));
   };
 
   // Get menu days filtered to only show Monday, Tuesday, Thursday, Friday
@@ -170,12 +183,8 @@ export function StepMenuSelection() {
     <div className="space-y-6">
       {children.map((child, index) => {
         const childKey = `${child.firstName}-${child.lastName}-${index}`;
-        const selection = menuSelections[childKey] || {
-          lundi: false,
-          mardi: false,
-          jeudi: false,
-          vendredi: false,
-        };
+        const selection = menuSelections[childKey] || [];
+        const selectedIds = Array.isArray(selection) ? selection : [];
 
         return (
           <Card
@@ -229,12 +238,12 @@ export function StepMenuSelection() {
                       <CardHeader className="p-4 pb-3 pt-0">
                         <div className="flex items-center space-x-3">
                           <Checkbox
-                            id={`${childKey}-${dayKey}`}
-                            checked={selection[dayKey]}
+                            id={`${childKey}-${dayMenu.id}`}
+                            checked={selectedIds.includes(dayMenu.id)}
                             onCheckedChange={(checked) =>
                               handleDayChange(
                                 childKey,
-                                dayKey,
+                                dayMenu.id,
                                 checked as boolean
                               )
                             }
