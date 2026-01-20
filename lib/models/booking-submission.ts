@@ -7,6 +7,7 @@ import { MenuSelection } from './menu-selection';
  */
 export interface BookingSubmission {
   schoolId: number;
+  menuId: number;
   email: string;
   children: Student[];
   menuSelections: Record<string, MenuSelection>;

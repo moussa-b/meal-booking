@@ -110,9 +110,22 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   const totalPrice = calculateTotalPrice();
 
   const handleSubmit = () => {
+    if (!weeklyMenu?.id) {
+      toast.error("Erreur", {
+        description: "Impossible de récupérer les informations du menu. Veuillez réessayer.",
+        duration: 5000,
+      });
+      return;
+    }
+
+    const submissionData = {
+      ...formData,
+      menuId: weeklyMenu.id,
+    };
+
     // Placeholder for future implementation
-    console.log("Form data to submit:", formData);
-    console.log("Form data to submit:", JSON.stringify(formData));
+    console.log("Form data to submit:", submissionData);
+    console.log("Form data to submit:", JSON.stringify(submissionData));
     toast.success("Réservation enregistrée avec succès!", {
       description: "Vous recevrez une confirmation par email.",
       duration: 5000,
