@@ -8,5 +8,6 @@ export interface Student {
   lastName: string;
   firstName: string;
   class: string;
-  feedingRegime: string | null;
+  feedingRegime?: string | null;
+  parentEmail?: string | null;
 }

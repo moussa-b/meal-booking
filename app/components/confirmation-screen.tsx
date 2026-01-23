@@ -85,10 +85,10 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     if (!weeklyMenu?.days) return 0;
 
     let total = 0;
-    formData.children.forEach((child, index) => {
-      const childKey = `${child.firstName}-${child.lastName}-${index}`;
-      const selectedIds = formData.menuSelections[childKey] || [];
-      
+    formData.students.forEach((student, index) => {
+      const studentKey = `${student.firstName}-${student.lastName}-${index}`;
+      const selectedIds = formData.menuSelections[studentKey] || [];
+
       if (!Array.isArray(selectedIds)) return;
 
       selectedIds.forEach((weeklyMenuDayId: number) => {
@@ -106,7 +106,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
 
   const totalPrice = calculateTotalPrice();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!weeklyMenu?.id) {
       toast.error("Erreur", {
         description: "Impossible de récupérer les informations du menu. Veuillez réessayer.",
@@ -120,14 +120,36 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       menuId: weeklyMenu.id,
     };
 
-    // Placeholder for future implementation
-    console.log("Form data to submit:", submissionData);
-    console.log("Form data to submit:", JSON.stringify(submissionData));
-    toast.success("Réservation enregistrée avec succès!", {
-      description: "Vous recevrez une confirmation par email.",
-      duration: 5000,
-    });
-    onSubmitted?.();
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submissionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        toast.error("Erreur", {
+          description: errorData.message || "Une erreur est survenue lors de l'enregistrement de la réservation.",
+          duration: 5000,
+        });
+        return;
+      }
+
+      toast.success("Réservation enregistrée avec succès!", {
+        description: "Vous recevrez une confirmation par email.",
+        duration: 5000,
+      });
+      onSubmitted?.();
+    } catch (error) {
+      console.error("Error submitting booking:", error);
+      toast.error("Erreur", {
+        description: "Une erreur est survenue lors de l'enregistrement de la réservation. Veuillez réessayer.",
+        duration: 5000,
+      });
+    }
   };
 
   return (
@@ -148,7 +170,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         <CardHeader className="bg-slate-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <School className="h-5 w-5 text-blue-600" />
-            Informations de l'école
+            Informations de l&apos;école
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-3">
@@ -174,20 +196,20 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         </CardContent>
       </Card>
 
-      {/* Children and Menu Selections */}
+      {/* Students and Menu Selections */}
       <Card className="border-2 border-blue-200 pt-0">
         <CardHeader className="bg-blue-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
-            Enfants inscrits
+            Étudiants inscrits
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-6">
-          {formData.children.map((child, index) => {
-            const childKey = `${child.firstName}-${child.lastName}-${index}`;
-            const selectedIds = formData.menuSelections[childKey] || [];
+          {formData.students.map((student, index) => {
+            const studentKey = `${student.firstName}-${student.lastName}-${index}`;
+            const selectedIds = formData.menuSelections[studentKey] || [];
             const selectedIdsArray = Array.isArray(selectedIds) ? selectedIds : [];
-            
+
             // Create array of selected days with their prices
             const selectedDaysWithPrices = selectedIdsArray
               .map((weeklyMenuDayId: number) => {
@@ -195,36 +217,36 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                   (day: WeeklyMenuDay) => day.id === weeklyMenuDayId
                 );
                 if (!dayMenu) return null;
-                
+
                 const dayKey = DAY_KEYS[dayMenu.dayOfWeek];
                 const dayName = dayKey ? DAYS_FRENCH[dayKey] : '';
-                return { 
+                return {
                   id: weeklyMenuDayId,
-                  dayKey: dayKey || '', 
-                  dayName, 
-                  price: dayMenu.price 
+                  dayKey: dayKey || '',
+                  dayName,
+                  price: dayMenu.price
                 };
               })
               .filter((item): item is { id: number; dayKey: string; dayName: string; price: number } => item !== null);
 
             return (
-              <div key={childKey}>
+              <div key={studentKey}>
                 {index > 0 && <Separator className="my-4" />}
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <User className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div className="flex-1">
                       <div className="font-semibold text-lg text-slate-900">
-                        {child.firstName} {child.lastName}
+                        {student.firstName} {student.lastName}
                       </div>
                       <div className="text-sm text-slate-600 mt-1">
-                        Classe: <span className="font-medium">{child.class}</span>
+                        Classe: <span className="font-medium">{student.class}</span>
                       </div>
-                      {child.feedingRegime && (
+                      {student.feedingRegime && (
                         <div className="text-sm text-slate-600 mt-1">
                           Régime alimentaire:{" "}
                           <span className="font-medium">
-                            {child.feedingRegime}
+                            {student.feedingRegime}
                           </span>
                         </div>
                       )}

@@ -15,7 +15,7 @@ import { ConfirmationScreen } from "./confirmation-screen";
 const formSchema = z.object({
   schoolId: z.number().min(1, "L'école est requise"),
   email: z.string().email("Email invalide"),
-  children: z
+  students: z
     .array(
       z.object({
         lastName: z.string().min(1, "Le nom de famille est requis"),
@@ -24,18 +24,18 @@ const formSchema = z.object({
         feedingRegime: z.string().optional(),
       })
     )
-    .min(1, "Au moins un enfant est requis"),
+    .min(1, "Au moins un étudiant est requis"),
   menuSelections: z
     .record(z.string(), z.array(z.number()))
     .refine(
       (menuSelections) => {
-        // Check if at least one WeeklyMenuDay ID is selected for at least one child
+        // Check if at least one WeeklyMenuDay ID is selected for at least one student
         return Object.values(menuSelections).some(
           (selection) => Array.isArray(selection) && selection.length > 0
         );
       },
       {
-        message: "Veuillez sélectionner au moins un jour pour au moins un enfant",
+        message: "Veuillez sélectionner au moins un jour pour au moins un étudiant",
       }
     ),
   saveChildrenInfo: z.boolean().optional(),
@@ -55,7 +55,7 @@ export function BookingWizard() {
     defaultValues: {
       schoolId: 0,
       email: "",
-      children: [
+      students: [
         {
           lastName: "",
           firstName: "",
@@ -74,7 +74,7 @@ export function BookingWizard() {
     if (currentStep === 1) {
       fieldsToValidate = ["schoolId", "email"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["children"];
+      fieldsToValidate = ["students"];
     } else if (currentStep === 3) {
       fieldsToValidate = ["menuSelections"];
     }

@@ -1,28 +1,16 @@
 "use client";
 
-import { useFormContext, useFieldArray } from "react-hook-form";
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
-import type { BookingFormData } from "./booking-wizard";
+import { useFieldArray, useFormContext } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel, } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Plus, Trash2 } from 'lucide-react';
+import type { BookingFormData } from './booking-wizard';
 
 const CLASSES = [
   "Petite Section",
@@ -40,27 +28,27 @@ const CLASSES = [
 ];
 
 export function StepChildren() {
-  const { control, watch, formState } = useFormContext<BookingFormData>();
+  const { control, watch } = useFormContext<BookingFormData>();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "children",
+    name: "students",
   });
 
-  const children = watch("children");
+  const students = watch("students");
 
-  // Check if the last child form is valid
-  const isLastChildValid = () => {
+  // Check if the last student form is valid
+  const isLastStudentValid = () => {
     if (fields.length === 0) return false;
     const lastIndex = fields.length - 1;
-    const lastChild = children[lastIndex];
+    const lastStudent = students[lastIndex];
     return (
-      lastChild?.lastName?.trim() !== "" &&
-      lastChild?.firstName?.trim() !== "" &&
-      lastChild?.class?.trim() !== ""
+      lastStudent?.lastName?.trim() !== "" &&
+      lastStudent?.firstName?.trim() !== "" &&
+      lastStudent?.class?.trim() !== ""
     );
   };
 
-  const addChild = () => {
+  const addStudent = () => {
     append({
       lastName: "",
       firstName: "",
@@ -76,7 +64,7 @@ export function StepChildren() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-slate-700">
-                Enfant {index + 1}
+                Étudiant {index + 1}
               </CardTitle>
               {index > 0 && (
                 <Button
@@ -95,7 +83,7 @@ export function StepChildren() {
           <CardContent className="space-y-4">
             <FormField
               control={control}
-              name={`children.${index}.lastName`}
+              name={`students.${index}.lastName`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nom de famille</FormLabel>
@@ -108,7 +96,7 @@ export function StepChildren() {
 
             <FormField
               control={control}
-              name={`children.${index}.firstName`}
+              name={`students.${index}.firstName`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Prénom</FormLabel>
@@ -121,7 +109,7 @@ export function StepChildren() {
 
             <FormField
               control={control}
-              name={`children.${index}.class`}
+              name={`students.${index}.class`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Classe</FormLabel>
@@ -149,7 +137,7 @@ export function StepChildren() {
 
             <FormField
               control={control}
-              name={`children.${index}.feedingRegime`}
+              name={`students.${index}.feedingRegime`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
@@ -175,12 +163,12 @@ export function StepChildren() {
       <Button
         type="button"
         variant="outline"
-        onClick={addChild}
-        disabled={!isLastChildValid()}
+        onClick={addStudent}
+        disabled={!isLastStudentValid()}
         className="w-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-colors"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Ajouter un autre enfant
+        Ajouter un autre étudiant
       </Button>
 
       <div className="mt-6 pt-4">

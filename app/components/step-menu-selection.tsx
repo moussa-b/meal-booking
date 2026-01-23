@@ -1,14 +1,14 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import type { BookingFormData } from "./booking-wizard";
-import { useEffect, useState } from "react";
-import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
-import { DayOfWeek } from "@/lib/models/weekly-menu";
+import { useFormContext } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import type { BookingFormData } from './booking-wizard';
+import { useEffect, useState } from 'react';
+import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/models/weekly-menu';
 
 const DAYS = ["lundi", "mardi", "jeudi", "vendredi"] as const;
 
@@ -45,7 +45,7 @@ function formatDateFrench(date: Date): string {
 
 export function StepMenuSelection() {
   const { watch, setValue } = useFormContext<BookingFormData>();
-  const children = watch("children");
+  const students = watch("students");
   const menuSelections = watch("menuSelections");
   const schoolId = watch("schoolId");
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
@@ -78,15 +78,15 @@ export function StepMenuSelection() {
     fetchMenu();
   }, [schoolId]);
 
-  // Initialize menu selections for all children if not already set
+  // Initialize menu selections for all students if not already set
   useEffect(() => {
     const selections = { ...menuSelections };
     let needsUpdate = false;
 
-    children.forEach((child, index) => {
-      const childKey = `${child.firstName}-${child.lastName}-${index}`;
-      if (!selections[childKey] || !Array.isArray(selections[childKey])) {
-        selections[childKey] = [];
+    students.forEach((student, index) => {
+      const studentKey = `${student.firstName}-${student.lastName}-${index}`;
+      if (!selections[studentKey] || !Array.isArray(selections[studentKey])) {
+        selections[studentKey] = [];
         needsUpdate = true;
       }
     });
@@ -94,40 +94,40 @@ export function StepMenuSelection() {
     if (needsUpdate) {
       setValue("menuSelections", selections);
     }
-  }, [children, menuSelections, setValue]);
+  }, [students, menuSelections, setValue]);
 
   const handleDayChange = (
-    childKey: string,
+    studentKey: string,
     weeklyMenuDayId: number,
     checked: boolean
   ) => {
-    const currentSelection = menuSelections[childKey] || [];
+    const currentSelection = menuSelections[studentKey] || [];
     const newSelection = checked
       ? [...currentSelection, weeklyMenuDayId]
       : currentSelection.filter((id) => id !== weeklyMenuDayId);
-    setValue(`menuSelections.${childKey}`, newSelection);
+    setValue(`menuSelections.${studentKey}`, newSelection);
   };
 
-  const handleSelectAll = (childKey: string, checked: boolean) => {
+  const handleSelectAll = (studentKey: string, checked: boolean) => {
     if (!weeklyMenu || !weeklyMenu.days) return;
-    
+
     const menuDays = weeklyMenu.days.filter(
       (day) => DAY_KEYS[day.dayOfWeek] !== null
     );
-    
+
     if (checked) {
       const allIds = menuDays.map((day) => day.id);
-      setValue(`menuSelections.${childKey}`, allIds);
+      setValue(`menuSelections.${studentKey}`, allIds);
     } else {
-      setValue(`menuSelections.${childKey}`, []);
+      setValue(`menuSelections.${studentKey}`, []);
     }
   };
 
-  const isAllSelected = (childKey: string) => {
+  const isAllSelected = (studentKey: string) => {
     if (!weeklyMenu || !weeklyMenu.days) return false;
-    const selection = menuSelections[childKey] || [];
+    const selection = menuSelections[studentKey] || [];
     if (!Array.isArray(selection)) return false;
-    
+
     const menuDays = weeklyMenu.days.filter(
       (day) => DAY_KEYS[day.dayOfWeek] !== null
     );
@@ -181,23 +181,23 @@ export function StepMenuSelection() {
 
   return (
     <div className="space-y-6">
-      {children.map((child, index) => {
-        const childKey = `${child.firstName}-${child.lastName}-${index}`;
-        const selection = menuSelections[childKey] || [];
+      {students.map((student, index) => {
+        const studentKey = `${student.firstName}-${student.lastName}-${index}`;
+        const selection = menuSelections[studentKey] || [];
         const selectedIds = Array.isArray(selection) ? selection : [];
 
         return (
           <Card
-            key={childKey}
+            key={studentKey}
             className="border-2 border-blue-200 bg-blue-50/30 pt-0 gap-1"
           >
             <CardHeader className="bg-blue-100/50 gap-1 rounded-t-xl">
               <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2">
-                Menu pour {child.firstName} {child.lastName}
+                Menu pour {student.firstName} {student.lastName}
               </CardTitle>
-              {child.feedingRegime && (
+              {student.feedingRegime && (
                 <p className="text-sm text-blue-700 my-1 text-center">
-                  Régime alimentaire: {child.feedingRegime}
+                  Régime alimentaire: {student.feedingRegime}
                 </p>
               )}
             </CardHeader>
@@ -205,14 +205,14 @@ export function StepMenuSelection() {
               {/* Select All Option */}
               <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border-2 border-blue-300">
                 <Checkbox
-                  id={`${childKey}-select-all`}
-                  checked={isAllSelected(childKey)}
+                  id={`${studentKey}-select-all`}
+                  checked={isAllSelected(studentKey)}
                   onCheckedChange={(checked) =>
-                    handleSelectAll(childKey, checked as boolean)
+                    handleSelectAll(studentKey, checked as boolean)
                   }
                 />
                 <Label
-                  htmlFor={`${childKey}-select-all`}
+                  htmlFor={`${studentKey}-select-all`}
                   className="text-base font-semibold cursor-pointer flex-1"
                 >
                   Sélectionner tous les jours
@@ -238,11 +238,11 @@ export function StepMenuSelection() {
                       <CardHeader className="p-4 pb-3 pt-0">
                         <div className="flex items-center space-x-3">
                           <Checkbox
-                            id={`${childKey}-${dayMenu.id}`}
+                            id={`${studentKey}-${dayMenu.id}`}
                             checked={selectedIds.includes(dayMenu.id)}
                             onCheckedChange={(checked) =>
                               handleDayChange(
-                                childKey,
+                                studentKey,
                                 dayMenu.id,
                                 checked as boolean
                               )

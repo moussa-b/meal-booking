@@ -1,39 +1,14 @@
 import { Student } from './student';
 
 /**
- * Booking submission model interface
- * Represents a complete meal booking submission
+ * Booking submission input model interface
+ * Represents a complete meal booking submission from the form
  */
 export interface BookingSubmission {
   schoolId: number;
   menuId: number;
   email: string;
-  children: Student[];
+  students: Omit<Student, 'id' | 'created' | 'parentEmail'>[];
   menuSelections: Record<string, number[]>; // Array of WeeklyMenuDay IDs
   saveChildrenInfo: boolean;
 }
-
-// sample json
-// {
-//   'schoolCode': '5NHWGD',
-//   'email': 'test@test.com',
-//   'children': [
-//     {
-//       'lastName': 'Doe',
-//       'firstName': 'John',
-//       'class': 'CM1',
-//       'feedingRegime': ''
-//     },
-//     {
-//       'lastName': 'Doe',
-//       'firstName': 'Jane',
-//       'class': 'CE2',
-//       'feedingRegime': 'Mange Hallal'
-//     }
-//   ],
-//   'menuSelections': {
-//     'John-Doe-0': [1, 2, 4, 5],
-//     'Jane-Doe-1': [2, 4]
-//   },
-//   'saveChildrenInfo': false
-// }

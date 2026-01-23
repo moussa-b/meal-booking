@@ -4,6 +4,7 @@ import { getWeekNumber, getYear, formatDateLocal } from '@/lib/utils/date.utils'
 import type { FieldPacket } from 'mysql2/promise';
 import { getMealById } from '@/lib/services/meal.service';
 import type { Meal } from '@/lib/models/meal';
+import { getSchoolById } from '@/lib/services/school.service';
 
 /**
  * Database row type for WeeklyMenu (as returned from MySQL)
@@ -153,6 +154,12 @@ export async function createWeeklyMenu(data: {
 
   try {
     await connection.beginTransaction();
+
+    // Validate school exists
+    const school = await getSchoolById(data.schoolId);
+    if (!school) {
+      throw new Error('School not found');
+    }
 
     const weekStartDateStr = formatDateLocal(data.weekStartDate);
     const weekNum = getWeekNumber(data.weekStartDate);
