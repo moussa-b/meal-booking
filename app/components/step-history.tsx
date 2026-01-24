@@ -10,6 +10,7 @@ interface BookingWithDetails extends Booking {
   totalMeals: number;
   totalAmount: number;
   schoolName?: string;
+  weekStartDate?: Date;
 }
 
 interface StepHistoryProps {
@@ -65,13 +66,18 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
           fetchedBookings
             .filter((booking) => booking.schoolId === schoolId)
             .map(async (booking) => {
-              // Get the weekly menu to access menu day prices
+              // Get the weekly menu to access menu day prices and weekStartDate
               const menuResponse = await fetch(`/api/weekly-menus/${booking.menuId}`);
               let menuDays: Array<{ id: number; price: number }> = [];
+              let weekStartDate: Date | undefined;
 
               if (menuResponse.ok) {
                 const menuResult = await menuResponse.json();
                 menuDays = menuResult.data?.days || [];
+                // Extract weekStartDate from the menu
+                if (menuResult.data?.weekStartDate) {
+                  weekStartDate = new Date(menuResult.data.weekStartDate);
+                }
               }
 
               // Create a map of menu day ID to price
@@ -96,6 +102,7 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
                 ...booking,
                 totalMeals,
                 totalAmount,
+                weekStartDate,
               };
             })
         );
@@ -163,6 +170,11 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
               <p className="font-semibold text-slate-800">
                 {formatDate(booking.created)}
               </p>
+              {booking.weekStartDate && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Semaine du {formatDate(booking.weekStartDate)}
+                </p>
+              )}
               <p className="text-sm text-slate-600 mt-1">
                 {booking.students
                   ?.map((s) => `${s.firstName} ${s.lastName}`)

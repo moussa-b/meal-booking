@@ -224,10 +224,12 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                   id: weeklyMenuDayId,
                   dayKey: dayKey || '',
                   dayName,
+                  dayOfWeek: dayMenu.dayOfWeek,
                   price: dayMenu.price
                 };
               })
-              .filter((item): item is { id: number; dayKey: string; dayName: string; price: number } => item !== null);
+              .filter((item): item is { id: number; dayKey: string; dayName: string; dayOfWeek: number; price: number } => item !== null)
+              .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
             return (
               <div key={studentKey}>
