@@ -6,7 +6,9 @@ import { execSync } from 'child_process';
  * Tables to clean up between tests (in order to respect foreign key constraints)
  */
 const TABLES_TO_CLEAN = [
-  'booking_submissions',
+  'booking_menu_selections',
+  'booking_students',
+  'bookings',
   'menu_selections',
   'day_menus',
   'menu_items',

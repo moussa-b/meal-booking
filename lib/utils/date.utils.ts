@@ -59,3 +59,16 @@ export function formatDateLocal(date: Date): string {
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Formats a date as a localized date string in French format
+ * @param date - The date to format
+ * @returns The formatted date string (e.g., "24 janvier 2026")
+ */
+export function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}

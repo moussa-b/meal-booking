@@ -52,6 +52,29 @@ export async function getSchoolById(id: number): Promise<School | null> {
 }
 
 /**
+ * Get a school by code
+ */
+export async function getSchoolByCode(code: string): Promise<School | null> {
+  const results = await query<SchoolRow[]>(
+    'SELECT id, created, name, code, description FROM schools WHERE code = ?',
+    [code]
+  );
+  
+  if (results.length === 0) {
+    return null;
+  }
+  
+  const row: SchoolRow = results[0];
+  return {
+    id: row.id,
+    created: new Date(row.created),
+    name: row.name,
+    code: row.code,
+    description: row.description || '',
+  };
+}
+
+/**
  * Generate a random 6-character code containing numbers and letters
  */
 function generateSchoolCode(): string {

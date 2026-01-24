@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSchool, deleteSchool, getAllSchools, getSchoolById, updateSchool, } from '@/lib/services/school.service';
+import { createSchool, deleteSchool, getAllSchools, getSchoolById, getSchoolByCode, updateSchool, } from '@/lib/services/school.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestSchoolData } from '../helpers/test-data';
 
@@ -67,6 +67,46 @@ describe('School Service', () => {
       expect(school?.code).toMatch(/^[A-Z0-9]{6}$/); // Verify code format
       expect(school?.description).toBe(testData.description);
       expect(school?.created).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('getSchoolByCode', () => {
+    it('should return null when school code does not exist', async () => {
+      const school = await getSchoolByCode('INVALID');
+      expect(school).toBeNull();
+    });
+
+    it('should return school when code exists', async () => {
+      const testData = createTestSchoolData();
+      const created = await createSchool(testData);
+
+      const school = await getSchoolByCode(created.code);
+
+      expect(school).not.toBeNull();
+      expect(school?.id).toBe(created.id);
+      expect(school?.name).toBe(testData.name);
+      expect(school?.code).toBe(created.code);
+      expect(school?.code).toMatch(/^[A-Z0-9]{6}$/); // Verify code format
+      expect(school?.description).toBe(testData.description);
+      expect(school?.created).toBeInstanceOf(Date);
+    });
+
+    it('should return correct school when multiple schools exist', async () => {
+      const testData1 = createTestSchoolData({ name: 'School A' });
+      const testData2 = createTestSchoolData({ name: 'School B' });
+      const school1 = await createSchool(testData1);
+      const school2 = await createSchool(testData2);
+
+      const foundSchool1 = await getSchoolByCode(school1.code);
+      const foundSchool2 = await getSchoolByCode(school2.code);
+
+      expect(foundSchool1).not.toBeNull();
+      expect(foundSchool1?.id).toBe(school1.id);
+      expect(foundSchool1?.name).toBe('School A');
+
+      expect(foundSchool2).not.toBeNull();
+      expect(foundSchool2?.id).toBe(school2.id);
+      expect(foundSchool2?.name).toBe('School B');
     });
   });
 
