@@ -7,5 +7,6 @@ export * from './school';
 export * from './student';
 export * from './booking-submission';
 export * from './booking';
+export * from './payment-status';
 export * from './meal';
 export * from './weekly-menu';

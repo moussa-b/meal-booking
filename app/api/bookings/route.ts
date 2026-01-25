@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         email: booking.email,
         schoolId: booking.schoolId,
         menuId: booking.menuId,
+        status: booking.status,
       },
     }, { status: 201 });
   } catch (error) {

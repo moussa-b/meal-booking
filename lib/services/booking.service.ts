@@ -1,6 +1,7 @@
 import { query, getConnection, type MysqlInsertResult } from '@/lib/db/connection';
 import type { Booking, BookingStudent, BookingMenuSelection } from '@/lib/models/booking';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
+import { PaymentStatus } from '@/lib/models/payment-status';
 import { createStudent } from './student.service';
 import { getSchoolById } from './school.service';
 import { getWeeklyMenuById } from './weekly-menu.service';
@@ -15,6 +16,7 @@ interface BookingRow {
   email: string;
   schoolId: number;
   menuId: number;
+  status: string;
 }
 
 /**
@@ -82,10 +84,10 @@ export async function createBooking(
       }
     }
 
-    // Insert booking
+    // Insert booking with default PENDING status
     const [bookingResult] = await connection.execute(
-      'INSERT INTO bookings (email, schoolId, menuId) VALUES (?, ?, ?)',
-      [data.email, data.schoolId, data.menuId]
+      'INSERT INTO bookings (email, schoolId, menuId, status) VALUES (?, ?, ?, ?)',
+      [data.email, data.schoolId, data.menuId, PaymentStatus.PENDING]
     ) as [MysqlInsertResult, FieldPacket[]];
 
     const bookingId = bookingResult.insertId;
@@ -159,7 +161,7 @@ export async function createBooking(
  */
 export async function getBookingById(id: number): Promise<Booking | null> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId FROM bookings WHERE id = ?',
+    'SELECT id, created, email, schoolId, menuId, status FROM bookings WHERE id = ?',
     [id]
   );
 
@@ -209,12 +211,16 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     menuSelections: selectionsByStudentId.get(studentRow.id) || [],
   }));
 
+  // Map status string to PaymentStatus enum
+  const status = bookingRow.status as PaymentStatus;
+
   return {
     id: bookingRow.id,
     created: new Date(bookingRow.created),
     email: bookingRow.email,
     schoolId: bookingRow.schoolId,
     menuId: bookingRow.menuId,
+    status,
     students,
   };
 }
@@ -224,7 +230,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
  */
 export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId FROM bookings WHERE email = ? ORDER BY created DESC',
+    'SELECT id, created, email, schoolId, menuId, status FROM bookings WHERE email = ? ORDER BY created DESC',
     [email]
   );
 

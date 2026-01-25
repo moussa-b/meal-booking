@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import type { HistoryFormData } from './history-wizard';
 import type { Booking } from '@/lib/models/booking';
+import { PaymentStatus } from '@/lib/models/payment-status';
 import { formatDate } from '@/lib/utils/date.utils';
+import { Badge } from '@/components/ui/badge';
 
 interface BookingWithDetails extends Booking {
   totalMeals: number;
@@ -23,6 +25,31 @@ const formatCurrency = (amount: number) => {
     style: 'currency',
     currency: 'EUR',
   }).format(amount);
+};
+
+/**
+ * Get badge className and French label for payment status
+ * Colors: PAID => green, PENDING/PROCESSING => yellow, FAILED/CANCELED/EXPIRED => red, REFUNDED => blue
+ */
+const getPaymentStatusBadge = (status: PaymentStatus): { className: string; label: string } => {
+  switch (status) {
+    case PaymentStatus.PENDING:
+      return { className: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'En attente' };
+    case PaymentStatus.PROCESSING:
+      return { className: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'En cours' };
+    case PaymentStatus.PAID:
+      return { className: 'bg-green-100 text-green-800 border-green-200', label: 'Payé' };
+    case PaymentStatus.FAILED:
+      return { className: 'bg-red-100 text-red-800 border-red-200', label: 'Échoué' };
+    case PaymentStatus.CANCELED:
+      return { className: 'bg-red-100 text-red-800 border-red-200', label: 'Annulé' };
+    case PaymentStatus.EXPIRED:
+      return { className: 'bg-red-100 text-red-800 border-red-200', label: 'Expiré' };
+    case PaymentStatus.REFUNDED:
+      return { className: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Remboursé' };
+    default:
+      return { className: 'bg-slate-100 text-slate-800 border-slate-200', label: status };
+  }
 };
 
 export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProps) {
@@ -166,10 +193,20 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
           className="p-4 border border-slate-200 rounded-lg bg-white shadow-sm"
         >
           <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="font-semibold text-slate-800">
-                {formatDate(booking.created)}
-              </p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-semibold text-slate-800">
+                  {formatDate(booking.created)}
+                </p>
+                {(() => {
+                  const { className, label } = getPaymentStatusBadge(booking.status);
+                  return (
+                    <Badge variant="outline" className={className}>
+                      {label}
+                    </Badge>
+                  );
+                })()}
+              </div>
               {booking.weekStartDate && (
                 <p className="text-xs text-slate-500 mt-1">
                   Semaine du {formatDate(booking.weekStartDate)}

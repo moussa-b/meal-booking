@@ -7,6 +7,7 @@ import { createMeal } from '@/lib/services/meal.service';
 import { createWeeklyMenu } from '@/lib/services/weekly-menu.service';
 import { MealType } from '@/lib/models/meal';
 import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { PaymentStatus } from '@/lib/models/payment-status';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 
 // Setup test isolation (clean tables before each test)
@@ -118,6 +119,7 @@ describe('Booking Service', () => {
       expect(booking.email).toBe(bookingData.email);
       expect(booking.schoolId).toBe(bookingData.schoolId);
       expect(booking.menuId).toBe(bookingData.menuId);
+      expect(booking.status).toBe(PaymentStatus.PENDING);
       expect(booking.students).toBeDefined();
       expect(booking.students?.length).toBe(bookingData.students.length);
       expect(booking.students?.[0].studentId).toBeNull(); // Should not have studentId
@@ -129,6 +131,7 @@ describe('Booking Service', () => {
       const booking = await createBooking(bookingData, true);
 
       expect(booking.id).toBeGreaterThan(0);
+      expect(booking.status).toBe(PaymentStatus.PENDING);
       expect(booking.students).toBeDefined();
       expect(booking.students?.length).toBe(bookingData.students.length);
       expect(booking.students?.[0].studentId).not.toBeNull(); // Should have studentId
@@ -269,6 +272,7 @@ describe('Booking Service', () => {
       expect(booking?.email).toBe(bookingData.email);
       expect(booking?.schoolId).toBe(bookingData.schoolId);
       expect(booking?.menuId).toBe(bookingData.menuId);
+      expect(booking?.status).toBe(PaymentStatus.PENDING);
       expect(booking?.students).toBeDefined();
       expect(booking?.students?.length).toBe(bookingData.students.length);
     });
@@ -306,6 +310,10 @@ describe('Booking Service', () => {
       const bookingIds = bookings.map((b) => b.id);
       expect(bookingIds).toContain(booking1.id);
       expect(bookingIds).toContain(booking2.id);
+      // Verify all bookings have status field
+      bookings.forEach((booking) => {
+        expect(booking.status).toBe(PaymentStatus.PENDING);
+      });
     });
 
     it('should return bookings ordered by created DESC', async () => {

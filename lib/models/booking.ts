@@ -1,5 +1,6 @@
 import { Student } from './student';
 import { WeeklyMenuDay } from './weekly-menu';
+import { PaymentStatus } from '@/lib/models/payment-status';
 
 /**
  * Booking model interface
@@ -12,6 +13,7 @@ export interface Booking {
   schoolId: number;
   menuId: number;
   students?: BookingStudent[];
+  status: PaymentStatus;
 }
 
 /**
