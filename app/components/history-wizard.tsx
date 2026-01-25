@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StepSchoolInfo } from './step-school-info';
@@ -21,11 +20,15 @@ export type HistoryFormData = z.infer<typeof formSchema>;
 
 type Step = 1 | 2;
 
-export function HistoryWizard() {
+type HistoryWizardProps = {
+  code?: string;
+  email?: string;
+};
+
+export function HistoryWizard({ code, email }: HistoryWizardProps) {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [hasBookings, setHasBookings] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const searchParams = useSearchParams();
 
   const methods = useForm<HistoryFormData>({
     resolver: zodResolver(formSchema),
@@ -52,9 +55,6 @@ export function HistoryWizard() {
 
   // Handle query parameters on mount
   useEffect(() => {
-    const code = searchParams.get('code');
-    const email = searchParams.get('email');
-
     // Validate and pre-populate email if valid
     const emailSchema = z.string().email();
     const emailValidation = email ? emailSchema.safeParse(email) : {success: false};
@@ -84,7 +84,7 @@ export function HistoryWizard() {
     } else if (validEmail) {
       // If only email is valid, stay on step 1 (already set email above)
     }
-  }, [searchParams, methods]);
+  }, [code, email, methods]);
 
   const handleNext = async () => {
     const isValid = await methods.trigger(['schoolId', 'email']);
