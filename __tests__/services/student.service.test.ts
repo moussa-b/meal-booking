@@ -5,6 +5,7 @@ import {
   getAllStudents,
   getStudentById,
   getStudentsByParentEmail,
+  getStudentsGroupedByParentEmail,
   updateStudent,
 } from '@/lib/services/student.service';
 import { setupTestIsolation } from '../helpers/db.setup';
@@ -113,6 +114,160 @@ describe('Student Service', () => {
       students.forEach((student) => {
         expect(student.parentEmail).toBe(parentEmail1);
       });
+    });
+  });
+
+  describe('getStudentsGroupedByParentEmail', () => {
+    it('should return empty array when no students exist', async () => {
+      const groups = await getStudentsGroupedByParentEmail();
+      expect(groups).toEqual([]);
+    });
+
+    it('should group students by parent email', async () => {
+      const parentEmail1 = `parent1${Date.now()}@example.com`;
+      const parentEmail2 = `parent2${Date.now()}@example.com`;
+
+      const student1 = await createStudent(createTestStudentData({ parentEmail: parentEmail1, firstName: 'Alice', lastName: 'Smith' }));
+      const student2 = await createStudent(createTestStudentData({ parentEmail: parentEmail1, firstName: 'Bob', lastName: 'Smith' }));
+      const student3 = await createStudent(createTestStudentData({ parentEmail: parentEmail2, firstName: 'Charlie', lastName: 'Brown' }));
+
+      const groups = await getStudentsGroupedByParentEmail();
+
+      expect(groups.length).toBe(2);
+
+      const group1 = groups.find(g => g.parentEmail === parentEmail1);
+      expect(group1).toBeDefined();
+      expect(group1?.students.length).toBe(2);
+      expect(group1?.students.map(s => s.id)).toContain(student1.id);
+      expect(group1?.students.map(s => s.id)).toContain(student2.id);
+
+      const group2 = groups.find(g => g.parentEmail === parentEmail2);
+      expect(group2).toBeDefined();
+      expect(group2?.students.length).toBe(1);
+      expect(group2?.students[0].id).toBe(student3.id);
+    });
+
+    it('should group students without parent email together', async () => {
+      const student1 = await createStudent(createTestStudentData({ parentEmail: null, firstName: 'NoEmail1', lastName: 'Student' }));
+      const student2 = await createStudent(createTestStudentData({ parentEmail: null, firstName: 'NoEmail2', lastName: 'Student' }));
+      const student3 = await createStudent(createTestStudentData({ parentEmail: 'parent@example.com', firstName: 'WithEmail', lastName: 'Student' }));
+
+      const groups = await getStudentsGroupedByParentEmail();
+
+      expect(groups.length).toBe(2);
+
+      const nullGroup = groups.find(g => g.parentEmail === null);
+      expect(nullGroup).toBeDefined();
+      expect(nullGroup?.students.length).toBe(2);
+      expect(nullGroup?.students.map(s => s.id)).toContain(student1.id);
+      expect(nullGroup?.students.map(s => s.id)).toContain(student2.id);
+
+      const emailGroup = groups.find(g => g.parentEmail === 'parent@example.com');
+      expect(emailGroup).toBeDefined();
+      expect(emailGroup?.students.length).toBe(1);
+      expect(emailGroup?.students[0].id).toBe(student3.id);
+    });
+
+    it('should sort groups alphabetically by parent email with null emails last', async () => {
+      const parentEmailA = `a_parent${Date.now()}@example.com`;
+      const parentEmailZ = `z_parent${Date.now()}@example.com`;
+
+      await createStudent(createTestStudentData({ parentEmail: parentEmailZ, firstName: 'Z' }));
+      await createStudent(createTestStudentData({ parentEmail: null, firstName: 'Null' }));
+      await createStudent(createTestStudentData({ parentEmail: parentEmailA, firstName: 'A' }));
+
+      const groups = await getStudentsGroupedByParentEmail();
+
+      expect(groups.length).toBe(3);
+      // First group should be parentEmailA (alphabetically first)
+      expect(groups[0].parentEmail).toBe(parentEmailA);
+      // Second group should be parentEmailZ (alphabetically second)
+      expect(groups[1].parentEmail).toBe(parentEmailZ);
+      // Last group should be null (null emails last)
+      expect(groups[2].parentEmail).toBeNull();
+    });
+
+    it('should sort students within each group by last name then first name', async () => {
+      const parentEmail = `parent${Date.now()}@example.com`;
+
+      // Create students in non-alphabetical order
+      const student1 = await createStudent(createTestStudentData({
+        parentEmail,
+        firstName: 'Charlie',
+        lastName: 'Zebra'
+      }));
+      const student2 = await createStudent(createTestStudentData({
+        parentEmail,
+        firstName: 'Alice',
+        lastName: 'Apple'
+      }));
+      const student3 = await createStudent(createTestStudentData({
+        parentEmail,
+        firstName: 'Bob',
+        lastName: 'Apple'
+      }));
+
+      const groups = await getStudentsGroupedByParentEmail();
+      const group = groups.find(g => g.parentEmail === parentEmail);
+
+      expect(group).toBeDefined();
+      expect(group?.students.length).toBe(3);
+
+      // Should be sorted alphabetically: Apple Alice, Apple Bob, Zebra Charlie
+      expect(group?.students[0].lastName).toBe('Apple');
+      expect(group?.students[0].firstName).toBe('Alice');
+      expect(group?.students[1].lastName).toBe('Apple');
+      expect(group?.students[1].firstName).toBe('Bob');
+      expect(group?.students[2].lastName).toBe('Zebra');
+      expect(group?.students[2].firstName).toBe('Charlie');
+    });
+
+    it('should handle multiple groups with different parent emails', async () => {
+      const parentEmail1 = `parent1${Date.now()}@example.com`;
+      const parentEmail2 = `parent2${Date.now()}@example.com`;
+      const parentEmail3 = `parent3${Date.now()}@example.com`;
+
+      await createStudent(createTestStudentData({ parentEmail: parentEmail1, firstName: 'Child1' }));
+      await createStudent(createTestStudentData({ parentEmail: parentEmail1, firstName: 'Child2' }));
+      await createStudent(createTestStudentData({ parentEmail: parentEmail2, firstName: 'Child3' }));
+      await createStudent(createTestStudentData({ parentEmail: parentEmail3, firstName: 'Child4' }));
+      await createStudent(createTestStudentData({ parentEmail: parentEmail3, firstName: 'Child5' }));
+      await createStudent(createTestStudentData({ parentEmail: parentEmail3, firstName: 'Child6' }));
+
+      const groups = await getStudentsGroupedByParentEmail();
+
+      expect(groups.length).toBe(3);
+
+      const group1 = groups.find(g => g.parentEmail === parentEmail1);
+      expect(group1?.students.length).toBe(2);
+
+      const group2 = groups.find(g => g.parentEmail === parentEmail2);
+      expect(group2?.students.length).toBe(1);
+
+      const group3 = groups.find(g => g.parentEmail === parentEmail3);
+      expect(group3?.students.length).toBe(3);
+    });
+
+    it('should return correct data structure for each group', async () => {
+      const parentEmail = `parent${Date.now()}@example.com`;
+      const testData = createTestStudentData({ parentEmail, firstName: 'Test', lastName: 'Student' });
+      const created = await createStudent(testData);
+
+      const groups = await getStudentsGroupedByParentEmail();
+      const group = groups.find(g => g.parentEmail === parentEmail);
+
+      expect(group).toBeDefined();
+      expect(group?.parentEmail).toBe(parentEmail);
+      expect(group?.students.length).toBe(1);
+
+      const student = group?.students[0];
+      expect(student?.id).toBe(created.id);
+      expect(student?.lastName).toBe(testData.lastName);
+      expect(student?.firstName).toBe(testData.firstName);
+      expect(student?.class).toBe(testData.class);
+      expect(student?.feedingRegime).toBe(testData.feedingRegime);
+      expect(student?.parentEmail).toBe(parentEmail);
+      expect(student?.created).toBeInstanceOf(Date);
     });
   });
 

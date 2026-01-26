@@ -179,3 +179,50 @@ export async function deleteStudent(id: number): Promise<void> {
     throw new Error('Student not found');
   }
 }
+
+/**
+ * Group type for students grouped by parent email
+ */
+export interface StudentsByParentEmail {
+  parentEmail: string | null;
+  students: Student[];
+}
+
+/**
+ * Get all students grouped by parent email
+ */
+export async function getStudentsGroupedByParentEmail(): Promise<StudentsByParentEmail[]> {
+  const students = await getAllStudents();
+  
+  // Group students by parentEmail
+  const grouped = new Map<string | null, Student[]>();
+  
+  for (const student of students) {
+    const email = student.parentEmail || null;
+    if (!grouped.has(email)) {
+      grouped.set(email, []);
+    }
+    grouped.get(email)!.push(student);
+  }
+  
+  // Convert to array and sort
+  const result: StudentsByParentEmail[] = Array.from(grouped.entries())
+    .map(([parentEmail, students]) => ({
+      parentEmail,
+      students: students.sort((a, b) => {
+        // Sort by last name, then first name
+        const lastNameCompare = a.lastName.localeCompare(b.lastName);
+        if (lastNameCompare !== 0) return lastNameCompare;
+        return a.firstName.localeCompare(b.firstName);
+      }),
+    }))
+    .sort((a, b) => {
+      // Sort groups: null emails last, then alphabetically by email
+      if (a.parentEmail === null && b.parentEmail !== null) return 1;
+      if (a.parentEmail !== null && b.parentEmail === null) return -1;
+      if (a.parentEmail === null && b.parentEmail === null) return 0;
+      return (a.parentEmail || '').localeCompare(b.parentEmail || '');
+    });
+  
+  return result;
+}

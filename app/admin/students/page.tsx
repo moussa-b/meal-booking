@@ -1,20 +1,28 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getStudentsGroupedByParentEmail } from "@/lib/services/student.service";
+import { StudentsTable } from "./students-table";
 
-export default function StudentsPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function StudentsPage() {
+  let groups = [];
+  let error: string | null = null;
+  let errorDetail: string | null = null;
+
+  try {
+    groups = await getStudentsGroupedByParentEmail();
+  } catch (err) {
+    console.error("Error fetching students:", err);
+    error = "Erreur lors du chargement des élèves";
+    errorDetail = err instanceof Error ? err.message : String(err);
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestion des élèves</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Cette section permettra de consulter et gérer les élèves enregistrés
-            : visualiser la liste des élèves, leurs informations et leurs
-            réservations.
-          </p>
-        </CardContent>
-      </Card>
+      <StudentsTable
+        groups={groups}
+        error={error}
+        errorDetail={errorDetail}
+      />
     </div>
   );
 }
