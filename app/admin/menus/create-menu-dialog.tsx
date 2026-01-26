@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, PlusIcon } from 'lucide-react';
-import { DayOfWeek, type WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
+import { DayOfWeek, getMonday, isMonday } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import type { School } from '@/lib/models/school';
@@ -29,7 +29,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { getMonday, isMonday } from '@/lib/utils/date.utils';
 import { MenuDayForm } from './menu-day-form';
 
 const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];

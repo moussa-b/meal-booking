@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import type { School as SchoolType } from "@/lib/models/school";
 import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
-import { DayOfWeek } from "@/lib/models/weekly-menu";
+import { DayOfWeek } from "@/lib/utils/date.utils";
 
 const DAYS_FRENCH: Record<string, string> = {
   lundi: "Lundi",

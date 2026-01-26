@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createBooking, getBookingById, getBookingsByEmail, } from '@/lib/services/booking.service';
+import { createBooking, getBookingById, getBookingsByEmail, getAllBookings } from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestMealData, createTestSchoolData, createTestWeeklyMenuData } from '../helpers/test-data';
 import { createSchool } from '@/lib/services/school.service';
 import { createMeal } from '@/lib/services/meal.service';
 import { createWeeklyMenu } from '@/lib/services/weekly-menu.service';
 import { MealType } from '@/lib/models/meal';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/utils/date.utils';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 
@@ -330,6 +330,82 @@ describe('Booking Service', () => {
       // Should be ordered by created DESC (newest first)
       expect(bookings[0].id).toBe(booking2.id);
       expect(bookings[1].id).toBe(booking1.id);
+    });
+  });
+
+  describe('getAllBookings', () => {
+    it('should return empty array when no bookings exist', async () => {
+      const bookings = await getAllBookings();
+      expect(bookings).toEqual([]);
+    });
+
+    it('should return all bookings regardless of email', async () => {
+      const email1 = `test1${Date.now()}@example.com`;
+      const email2 = `test2${Date.now()}@example.com`;
+      const bookingData1 = await createTestBookingData({ email: email1 });
+      const bookingData2 = await createTestBookingData({ email: email2 });
+      const bookingData3 = await createTestBookingData({ email: email1 });
+
+      const booking1 = await createBooking(bookingData1, false);
+      const booking2 = await createBooking(bookingData2, false);
+      const booking3 = await createBooking(bookingData3, false);
+
+      const bookings = await getAllBookings();
+
+      expect(bookings.length).toBeGreaterThanOrEqual(3);
+      const bookingIds = bookings.map((b) => b.id);
+      expect(bookingIds).toContain(booking1.id);
+      expect(bookingIds).toContain(booking2.id);
+      expect(bookingIds).toContain(booking3.id);
+      // Verify all bookings have status field
+      bookings.forEach((booking) => {
+        expect(booking.status).toBeDefined();
+      });
+    });
+
+    it('should return bookings ordered by created DESC', async () => {
+      const bookingData1 = await createTestBookingData();
+      const booking1 = await createBooking(bookingData1, false);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const bookingData2 = await createTestBookingData();
+      const booking2 = await createBooking(bookingData2, false);
+
+      const bookings = await getAllBookings();
+
+      // Find our bookings in the results
+      const booking1Index = bookings.findIndex((b) => b.id === booking1.id);
+      const booking2Index = bookings.findIndex((b) => b.id === booking2.id);
+
+      // booking2 should come before booking1 (newest first)
+      expect(booking2Index).toBeLessThan(booking1Index);
+    });
+
+    it('should return bookings with full details (students, menu selections, status)', async () => {
+      const bookingData = await createTestBookingData({
+        students: [
+          {
+            lastName: 'Doe',
+            firstName: 'John',
+            class: 'CM1',
+            feedingRegime: null,
+          },
+        ],
+      });
+      const created = await createBooking(bookingData, false);
+
+      const bookings = await getAllBookings();
+      const booking = bookings.find((b) => b.id === created.id);
+
+      expect(booking).toBeDefined();
+      expect(booking?.id).toBe(created.id);
+      expect(booking?.email).toBe(bookingData.email);
+      expect(booking?.schoolId).toBe(bookingData.schoolId);
+      expect(booking?.menuId).toBe(bookingData.menuId);
+      expect(booking?.status).toBe(PaymentStatus.PENDING);
+      expect(booking?.students).toBeDefined();
+      expect(booking?.students?.length).toBe(1);
+      expect(booking?.students?.[0].menuSelections).toBeDefined();
+      expect(booking?.students?.[0].menuSelections?.length).toBeGreaterThan(0);
     });
   });
 });

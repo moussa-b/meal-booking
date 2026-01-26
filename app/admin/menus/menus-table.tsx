@@ -7,7 +7,7 @@ import { EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import type { School } from '@/lib/models/school';
 import { type ActionResult } from './actions';

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createBooking, getBookingsByEmail } from '@/lib/services/booking.service';
+import { createBooking, getBookingsByEmail, getAllBookings } from '@/lib/services/booking.service';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 import { z } from 'zod';
 
@@ -96,39 +96,41 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/bookings
- * Get bookings by email
+ * Get bookings by email or all bookings
  * Query params:
- *   - email: required, the email address to search for
+ *   - email: optional, if provided, returns bookings for that email only
+ *   - if no email param, returns all bookings
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
 
-    if (!email) {
-      return NextResponse.json(
-        {
-          error: 'Bad Request',
-          message: 'email query parameter is required',
-        },
-        { status: 400 }
-      );
+    // If email is provided, get bookings by email
+    if (email) {
+      // Validate email format
+      const emailSchema = z.string().email();
+      const emailValidation = emailSchema.safeParse(email);
+      if (!emailValidation.success) {
+        return NextResponse.json(
+          {
+            error: 'Bad Request',
+            message: 'Invalid email format',
+          },
+          { status: 400 }
+        );
+      }
+
+      const bookings = await getBookingsByEmail(email);
+
+      return NextResponse.json({
+        data: bookings,
+        count: bookings.length,
+      });
     }
 
-    // Validate email format
-    const emailSchema = z.string().email();
-    const emailValidation = emailSchema.safeParse(email);
-    if (!emailValidation.success) {
-      return NextResponse.json(
-        {
-          error: 'Bad Request',
-          message: 'Invalid email format',
-        },
-        { status: 400 }
-      );
-    }
-
-    const bookings = await getBookingsByEmail(email);
+    // If no email param, get all bookings
+    const bookings = await getAllBookings();
 
     return NextResponse.json({
       data: bookings,

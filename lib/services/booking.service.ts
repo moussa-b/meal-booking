@@ -245,3 +245,23 @@ export async function getBookingsByEmail(email: string): Promise<Booking[]> {
 
   return bookingsWithDetails.filter((booking): booking is Booking => booking !== null);
 }
+
+/**
+ * Get all bookings with full details
+ */
+export async function getAllBookings(): Promise<Booking[]> {
+  const bookings = await query<BookingRow[]>(
+    'SELECT id, created, email, schoolId, menuId, status FROM bookings ORDER BY created DESC'
+  );
+
+  if (bookings.length === 0) {
+    return [];
+  }
+
+  // Get all bookings with their details
+  const bookingsWithDetails = await Promise.all(
+    bookings.map((bookingRow) => getBookingById(bookingRow.id))
+  );
+
+  return bookingsWithDetails.filter((booking): booking is Booking => booking !== null);
+}

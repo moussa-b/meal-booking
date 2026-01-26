@@ -9,7 +9,7 @@ import { format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
 import type { WeeklyMenu, WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import type { School } from '@/lib/models/school';

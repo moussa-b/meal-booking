@@ -8,31 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import type { BookingFormData } from './booking-wizard';
 import { useEffect, useState } from 'react';
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
-
-const DAYS = ["lundi", "mardi", "jeudi", "vendredi"] as const;
-
-// Map day of week (0-6) to French day names
-const DAY_NAMES: Record<number, string> = {
-  [DayOfWeek.MONDAY]: "Lundi",
-  [DayOfWeek.TUESDAY]: "Mardi",
-  [DayOfWeek.WEDNESDAY]: "Mercredi",
-  [DayOfWeek.THURSDAY]: "Jeudi",
-  [DayOfWeek.FRIDAY]: "Vendredi",
-  [DayOfWeek.SATURDAY]: "Samedi",
-  [DayOfWeek.SUNDAY]: "Dimanche",
-};
-
-// Map day of week to lowercase key for form
-const DAY_KEYS: Record<number, (typeof DAYS)[number] | null> = {
-  [DayOfWeek.MONDAY]: "lundi",
-  [DayOfWeek.TUESDAY]: "mardi",
-  [DayOfWeek.THURSDAY]: "jeudi",
-  [DayOfWeek.FRIDAY]: "vendredi",
-  [DayOfWeek.WEDNESDAY]: null,
-  [DayOfWeek.SATURDAY]: null,
-  [DayOfWeek.SUNDAY]: null,
-};
+import { DAY_KEYS, DAY_NAMES } from '@/lib/utils/date.utils';
 
 // Format date to French format
 function formatDateFrench(date: Date): string {

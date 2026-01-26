@@ -6,7 +6,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupText } from '@/components/ui/input-group';
 import type { Meal } from '@/lib/models/meal';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/utils/date.utils';
 
 const DAY_LABELS: Record<number, string> = {
   [DayOfWeek.MONDAY]: 'Lundi',

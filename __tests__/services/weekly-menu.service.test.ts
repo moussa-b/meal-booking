@@ -7,7 +7,7 @@ import {
   getWeeklyMenuByWeekStart,
   updateWeeklyMenu,
 } from '@/lib/services/weekly-menu.service';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/utils/date.utils';
 import { MealType } from '@/lib/models/meal';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestMealData, createTestWeeklyMenuData, createTestSchoolData } from '../helpers/test-data';

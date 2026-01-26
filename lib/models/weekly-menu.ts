@@ -1,20 +1,6 @@
 import { Meal } from './meal';
 
 /**
- * Day of week enum
- * Represents the days of the week (0 = Monday, 6 = Sunday)
- */
-export enum DayOfWeek {
-  MONDAY = 0,
-  TUESDAY = 1,
-  WEDNESDAY = 2,
-  THURSDAY = 3,
-  FRIDAY = 4,
-  SATURDAY = 5,
-  SUNDAY = 6,
-}
-
-/**
  * WeeklyMenu model interface
  * Represents a weekly menu starting on a Monday
  */

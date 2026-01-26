@@ -1,5 +1,5 @@
 import { MealType } from '@/lib/models/meal';
-import { DayOfWeek } from '@/lib/models/weekly-menu';
+import { DayOfWeek } from '@/lib/utils/date.utils';
 import { getMonday } from '@/lib/utils/date.utils';
 
 /**

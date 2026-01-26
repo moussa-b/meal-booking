@@ -3,6 +3,45 @@
  */
 
 /**
+ * Day of week enum
+ * Represents the days of the week (0 = Monday, 6 = Sunday)
+ */
+export enum DayOfWeek {
+  MONDAY = 0,
+  TUESDAY = 1,
+  WEDNESDAY = 2,
+  THURSDAY = 3,
+  FRIDAY = 4,
+  SATURDAY = 5,
+  SUNDAY = 6,
+}
+
+// Day name mapping (capitalized for display)
+export const DAY_NAMES: Record<number, string> = {
+  [DayOfWeek.MONDAY]: 'Lundi',
+  [DayOfWeek.TUESDAY]: 'Mardi',
+  [DayOfWeek.WEDNESDAY]: 'Mercredi',
+  [DayOfWeek.THURSDAY]: 'Jeudi',
+  [DayOfWeek.FRIDAY]: 'Vendredi',
+  [DayOfWeek.SATURDAY]: 'Samedi',
+  [DayOfWeek.SUNDAY]: 'Dimanche',
+};
+
+// Available days for meal selection (lowercase)
+export const DAYS = ['lundi', 'mardi', 'jeudi', 'vendredi'] as const;
+
+// Map day of week to lowercase key for form
+export const DAY_KEYS: Record<number, (typeof DAYS)[number] | null> = {
+  [DayOfWeek.MONDAY]: 'lundi',
+  [DayOfWeek.TUESDAY]: 'mardi',
+  [DayOfWeek.THURSDAY]: 'jeudi',
+  [DayOfWeek.FRIDAY]: 'vendredi',
+  [DayOfWeek.WEDNESDAY]: null,
+  [DayOfWeek.SATURDAY]: null,
+  [DayOfWeek.SUNDAY]: null,
+};
+
+/**
  * Returns the Monday of the week for a given date
  * @param date - The date to get the Monday for
  * @returns The Monday date of that week
@@ -71,4 +110,22 @@ export function formatDate(date: Date): string {
     month: 'long',
     day: 'numeric',
   });
+}
+
+/**
+ * Formats a day with full date (e.g., "Lundi 19 janvier")
+ * @param weekStartDate - The Monday date of the week
+ * @param dayOfWeek - The day of week (0 = Monday, 1 = Tuesday, etc.)
+ * @returns The formatted day string (e.g., "Lundi 19 janvier")
+ */
+export function formatDayWithDate(weekStartDate: Date, dayOfWeek: number): string {
+  const date = new Date(weekStartDate);
+  // Add days to get to the specific day (Monday is day 0, so add dayOfWeek days)
+  date.setDate(date.getDate() + dayOfWeek);
+
+  const dayName = DAY_NAMES[dayOfWeek] || `Jour ${dayOfWeek}`;
+  const dayNumber = date.getDate();
+  const monthName = date.toLocaleDateString('fr-FR', { month: 'long' });
+
+  return `${dayName} ${dayNumber} ${monthName}`;
 }
