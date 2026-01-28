@@ -1,5 +1,6 @@
 import { getStudentsGroupedByParentEmail } from "@/lib/services/student.service";
 import { StudentsTable } from "./students-table";
+import { updateStudentAction, deleteStudentAction, } from "./actions";
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,8 @@ export default async function StudentsPage() {
     <div className="space-y-6">
       <StudentsTable
         groups={groups}
+        updateStudentAction={updateStudentAction}
+        deleteStudentAction={deleteStudentAction}
         error={error}
         errorDetail={errorDetail}
       />

@@ -1,21 +1,88 @@
 'use client';
 
-import { Fragment, useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
+import { Fragment, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { ChevronDownIcon, ChevronRightIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import type { StudentsByParentEmail } from '@/lib/services/student.service';
+import type { Student } from '@/lib/models/student';
+import { type ActionResult } from './actions';
+import { type UpdateStudentInput, } from '@/lib/validations/student.validation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatDate } from '@/lib/utils/date.utils';
+import { EditStudentDialog } from './edit-student-dialog';
 
 interface StudentsTableProps {
   groups: StudentsByParentEmail[];
+  updateStudentAction: (id: number, data: UpdateStudentInput) => Promise<ActionResult>;
+  deleteStudentAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
   errorDetail?: string | null;
 }
 
-export function StudentsTable({groups, error, errorDetail,}: StudentsTableProps) {
+export function StudentsTable({
+  groups: initialGroups,
+  updateStudentAction,
+  deleteStudentAction,
+  error,
+  errorDetail,
+}: StudentsTableProps) {
+  const router = useRouter();
+  const [groups, setGroups] = useState(initialGroups);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  // Update groups when initialGroups changes (after revalidation)
+  useEffect(() => {
+    setGroups(initialGroups);
+  }, [initialGroups]);
+
+  // Handle edit
+  const handleEditClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditDialogOpen(false);
+    setSelectedStudent(null);
+  };
+
+  // Handle delete
+  const handleDeleteClick = (id: number) => {
+    setDeleteId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteId === null) return;
+
+    const result = await deleteStudentAction(deleteId);
+    if (result.success) {
+      toast.success("Élève supprimé avec succès");
+      setIsDeleteDialogOpen(false);
+      setDeleteId(null);
+      router.refresh();
+    } else {
+      toast.error(result.error || "Erreur lors de la suppression");
+    }
+  };
 
   const toggleGroup = (parentEmail: string | null) => {
     const key = parentEmail ?? '__null__';
@@ -41,7 +108,14 @@ export function StudentsTable({groups, error, errorDetail,}: StudentsTableProps)
 
   const totalStudents = groups.reduce((sum, group) => sum + group.students.length, 0);
 
+  const studentToDelete = deleteId
+    ? groups
+        .flatMap((g) => g.students)
+        .find((s) => s.id === deleteId)
+    : null;
+
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Gestion des élèves</CardTitle>
@@ -72,6 +146,7 @@ export function StudentsTable({groups, error, errorDetail,}: StudentsTableProps)
                 <TableHead>Classe</TableHead>
                 <TableHead>Régime alimentaire</TableHead>
                 <TableHead>Date de création</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -103,7 +178,7 @@ export function StudentsTable({groups, error, errorDetail,}: StudentsTableProps)
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell colSpan={5}></TableCell>
+                      <TableCell colSpan={6}></TableCell>
                     </TableRow>
                     {/* Student Rows (only visible when expanded) */}
                     {isExpanded &&
@@ -121,6 +196,30 @@ export function StudentsTable({groups, error, errorDetail,}: StudentsTableProps)
                             )}
                           </TableCell>
                           <TableCell>{formatDate(student.created)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditClick(student);
+                                }}
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteClick(student.id);
+                                }}
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                   </Fragment>
@@ -131,5 +230,39 @@ export function StudentsTable({groups, error, errorDetail,}: StudentsTableProps)
         )}
       </CardContent>
     </Card>
+
+    {/* Edit Dialog */}
+    <EditStudentDialog
+      student={selectedStudent}
+      updateStudentAction={updateStudentAction}
+      open={isEditDialogOpen}
+      onOpenChange={handleEditClose}
+    />
+
+    {/* Delete Alert Dialog */}
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+          <AlertDialogDescription>
+            Êtes-vous sûr de vouloir supprimer l&apos;élève{" "}
+            <strong>
+              {studentToDelete
+                ? `${studentToDelete.firstName} ${studentToDelete.lastName}`
+                : ""}
+            </strong> ? Cette action est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setDeleteId(null)}>
+            Annuler
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteConfirm}>
+            Supprimer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
