@@ -74,7 +74,7 @@ export async function createBooking(
 
     // Get all weeklyMenuDayIds from the menu to validate selections
     const validMenuDayIds = new Set(menu.days?.map(day => day.id) || []);
-    
+
     // Validate all selected menu days belong to the menu
     for (const selectedIds of Object.values(data.menuSelections)) {
       for (const menuDayId of selectedIds) {
@@ -244,6 +244,40 @@ export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   );
 
   return bookingsWithDetails.filter((booking): booking is Booking => booking !== null);
+}
+
+/**
+ * Update booking payment status
+ */
+export async function updateBookingStatus(bookingId: number, status: PaymentStatus): Promise<void> {
+  await query('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+}
+
+/**
+ * Get total amount for a booking (sum of menu day prices for all selections)
+ */
+export async function getBookingTotalAmount(bookingId: number): Promise<number> {
+  const booking = await getBookingById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  const menu = await getWeeklyMenuById(booking.menuId);
+  if (!menu?.days?.length) {
+    throw new Error('Menu not found or has no days');
+  }
+
+  const priceMap = new Map(menu.days.map((day) => [day.id, day.price]));
+  let total = 0;
+
+  for (const student of booking.students ?? []) {
+    for (const selection of student.menuSelections ?? []) {
+      const price = priceMap.get(selection.weeklyMenuDayId) ?? 0;
+      total += price;
+    }
+  }
+
+  return Math.round(total * 100) / 100;
 }
 
 /**

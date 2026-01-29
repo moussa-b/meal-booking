@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createBooking, getBookingById, getBookingsByEmail, getAllBookings } from '@/lib/services/booking.service';
+import {
+  createBooking,
+  getBookingById,
+  getBookingsByEmail,
+  getAllBookings,
+  updateBookingStatus,
+  getBookingTotalAmount,
+} from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestMealData, createTestSchoolData, createTestWeeklyMenuData } from '../helpers/test-data';
 import { createSchool } from '@/lib/services/school.service';
@@ -406,6 +413,145 @@ describe('Booking Service', () => {
       expect(booking?.students?.length).toBe(1);
       expect(booking?.students?.[0].menuSelections).toBeDefined();
       expect(booking?.students?.[0].menuSelections?.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('updateBookingStatus', () => {
+    it('should update booking status to PAID', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      expect(created.status).toBe(PaymentStatus.PENDING);
+
+      await updateBookingStatus(created.id, PaymentStatus.PAID);
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.status).toBe(PaymentStatus.PAID);
+    });
+
+    it('should update booking status to CANCELED', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+
+      await updateBookingStatus(created.id, PaymentStatus.CANCELED);
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.status).toBe(PaymentStatus.CANCELED);
+    });
+
+    it('should update booking status to FAILED', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+
+      await updateBookingStatus(created.id, PaymentStatus.FAILED);
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.status).toBe(PaymentStatus.FAILED);
+    });
+  });
+
+  describe('getBookingTotalAmount', () => {
+    it('should return total amount for booking with one student and one menu day', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      // Default: one student, Monday only, price 5.5
+      const total = await getBookingTotalAmount(created.id);
+      expect(total).toBe(5.5);
+    });
+
+    it('should return total amount for booking with one student and multiple menu days', async () => {
+      const bookingData = await createTestBookingData();
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const menuDays = menu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
+      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      bookingData.menuSelections = {
+        [studentKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+      };
+      const created = await createBooking(bookingData, false);
+      // Monday 5.5 + Tuesday 4.5 = 10
+      const total = await getBookingTotalAmount(created.id);
+      expect(total).toBe(10);
+    });
+
+    it('should return total amount for booking with multiple students and selections', async () => {
+      const bookingData = await createTestBookingData({
+        students: [
+          { lastName: 'Doe', firstName: 'John', class: 'CM1', feedingRegime: null },
+          { lastName: 'Doe', firstName: 'Jane', class: 'CE2', feedingRegime: null },
+        ],
+      });
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const menuDays = menu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
+      if (!mondayDay || !tuesdayDay) throw new Error('Menu days not found');
+      bookingData.menuSelections = {
+        'John-Doe-0': [mondayDay.id],
+        'Jane-Doe-1': [tuesdayDay.id],
+      };
+      const created = await createBooking(bookingData, false);
+      // John: Monday 5.5, Jane: Tuesday 4.5 -> total 10
+      const total = await getBookingTotalAmount(created.id);
+      expect(total).toBe(10);
+    });
+
+    it('should return 0 when booking has no menu selections', async () => {
+      const bookingData = await createTestBookingData();
+      bookingData.menuSelections = {};
+      const created = await createBooking(bookingData, false);
+      const total = await getBookingTotalAmount(created.id);
+      expect(total).toBe(0);
+    });
+
+    it('should round total to 2 decimal places', async () => {
+      const mainDish = await createMeal(createTestMealData({ type: MealType.MAIN_COURSE }));
+      const appetizer = await createMeal(createTestMealData({ type: MealType.APPETIZER }));
+      const dessert = await createMeal(createTestMealData({ type: MealType.DESSERT }));
+      const school = await createSchool(createTestSchoolData());
+      const menu = await createWeeklyMenu(
+        createTestWeeklyMenuData({
+          schoolId: school.id,
+          days: [
+            {
+              dayOfWeek: DayOfWeek.MONDAY,
+              mainDishId: mainDish.id,
+              appetizerId: appetizer.id,
+              dessertId: dessert.id,
+              price: 3.33,
+            },
+            {
+              dayOfWeek: DayOfWeek.TUESDAY,
+              mainDishId: mainDish.id,
+              appetizerId: null,
+              dessertId: dessert.id,
+              price: 3.33,
+            },
+          ],
+        })
+      );
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const fullMenu = await getWeeklyMenuById(menu.id);
+      const menuDays = fullMenu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
+      const bookingData = await createTestBookingData({
+        schoolId: school.id,
+        menuId: menu.id,
+        menuSelections:
+          mondayDay && tuesdayDay
+            ? { 'John-Doe-0': [mondayDay.id, tuesdayDay.id] }
+            : {},
+      });
+      const created = await createBooking(bookingData, false);
+      const total = await getBookingTotalAmount(created.id);
+      expect(total).toBe(6.66); // 3.33 + 3.33 rounded
+    });
+
+    it('should throw when booking does not exist', async () => {
+      await expect(getBookingTotalAmount(99999)).rejects.toThrow('Booking not found');
     });
   });
 });

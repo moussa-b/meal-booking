@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import type { HistoryFormData } from './history-wizard';
 import type { Booking } from '@/lib/models/booking';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { formatDate } from '@/lib/utils/date.utils';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface BookingWithDetails extends Booking {
   totalMeals: number;
@@ -61,6 +63,7 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (!email || !schoolId) {
@@ -155,7 +158,7 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
     }
 
     fetchBookings();
-  }, [email, schoolId, onBookingsLoaded, onLoadingChange]);
+  }, [email, schoolId, onBookingsLoaded, onLoadingChange, refreshTrigger]);
 
   if (loading) {
     return (
@@ -185,7 +188,44 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
     );
   }
 
-  return (
+  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? '';
+
+  async function createOrder(bookingId: number): Promise<string> {
+    const res = await fetch('/api/payments/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message ?? 'Failed to create order');
+    }
+    return data.orderId;
+  }
+
+  async function onApprove(orderData: { orderID: string }, bookingId: number): Promise<void> {
+    const res = await fetch('/api/payments/capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: orderData.orderID,
+        bookingId,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.message ?? 'Paiement échoué');
+      return;
+    }
+    toast.success('Paiement effectué');
+    setRefreshTrigger((t) => t + 1);
+  }
+
+  function onPayPalError(): void {
+    toast.error('Erreur lors du paiement');
+  }
+
+  const content = (
     <div className="space-y-4">
       {bookings.map((booking) => (
         <div
@@ -227,8 +267,33 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
               </p>
             </div>
           </div>
+          {booking.status !== PaymentStatus.PAID && paypalClientId && (
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              <PayPalButtons
+                style={{ layout: 'horizontal' }}
+                createOrder={() => createOrder(booking.id)}
+                onApprove={(data) => onApprove(data, booking.id)}
+                onError={onPayPalError}
+              />
+            </div>
+          )}
         </div>
       ))}
     </div>
   );
+
+  if (paypalClientId) {
+    return (
+      <PayPalScriptProvider
+        options={{
+          clientId: paypalClientId,
+          currency: 'EUR',
+        }}
+      >
+        {content}
+      </PayPalScriptProvider>
+    );
+  }
+
+  return content;
 }
