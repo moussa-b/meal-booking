@@ -1,11 +1,11 @@
-import { getStudentsGroupedByParentEmail } from "@/lib/services/student.service";
+import { getStudentsGroupedByParentEmail, type StudentsByParentEmail } from '@/lib/services/student.service';
 import { StudentsTable } from "./students-table";
 import { updateStudentAction, deleteStudentAction, } from "./actions";
 
 export const dynamic = 'force-dynamic';
 
 export default async function StudentsPage() {
-  let groups = [];
+  let groups: StudentsByParentEmail[] = [];
   let error: string | null = null;
   let errorDetail: string | null = null;
 
