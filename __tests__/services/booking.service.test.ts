@@ -5,6 +5,7 @@ import {
   getBookingsByEmail,
   getAllBookings,
   updateBookingStatus,
+  updateBookingOrderId,
   getBookingTotalAmount,
 } from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
@@ -446,6 +447,29 @@ describe('Booking Service', () => {
 
       const updated = await getBookingById(created.id);
       expect(updated?.status).toBe(PaymentStatus.FAILED);
+    });
+  });
+
+  describe('updateBookingOrderId', () => {
+    it('should set paypalOrderId on booking', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      expect(created.paypalOrderId).toBeOneOf([null, undefined]);
+
+      await updateBookingOrderId(created.id, 'PAYPAL-ORDER-123');
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.paypalOrderId).toBe('PAYPAL-ORDER-123');
+    });
+
+    it('should overwrite existing paypalOrderId', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      await updateBookingOrderId(created.id, 'OLD-ORDER');
+      await updateBookingOrderId(created.id, 'NEW-ORDER');
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.paypalOrderId).toBe('NEW-ORDER');
     });
   });
 

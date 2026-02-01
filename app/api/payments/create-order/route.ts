@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBookingById } from '@/lib/services/booking.service';
-import { getBookingTotalAmount } from '@/lib/services/booking.service';
+import {
+  getBookingById,
+  getBookingTotalAmount,
+  updateBookingOrderId,
+} from '@/lib/services/booking.service';
 import { getPayPalAccessToken, PAYPAL_API_BASE } from '@/lib/services/paypal.service';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { z } from 'zod';
@@ -9,9 +12,19 @@ const createOrderSchema = z.object({
   bookingId: z.number().int().positive(),
 });
 
+/** PayPal order statuses that allow reusing the order (user can still approve or we can capture) */
+const REUSABLE_ORDER_STATUSES = ['CREATED', 'APPROVED'];
+
+/** Extract approval URL from PayPal order response links */
+function getApprovalUrl(orderJson: { links?: Array<{ href: string; rel: string }> }): string | null {
+  const link = orderJson.links?.find((l) => l.rel === 'approve');
+  return link?.href ?? null;
+}
+
 /**
  * POST /api/payments/create-order
- * Create a PayPal order for an unpaid booking
+ * Create a PayPal order for an unpaid booking, or reuse existing valid orderId if stored.
+ * Returns { orderId, approvalUrl } for redirect/popup flow.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +64,29 @@ export async function POST(request: NextRequest) {
 
     const accessToken = await getPayPalAccessToken();
     const value = total.toFixed(2);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+    // Reuse existing PayPal order if stored and still valid
+    if (booking.paypalOrderId) {
+      const getOrderRes = await fetch(
+        `${PAYPAL_API_BASE}/v2/checkout/orders/${booking.paypalOrderId}`,
+        {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (getOrderRes.ok) {
+        const existingOrder = (await getOrderRes.json()) as { status?: string; links?: Array<{ href: string; rel: string }> };
+        if (existingOrder.status && REUSABLE_ORDER_STATUSES.includes(existingOrder.status)) {
+          const approvalUrl = getApprovalUrl(existingOrder);
+          return NextResponse.json({
+            orderId: booking.paypalOrderId,
+            approvalUrl: approvalUrl ?? undefined,
+          });
+        }
+      }
+      // Order missing, expired, or already captured — fall through to create new
+    }
 
     const orderResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
       method: 'POST',
@@ -69,6 +105,10 @@ export async function POST(request: NextRequest) {
             },
           },
         ],
+        application_context: {
+          return_url: `${baseUrl}/booking/return?bookingId=${bookingId}`,
+          cancel_url: `${baseUrl}/booking/cancel?bookingId=${bookingId}`,
+        },
       }),
     });
 
@@ -81,8 +121,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const orderData = (await orderResponse.json()) as { id: string };
-    return NextResponse.json({ orderId: orderData.id });
+    const orderData = (await orderResponse.json()) as {
+      id: string;
+      links?: Array<{ href: string; rel: string }>;
+    };
+    await updateBookingOrderId(bookingId, orderData.id);
+    const approvalUrl = getApprovalUrl(orderData);
+
+    return NextResponse.json({
+      orderId: orderData.id,
+      approvalUrl: approvalUrl ?? undefined,
+    });
   } catch (error) {
     console.error('Create order error:', error);
     if (error instanceof Error && error.message.includes('PayPal credentials')) {

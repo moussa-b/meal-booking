@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, Mail, School, User, UtensilsCrossed } from "lucide-react";
 import type { BookingFormData } from "./booking-wizard";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { School as SchoolType } from "@/lib/models/school";
 import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
 import { DayOfWeek } from "@/lib/utils/date.utils";
@@ -105,8 +105,36 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   };
 
   const totalPrice = calculateTotalPrice();
+  const [paying, setPaying] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  const handleSubmit = async () => {
+  const submissionData = {
+    ...formData,
+    menuId: weeklyMenu?.id ?? 0,
+    saveChildrenInfo: formData.saveChildrenInfo ?? false,
+  };
+
+  const handlePaymentMessage = useCallback(
+    (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "payment_captured") {
+        setPaymentSuccess(true);
+        toast.success("Réservation enregistrée et payée avec succès!", {
+          description: "Vous recevrez une confirmation par email.",
+          duration: 5000,
+        });
+        onSubmitted?.();
+      }
+    },
+    [onSubmitted]
+  );
+
+  useEffect(() => {
+    window.addEventListener("message", handlePaymentMessage);
+    return () => window.removeEventListener("message", handlePaymentMessage);
+  }, [handlePaymentMessage]);
+
+  const handlePayWithPayPal = async () => {
     if (!weeklyMenu?.id) {
       toast.error("Erreur", {
         description: "Impossible de récupérer les informations du menu. Veuillez réessayer.",
@@ -115,41 +143,81 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       return;
     }
 
-    const submissionData = {
-      ...formData,
-      menuId: weeklyMenu.id,
-    };
+    if (totalPrice <= 0) {
+      toast.error("Erreur", {
+        description: "Aucun repas sélectionné. Veuillez sélectionner au moins un jour.",
+        duration: 5000,
+      });
+      return;
+    }
 
+    setPaying(true);
     try {
-      const response = await fetch("/api/bookings", {
+      const bookingRes = await fetch("/api/bookings", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submissionData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      if (!bookingRes.ok) {
+        const errorData = await bookingRes.json().catch(() => ({}));
         toast.error("Erreur", {
-          description: errorData.message || "Une erreur est survenue lors de l'enregistrement de la réservation.",
+          description: errorData.message ?? "Une erreur est survenue lors de l'enregistrement de la réservation.",
           duration: 5000,
         });
+        setPaying(false);
         return;
       }
 
-      toast.success("Réservation enregistrée avec succès!", {
-        description: "Vous recevrez une confirmation par email.",
-        duration: 5000,
+      const bookingResult = await bookingRes.json();
+      const bookingId = bookingResult.data?.id;
+      if (!bookingId) {
+        toast.error("Erreur", { description: "Réponse invalide du serveur.", duration: 5000 });
+        setPaying(false);
+        return;
+      }
+
+      const orderRes = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId }),
       });
-      onSubmitted?.();
+
+      if (!orderRes.ok) {
+        const orderErr = await orderRes.json().catch(() => ({}));
+        toast.error("Erreur", {
+          description: orderErr.message ?? "Impossible de créer le paiement PayPal.",
+          duration: 5000,
+        });
+        setPaying(false);
+        return;
+      }
+
+      const orderData = await orderRes.json();
+      const approvalUrl = orderData.approvalUrl ?? orderData.approval_url;
+      if (!approvalUrl) {
+        toast.error("Erreur", { description: "URL de paiement manquante.", duration: 5000 });
+        setPaying(false);
+        return;
+      }
+
+      const width = 500;
+      const height = 600;
+      const left = Math.round((window.screen.width - width) / 2);
+      const top = Math.round((window.screen.height - height) / 2);
+      window.open(
+        approvalUrl,
+        "paypal-checkout",
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+      );
     } catch (error) {
-      console.error("Error submitting booking:", error);
+      console.error("Error starting PayPal:", error);
       toast.error("Erreur", {
-        description: "Une erreur est survenue lors de l'enregistrement de la réservation. Veuillez réessayer.",
+        description: "Une erreur est survenue. Veuillez réessayer.",
         duration: 5000,
       });
     }
+    setPaying(false);
   };
 
   return (
@@ -302,16 +370,33 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         </CardContent>
       </Card>
 
-      {/* Submit Button */}
+      {/* After payment success: message to close the window; otherwise PayPal button */}
       <div className="pt-4">
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-700"
-        >
-          <CheckCircle2 className="h-5 w-5 mr-2" />
-          Soumettre la réservation
-        </Button>
+        {paymentSuccess ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
+            <div className="rounded-full bg-green-100 p-3">
+              <CheckCircle2 className="h-10 w-10 text-green-600" aria-hidden />
+            </div>
+            <p className="font-semibold text-green-800">Paiement effectué avec succès</p>
+            <p className="text-sm text-slate-600">Vous pouvez fermer la fenêtre de paiement maintenant.</p>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            onClick={handlePayWithPayPal}
+            disabled={paying || totalPrice <= 0}
+            className="w-full h-12 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white"
+          >
+            {paying ? (
+              "Enregistrement et préparation du paiement..."
+            ) : (
+              <>
+                <CheckCircle2 className="h-5 w-5 mr-2" />
+                Soumettre la réservation et payer avec PayPal
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

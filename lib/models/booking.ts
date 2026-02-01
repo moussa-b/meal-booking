@@ -14,6 +14,7 @@ export interface Booking {
   menuId: number;
   students?: BookingStudent[];
   status: PaymentStatus;
+  paypalOrderId?: string | null;
 }
 
 /**

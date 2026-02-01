@@ -17,6 +17,7 @@ interface BookingRow {
   schoolId: number;
   menuId: number;
   status: string;
+  paypalOrderId?: string | null;
 }
 
 /**
@@ -161,7 +162,7 @@ export async function createBooking(
  */
 export async function getBookingById(id: number): Promise<Booking | null> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status FROM bookings WHERE id = ?',
+    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId FROM bookings WHERE id = ?',
     [id]
   );
 
@@ -222,6 +223,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     menuId: bookingRow.menuId,
     status,
     students,
+    paypalOrderId: bookingRow.paypalOrderId ?? null,
   };
 }
 
@@ -230,7 +232,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
  */
 export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status FROM bookings WHERE email = ? ORDER BY created DESC',
+    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId FROM bookings WHERE email = ? ORDER BY created DESC',
     [email]
   );
 
@@ -251,6 +253,13 @@ export async function getBookingsByEmail(email: string): Promise<Booking[]> {
  */
 export async function updateBookingStatus(bookingId: number, status: PaymentStatus): Promise<void> {
   await query('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+}
+
+/**
+ * Update booking PayPal order ID (stored for reuse/retry)
+ */
+export async function updateBookingOrderId(bookingId: number, orderId: string): Promise<void> {
+  await query('UPDATE bookings SET paypalOrderId = ? WHERE id = ?', [orderId, bookingId]);
 }
 
 /**
@@ -285,7 +294,7 @@ export async function getBookingTotalAmount(bookingId: number): Promise<number> 
  */
 export async function getAllBookings(): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status FROM bookings ORDER BY created DESC'
+    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId FROM bookings ORDER BY created DESC'
   );
 
   if (bookings.length === 0) {
