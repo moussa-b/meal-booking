@@ -54,6 +54,17 @@ export function getMonday(date: Date): Date {
 }
 
 /**
+ * Returns the Monday of the week following the given date
+ * @param date - The date to get the next Monday for
+ * @returns The Monday date of the next week
+ */
+export function getNextMonday(date: Date): Date {
+  const next = new Date(getMonday(date));
+  next.setDate(next.getDate() + 7);
+  return next;
+}
+
+/**
  * Checks if a date is a Monday
  * @param date - The date to check
  * @returns True if the date is a Monday, false otherwise

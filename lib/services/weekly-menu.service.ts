@@ -1,6 +1,6 @@
 import { query, getConnection, type MysqlInsertResult, type MysqlDeleteResult } from '@/lib/db/connection';
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
-import { getWeekNumber, getYear, formatDateLocal } from '@/lib/utils/date.utils';
+import { getWeekNumber, getYear, formatDateLocal, isMonday } from '@/lib/utils/date.utils';
 import type { FieldPacket } from 'mysql2/promise';
 import { getMealById } from '@/lib/services/meal.service';
 import type { Meal } from '@/lib/models/meal';
@@ -363,23 +363,23 @@ export async function getWeeklyMenuWithMeals(id: number): Promise<WeeklyMenu | n
 }
 
 /**
- * Get the current week's menu with full meal details for a specific school
+ * Get the weekly menu with full meal details for a given week and school.
+ * @param weekStartDate - The Monday that starts the week (required, must be a Monday)
  * @param schoolId - The school ID (required)
- * @returns The current week's menu with meal details, or null if not found
- * @throws Error if schoolId is not provided
+ * @returns The week's menu with meal details, or null if not found
+ * @throws Error if weekStartDate is not a Monday or schoolId is invalid
  */
-export async function getCurrentWeeklyMenuWithMeals(schoolId: number): Promise<WeeklyMenu | null> {
+export async function getWeeklyMenuWithMealsForDate(weekStartDate: Date, schoolId: number): Promise<WeeklyMenu | null> {
+  const date = new Date(weekStartDate);
+  date.setHours(0, 0, 0, 0);
+  if (!isMonday(date)) {
+    throw new Error('weekStartDate must be a Monday');
+  }
   if (!schoolId || schoolId <= 0) {
     throw new Error('schoolId is required and must be a positive number');
   }
 
-  const today = new Date();
-  const currentWeekStart = new Date(today);
-  currentWeekStart.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1)); // Monday
-  currentWeekStart.setHours(0, 0, 0, 0);
-
-  // Get menu for current week and school
-  const menu = await getWeeklyMenuByWeekStart(currentWeekStart, schoolId);
+  const menu = await getWeeklyMenuByWeekStart(date, schoolId);
 
   if (!menu) {
     return null;

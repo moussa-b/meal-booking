@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import type { BookingFormData } from './booking-wizard';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
 import { DAY_KEYS, DAY_NAMES } from '@/lib/utils/date.utils';
 
@@ -19,40 +19,15 @@ function formatDateFrench(date: Date): string {
   }).format(date);
 }
 
-export function StepMenuSelection() {
+type StepMenuSelectionProps = {
+  weeklyMenu: WeeklyMenu | null;
+  isLoading: boolean;
+};
+
+export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionProps) {
   const { watch, setValue } = useFormContext<BookingFormData>();
   const students = watch("students");
   const menuSelections = watch("menuSelections");
-  const schoolId = watch("schoolId");
-  const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch weekly menu from API
-  useEffect(() => {
-    async function fetchMenu() {
-      if (!schoolId || schoolId <= 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await fetch(`/api/weekly-menus?current=true&schoolId=${schoolId}`);
-        if (!response.ok) {
-          throw new Error("Impossible de charger le menu");
-        }
-        const result = await response.json();
-        setWeeklyMenu(result.data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchMenu();
-  }, [schoolId]);
 
   // Initialize menu selections for all students if not already set
   useEffect(() => {
@@ -128,16 +103,6 @@ export function StepMenuSelection() {
       <div className="space-y-6">
         <div className="text-center py-8">
           <p className="text-slate-600">Chargement du menu...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-          <p className="text-red-700 font-medium">{error}</p>
         </div>
       </div>
     );

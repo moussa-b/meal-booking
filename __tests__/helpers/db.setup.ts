@@ -10,8 +10,6 @@ const TABLES_TO_CLEAN = [
   'booking_students',
   'bookings',
   'menu_selections',
-  'day_menus',
-  'menu_items',
   'weekly_menu_days',
   'weekly_menus',
   'students',

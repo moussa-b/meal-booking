@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getAllWeeklyMenus,
   createWeeklyMenu,
-  getCurrentWeeklyMenuWithMeals,
+  getAllWeeklyMenus,
+  getWeeklyMenuWithMealsForDate,
 } from '@/lib/services/weekly-menu.service';
-import {
-  createWeeklyMenuSchema,
-} from '@/lib/validations/weekly-menu.validation';
+import { createWeeklyMenuSchema, } from '@/lib/validations/weekly-menu.validation';
+import { getNextMonday } from '@/lib/utils/date.utils';
 
 /**
  * GET /api/weekly-menus
@@ -43,7 +42,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const menu = await getCurrentWeeklyMenuWithMeals(schoolId);
+      const weekStartDate = getNextMonday(new Date());
+      weekStartDate.setHours(0, 0, 0, 0);
+      const menu = await getWeeklyMenuWithMealsForDate(weekStartDate, schoolId);
       if (!menu) {
         return NextResponse.json(
           {

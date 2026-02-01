@@ -106,7 +106,9 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
 
   const totalPrice = calculateTotalPrice();
   const [paying, setPaying] = useState(false);
+  const [savingForLater, setSavingForLater] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [savedForLater, setSavedForLater] = useState(false);
 
   const submissionData = {
     ...formData,
@@ -134,13 +136,17 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     return () => window.removeEventListener("message", handlePaymentMessage);
   }, [handlePaymentMessage]);
 
-  const handlePayWithPayPal = async () => {
+  /**
+   * Validates, saves the booking via API, and returns the created booking id or null.
+   * Shows error toasts on validation or request failure. Does not manage loading state.
+   */
+  async function saveBooking(): Promise<{ id: number } | null> {
     if (!weeklyMenu?.id) {
       toast.error("Erreur", {
         description: "Impossible de récupérer les informations du menu. Veuillez réessayer.",
         duration: 5000,
       });
-      return;
+      return null;
     }
 
     if (totalPrice <= 0) {
@@ -148,10 +154,9 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         description: "Aucun repas sélectionné. Veuillez sélectionner au moins un jour.",
         duration: 5000,
       });
-      return;
+      return null;
     }
 
-    setPaying(true);
     try {
       const bookingRes = await fetch("/api/bookings", {
         method: "POST",
@@ -165,22 +170,40 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
           description: errorData.message ?? "Une erreur est survenue lors de l'enregistrement de la réservation.",
           duration: 5000,
         });
-        setPaying(false);
-        return;
+        return null;
       }
 
       const bookingResult = await bookingRes.json();
       const bookingId = bookingResult.data?.id;
       if (!bookingId) {
         toast.error("Erreur", { description: "Réponse invalide du serveur.", duration: 5000 });
-        setPaying(false);
-        return;
+        return null;
       }
 
+      return { id: bookingId };
+    } catch (error) {
+      console.error("Error saving booking:", error);
+      toast.error("Erreur", {
+        description: "Une erreur est survenue. Veuillez réessayer.",
+        duration: 5000,
+      });
+      return null;
+    }
+  }
+
+  const handlePayWithPayPal = async () => {
+    setPaying(true);
+    const result = await saveBooking();
+    if (!result) {
+      setPaying(false);
+      return;
+    }
+
+    try {
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
+        body: JSON.stringify({ bookingId: result.id }),
       });
 
       if (!orderRes.ok) {
@@ -218,6 +241,21 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       });
     }
     setPaying(false);
+  };
+
+  const handleSaveAndPayLater = async () => {
+    setSavingForLater(true);
+    const result = await saveBooking();
+    setSavingForLater(false);
+
+    if (!result) return;
+
+    setSavedForLater(true);
+    toast.success("Réservation enregistrée", {
+      description: "Vous pourrez effectuer le paiement plus tard.",
+      duration: 5000,
+    });
+    onSubmitted?.();
   };
 
   return (
@@ -370,7 +408,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         </CardContent>
       </Card>
 
-      {/* After payment success: message to close the window; otherwise PayPal button */}
+      {/* After success: message; otherwise action buttons */}
       <div className="pt-4">
         {paymentSuccess ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
@@ -380,22 +418,41 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
             <p className="font-semibold text-green-800">Paiement effectué avec succès</p>
             <p className="text-sm text-slate-600">Vous pouvez fermer la fenêtre de paiement maintenant.</p>
           </div>
+        ) : savedForLater ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
+            <div className="rounded-full bg-green-100 p-3">
+              <CheckCircle2 className="h-10 w-10 text-green-600" aria-hidden />
+            </div>
+            <p className="font-semibold text-green-800">Réservation enregistrée</p>
+            <p className="text-sm text-slate-600">Vous pourrez effectuer le paiement plus tard.</p>
+          </div>
         ) : (
-          <Button
-            type="button"
-            onClick={handlePayWithPayPal}
-            disabled={paying || totalPrice <= 0}
-            className="w-full h-12 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white"
-          >
-            {paying ? (
-              "Enregistrement et préparation du paiement..."
-            ) : (
-              <>
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                Soumettre la réservation et payer avec PayPal
-              </>
-            )}
-          </Button>
+          <div className="space-y-3">
+            <Button
+              type="button"
+              onClick={handlePayWithPayPal}
+              disabled={paying || savingForLater || totalPrice <= 0}
+              className="w-full h-12 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white"
+            >
+              {paying ? (
+                "Enregistrement et préparation du paiement..."
+              ) : (
+                <>
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  Soumettre la réservation et payer avec PayPal
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveAndPayLater}
+              disabled={paying || savingForLater || totalPrice <= 0}
+              className="w-full h-11 text-base font-medium"
+            >
+              {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}
+            </Button>
+          </div>
         )}
       </div>
     </div>

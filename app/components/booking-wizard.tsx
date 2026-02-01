@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,6 +10,8 @@ import { StepSchoolInfo } from "./step-school-info";
 import { StepChildren } from "./step-children";
 import { StepMenuSelection } from "./step-menu-selection";
 import { ConfirmationScreen } from "./confirmation-screen";
+import type { WeeklyMenu } from "@/lib/models/weekly-menu";
+import { DAY_KEYS } from "@/lib/utils/date.utils";
 
 // Define the complete form schema
 const formSchema = z.object({
@@ -43,11 +45,13 @@ const formSchema = z.object({
 
 export type BookingFormData = z.infer<typeof formSchema>;
 
-type Step = 1 | 2 | 3 | 100;
+type Step = 1 | 2 | 3 | 99 | 100;
 
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
 
   const methods = useForm<BookingFormData>({
     resolver: zodResolver(formSchema),
@@ -82,7 +86,14 @@ export function BookingWizard() {
     const isValid = await methods.trigger(fieldsToValidate);
 
     if (isValid) {
-      if (currentStep === 3) {
+      if (currentStep === 1) {
+        if (isLoadingMenu) return;
+        if (!hasMenu) {
+          setCurrentStep(99);
+          return;
+        }
+        setCurrentStep(2);
+      } else if (currentStep === 3) {
         setCurrentStep(100);
       } else {
         setCurrentStep((currentStep + 1) as Step);
@@ -93,19 +104,67 @@ export function BookingWizard() {
   const handleBack = () => {
     if (currentStep === 100) {
       setCurrentStep(3);
+    } else if (currentStep === 99) {
+      setCurrentStep(1);
     } else if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as Step);
     }
   };
 
+  const schoolId = methods.watch('schoolId');
+
+  useEffect(() => {
+    async function fetchMenu() {
+      if (!schoolId || schoolId <= 0) {
+        setWeeklyMenu(null);
+        setIsLoadingMenu(false);
+        return;
+      }
+
+      try {
+        setIsLoadingMenu(true);
+        const response = await fetch(`/api/weekly-menus?current=true&schoolId=${schoolId}`);
+        if (!response.ok) {
+          setWeeklyMenu(null);
+          return;
+        }
+        const result = await response.json();
+        setWeeklyMenu(result.data);
+      } catch {
+        setWeeklyMenu(null);
+      } finally {
+        setIsLoadingMenu(false);
+      }
+    }
+    fetchMenu();
+  }, [schoolId]);
+
+  const menuDays = weeklyMenu?.days?.filter(
+    (day) => DAY_KEYS[day.dayOfWeek] !== null
+  ) ?? [];
+  const hasMenu = menuDays.length > 0;
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return <StepSchoolInfo />;
+      case 99:
+        return (
+          <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+            <p className="text-yellow-700 font-medium">
+              Aucun menu disponible pour le moment.
+            </p>
+          </div>
+        );
       case 2:
         return <StepChildren />;
       case 3:
-        return <StepMenuSelection />;
+        return (
+          <StepMenuSelection
+            weeklyMenu={weeklyMenu}
+            isLoading={isLoadingMenu}
+          />
+        );
       case 100:
         return <ConfirmationScreen onSubmitted={() => setIsSubmitted(true)} />;
       default:
@@ -117,6 +176,8 @@ export function BookingWizard() {
     switch (currentStep) {
       case 1:
         return "Informations de l'école";
+      case 99:
+        return "Aucun menu disponible";
       case 2:
         return "Informations des enfants";
       case 3:
@@ -137,7 +198,7 @@ export function BookingWizard() {
               <CardTitle className="text-2xl font-bold text-center">
                 Réservation des repas
               </CardTitle>
-              {currentStep !== 100 && (
+              {currentStep !== 100 && currentStep !== 99 && (
                 <div className="text-center text-sm opacity-90 my-1">
                   Étape {currentStep} sur 3
                 </div>
@@ -175,7 +236,7 @@ export function BookingWizard() {
                   </div>
                 ) : (
                   <>
-                    {(currentStep > 1 || currentStep === 100) && (
+                    {(currentStep > 1 || currentStep === 99 || currentStep === 100) && (
                       <Button
                         type="button"
                         variant="outline"
@@ -186,11 +247,12 @@ export function BookingWizard() {
                       </Button>
                     )}
 
-                    {currentStep !== 100 && (
+                    {currentStep !== 100 && currentStep !== 99 && (currentStep !== 3 || hasMenu) && (
                       <Button
                         type="button"
                         onClick={handleNext}
                         className="flex-1"
+                        disabled={currentStep === 1 && isLoadingMenu}
                       >
                         {currentStep === 3 ? "Voir le récapitulatif" : "Suivant"}
                       </Button>

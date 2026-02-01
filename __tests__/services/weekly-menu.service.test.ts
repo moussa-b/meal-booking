@@ -3,6 +3,7 @@ import {
   createWeeklyMenu,
   deleteWeeklyMenu,
   getAllWeeklyMenus,
+  getWeeklyMenuWithMealsForDate,
   getWeeklyMenuById,
   getWeeklyMenuByWeekStart,
   updateWeeklyMenu,
@@ -145,6 +146,62 @@ describe('Weekly Menu Service', () => {
 
       expect(menu).not.toBeNull();
       expect(menu?.id).toBe(created.id);
+    });
+  });
+
+  describe('getWeeklyMenuWithMealsForDate', () => {
+    it('should throw when weekStartDate is not a Monday', async () => {
+      const school = await createTestSchool();
+      const tuesday = getMonday(new Date());
+      tuesday.setDate(tuesday.getDate() + 1);
+
+      await expect(getWeeklyMenuWithMealsForDate(tuesday, school.id)).rejects.toThrow(
+        'weekStartDate must be a Monday'
+      );
+    });
+
+    it('should throw when schoolId is invalid', async () => {
+      const monday = getMonday(new Date());
+
+      await expect(getWeeklyMenuWithMealsForDate(monday, 0)).rejects.toThrow(
+        'schoolId is required and must be a positive number'
+      );
+      await expect(getWeeklyMenuWithMealsForDate(monday, -1)).rejects.toThrow(
+        'schoolId is required and must be a positive number'
+      );
+    });
+
+    it('should return null when no menu exists for that week and school', async () => {
+      const school = await createTestSchool();
+      const monday = getMonday(new Date());
+      monday.setDate(monday.getDate() + 7);
+
+      const menu = await getWeeklyMenuWithMealsForDate(monday, school.id);
+
+      expect(menu).toBeNull();
+    });
+
+    it('should return menu with meals when menu exists for that week and school', async () => {
+      const school = await createTestSchool();
+      const { mainDish } = await createTestMeals();
+      const monday = getMonday(new Date());
+      monday.setDate(monday.getDate() + 7);
+      const testData = createTestWeeklyMenuData({
+        schoolId: school.id,
+        weekStartDate: monday,
+        days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
+      });
+      await createWeeklyMenu(testData);
+
+      const menu = await getWeeklyMenuWithMealsForDate(monday, school.id);
+
+      expect(menu).not.toBeNull();
+      expect(menu?.schoolId).toBe(school.id);
+      expect(menu?.weekStartDate).toBeInstanceOf(Date);
+      expect(menu?.days).toBeDefined();
+      expect(menu?.days?.length).toBe(1);
+      expect(menu?.days?.[0].mainDish).toBeDefined();
+      expect(menu?.days?.[0].mainDish?.id).toBe(mainDish.id);
     });
   });
 
