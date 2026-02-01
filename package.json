@@ -1,6 +1,6 @@
 {
   "name": "meal-booking",
-  "version": "2026.01.29.02",
+  "version": "2026.02.01.01",
   "private": true,
   "scripts": {
     "dev": "next dev",
