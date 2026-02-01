@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function BookingReturnPage() {
+function BookingReturnContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState<string>('');
@@ -98,5 +98,22 @@ export default function BookingReturnPage() {
         Fermer cette fenêtre
       </Button>
     </div>
+  );
+}
+
+function ReturnFallback() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 p-6">
+      <Loader2 className="h-12 w-12 animate-spin text-blue-600" aria-hidden />
+      <p className="text-slate-700 font-medium">Chargement...</p>
+    </div>
+  );
+}
+
+export default function BookingReturnPage() {
+  return (
+    <Suspense fallback={<ReturnFallback />}>
+      <BookingReturnContent />
+    </Suspense>
   );
 }
