@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import type { HistoryFormData } from './history-wizard';
 import type { Booking } from '@/lib/models/booking';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { formatDate } from '@/lib/utils/date.utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 interface BookingWithDetails extends Booking {
@@ -64,6 +64,22 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [payingBookingId, setPayingBookingId] = useState<number | null>(null);
+
+  // function used in addEventListener/removeEventListener the reference must be unique to avoid memory leaks
+  // and adding same listener several times
+  const handlePaymentMessage = useCallback((event: MessageEvent) => {
+    if (event.origin !== window.location.origin) return;
+    if (event.data?.type === 'payment_captured') {
+      toast.success('Paiement effectué');
+      setRefreshTrigger((t) => t + 1);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('message', handlePaymentMessage);
+    return () => window.removeEventListener('message', handlePaymentMessage);
+  }, [handlePaymentMessage]);
 
   useEffect(() => {
     if (!email || !schoolId) {
@@ -190,39 +206,39 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
 
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? '';
 
-  async function createOrder(bookingId: number): Promise<string> {
-    const res = await fetch('/api/payments/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message ?? 'Failed to create order');
+  async function handlePayWithPayPal(bookingId: number): Promise<void> {
+    setPayingBookingId(bookingId);
+    try {
+      const res = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message ?? 'Impossible de créer le paiement PayPal');
+        return;
+      }
+      const approvalUrl = data.approvalUrl ?? data.approval_url;
+      if (!approvalUrl) {
+        toast.error('URL de paiement manquante.');
+        return;
+      }
+      const width = 500;
+      const height = 600;
+      const left = Math.round((window.screen.width - width) / 2);
+      const top = Math.round((window.screen.height - height) / 2);
+      window.open(
+        approvalUrl,
+        'paypal-checkout',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+      );
+    } catch (err) {
+      console.error('Error starting PayPal:', err);
+      toast.error('Erreur lors du paiement');
+    } finally {
+      setPayingBookingId(null);
     }
-    return data.orderId;
-  }
-
-  async function onApprove(orderData: { orderID: string }, bookingId: number): Promise<void> {
-    const res = await fetch('/api/payments/capture', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        orderId: orderData.orderID,
-        bookingId,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      toast.error(err.message ?? 'Paiement échoué');
-      return;
-    }
-    toast.success('Paiement effectué');
-    setRefreshTrigger((t) => t + 1);
-  }
-
-  function onPayPalError(): void {
-    toast.error('Erreur lors du paiement');
   }
 
   const content = (
@@ -269,31 +285,22 @@ export function StepHistory({onBookingsLoaded, onLoadingChange}: StepHistoryProp
           </div>
           {booking.status !== PaymentStatus.PAID && paypalClientId && (
             <div className="mt-3 pt-3 border-t border-slate-100">
-              <PayPalButtons
-                style={{ layout: 'horizontal' }}
-                createOrder={() => createOrder(booking.id)}
-                onApprove={(data) => onApprove(data, booking.id)}
-                onError={onPayPalError}
-              />
+              <Button
+                type="button"
+                onClick={() => handlePayWithPayPal(booking.id)}
+                disabled={payingBookingId !== null}
+                className="w-full h-10 text-sm font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white"
+              >
+                {payingBookingId === booking.id
+                  ? 'Préparation du paiement...'
+                  : 'Payer avec PayPal'}
+              </Button>
             </div>
           )}
         </div>
       ))}
     </div>
   );
-
-  if (paypalClientId) {
-    return (
-      <PayPalScriptProvider
-        options={{
-          clientId: paypalClientId,
-          currency: 'EUR',
-        }}
-      >
-        {content}
-      </PayPalScriptProvider>
-    );
-  }
 
   return content;
 }
