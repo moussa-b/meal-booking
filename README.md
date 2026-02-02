@@ -12,6 +12,14 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Email (Resend)
+
+After a booking is created or paid, the app can send emails (pay-later link or payment confirmation) via [Resend](https://resend.com/). Set these environment variables to enable sending:
+
+- **RESEND_API_KEY** – Your Resend API key (required for sending; if unset, emails are skipped and a warning is logged).
+- **EMAIL_FROM** – Sender address (default: `onboarding@resend.dev`; use a verified domain in production).
+- **NEXT_PUBLIC_APP_URL** – Base URL for links in emails (e.g. `https://your-app.com`; default: `http://localhost:3000`).
+
 ## Docker Setup
 
 This document provides instructions for building and running the Meal Booking application using Docker.

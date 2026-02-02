@@ -20,6 +20,7 @@ const bookingSubmissionSchema = z.object({
   ).min(1),
   menuSelections: z.record(z.string(), z.array(z.number())),
   saveChildrenInfo: z.boolean(),
+  sendPayLaterEmail: z.boolean().optional().default(true),
 });
 
 /**
@@ -29,7 +30,7 @@ const bookingSubmissionSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate request body
     const validationResult = bookingSubmissionSchema.safeParse(body);
     if (!validationResult.success) {
@@ -43,10 +44,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data: BookingSubmission = validationResult.data;
+    const { sendPayLaterEmail, ...data } = validationResult.data;
 
     // Create booking
-    const booking = await createBooking(data, data.saveChildrenInfo);
+    const booking = await createBooking(data, data.saveChildrenInfo, sendPayLaterEmail);
 
     return NextResponse.json({
       data: {
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating booking:', error);
-    
+
     if (error instanceof Error) {
       // Handle specific error messages
       if (error.message.includes('not found')) {
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
-      
+
       if (error.message.includes('does not belong')) {
         return NextResponse.json(
           {

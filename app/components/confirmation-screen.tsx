@@ -139,8 +139,9 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   /**
    * Validates, saves the booking via API, and returns the created booking id or null.
    * Shows error toasts on validation or request failure. Does not manage loading state.
+   * @param options.sendPayLaterEmail - When false, no pay-later email is sent (e.g. when paying with PayPal). Default true.
    */
-  async function saveBooking(): Promise<{ id: number } | null> {
+  async function saveBooking(options?: { sendPayLaterEmail?: boolean }): Promise<{ id: number } | null> {
     if (!weeklyMenu?.id) {
       toast.error("Erreur", {
         description: "Impossible de récupérer les informations du menu. Veuillez réessayer.",
@@ -157,11 +158,16 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       return null;
     }
 
+    const body = {
+      ...submissionData,
+      ...(options?.sendPayLaterEmail !== undefined && { sendPayLaterEmail: options.sendPayLaterEmail }),
+    };
+
     try {
       const bookingRes = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submissionData),
+        body: JSON.stringify(body),
       });
 
       if (!bookingRes.ok) {
@@ -193,7 +199,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
 
   const handlePayWithPayPal = async () => {
     setPaying(true);
-    const result = await saveBooking();
+    const result = await saveBooking({ sendPayLaterEmail: false });
     if (!result) {
       setPaying(false);
       return;
@@ -245,7 +251,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
 
   const handleSaveAndPayLater = async () => {
     setSavingForLater(true);
-    const result = await saveBooking();
+    const result = await saveBooking({ sendPayLaterEmail: true });
     setSavingForLater(false);
 
     if (!result) return;

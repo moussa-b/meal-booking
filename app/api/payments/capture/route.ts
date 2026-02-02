@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await updateBookingStatus(bookingId, PaymentStatus.PAID);
+    await updateBookingStatus(bookingId, PaymentStatus.PAID, true);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Capture error:', error);

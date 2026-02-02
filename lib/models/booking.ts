@@ -15,6 +15,8 @@ export interface Booking {
   students?: BookingStudent[];
   status: PaymentStatus;
   paypalOrderId?: string | null;
+  paymentEmailSentAt?: Date | null;
+  confirmationEmailSentAt?: Date | null;
 }
 
 /**

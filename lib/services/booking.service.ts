@@ -5,6 +5,7 @@ import { PaymentStatus } from '@/lib/models/payment-status';
 import { createStudent } from './student.service';
 import { getSchoolById } from './school.service';
 import { getWeeklyMenuById } from './weekly-menu.service';
+import { sendBookingPayLater, sendBookingConfirmationPaid } from './email.service';
 import type { FieldPacket } from 'mysql2/promise';
 
 /**
@@ -18,6 +19,8 @@ interface BookingRow {
   menuId: number;
   status: string;
   paypalOrderId?: string | null;
+  paymentEmailSentAt?: string | Date | null;
+  confirmationEmailSentAt?: string | Date | null;
 }
 
 /**
@@ -45,11 +48,13 @@ interface BookingMenuSelectionRow {
 }
 
 /**
- * Create a new booking with students and menu selections
+ * Create a new booking with students and menu selections.
+ * When sendEmail is true, sends a "pay later" email with link to history page.
  */
 export async function createBooking(
   data: BookingSubmission,
-  saveChildrenInfo: boolean
+  saveChildrenInfo: boolean,
+  sendEmail = false
 ): Promise<Booking> {
   const connection = await getConnection();
 
@@ -148,6 +153,15 @@ export async function createBooking(
       throw new Error('Failed to retrieve created booking');
     }
 
+    if (sendEmail && school) {
+      try {
+        await sendBookingPayLater(booking, school.code, school.name);
+        await updatePaymentEmailSentAt(booking.id);
+      } catch (emailError) {
+        console.error('Failed to send pay-later email after booking creation:', emailError);
+      }
+    }
+
     return booking;
   } catch (error) {
     await connection.rollback();
@@ -162,7 +176,7 @@ export async function createBooking(
  */
 export async function getBookingById(id: number): Promise<Booking | null> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId FROM bookings WHERE id = ?',
+    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE id = ?',
     [id]
   );
 
@@ -224,6 +238,8 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     status,
     students,
     paypalOrderId: bookingRow.paypalOrderId ?? null,
+    paymentEmailSentAt: bookingRow.paymentEmailSentAt ? new Date(bookingRow.paymentEmailSentAt) : null,
+    confirmationEmailSentAt: bookingRow.confirmationEmailSentAt ? new Date(bookingRow.confirmationEmailSentAt) : null,
   };
 }
 
@@ -232,7 +248,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
  */
 export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId FROM bookings WHERE email = ? ORDER BY created DESC',
+    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE email = ? ORDER BY created DESC',
     [email]
   );
 
@@ -249,10 +265,26 @@ export async function getBookingsByEmail(email: string): Promise<Booking[]> {
 }
 
 /**
- * Update booking payment status
+ * Update booking payment status.
+ * When sendEmail is true and status is PAID, sends a confirmation email with booking summary and history link.
  */
-export async function updateBookingStatus(bookingId: number, status: PaymentStatus): Promise<void> {
+export async function updateBookingStatus(bookingId: number, status: PaymentStatus, sendEmail = false): Promise<void> {
   await query('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+
+  if (sendEmail && status === PaymentStatus.PAID) {
+    try {
+      const booking = await getBookingById(bookingId);
+      if (!booking) return;
+      const school = await getSchoolById(booking.schoolId);
+      if (!school) return;
+      const menu = await getWeeklyMenuById(booking.menuId);
+      if (!menu) return;
+      await sendBookingConfirmationPaid(booking, school.code, school.name, menu);
+      await updateConfirmationEmailSentAt(bookingId);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email after payment:', emailError);
+    }
+  }
 }
 
 /**
@@ -260,6 +292,24 @@ export async function updateBookingStatus(bookingId: number, status: PaymentStat
  */
 export async function updateBookingOrderId(bookingId: number, orderId: string): Promise<void> {
   await query('UPDATE bookings SET paypalOrderId = ? WHERE id = ?', [orderId, bookingId]);
+}
+
+/**
+ * Set confirmationEmailSentAt to current timestamp (when confirmation email is sent).
+ */
+export async function updateConfirmationEmailSentAt(bookingId: number): Promise<void> {
+  await query('UPDATE bookings SET confirmationEmailSentAt = CURRENT_TIMESTAMP WHERE id = ?', [
+    bookingId,
+  ]);
+}
+
+/**
+ * Set paymentEmailSentAt to current timestamp (when pay-later email is sent).
+ */
+export async function updatePaymentEmailSentAt(bookingId: number): Promise<void> {
+  await query('UPDATE bookings SET paymentEmailSentAt = CURRENT_TIMESTAMP WHERE id = ?', [
+    bookingId,
+  ]);
 }
 
 /**
@@ -294,7 +344,7 @@ export async function getBookingTotalAmount(bookingId: number): Promise<number> 
  */
 export async function getAllBookings(): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId FROM bookings ORDER BY created DESC'
+    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings ORDER BY created DESC'
   );
 
   if (bookings.length === 0) {

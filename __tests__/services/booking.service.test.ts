@@ -6,6 +6,8 @@ import {
   getAllBookings,
   updateBookingStatus,
   updateBookingOrderId,
+  updateConfirmationEmailSentAt,
+  updatePaymentEmailSentAt,
   getBookingTotalAmount,
 } from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
@@ -470,6 +472,66 @@ describe('Booking Service', () => {
 
       const updated = await getBookingById(created.id);
       expect(updated?.paypalOrderId).toBe('NEW-ORDER');
+    });
+  });
+
+  describe('updateConfirmationEmailSentAt', () => {
+    it('should set confirmationEmailSentAt on booking', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      expect(created.confirmationEmailSentAt).toBeOneOf([null, undefined]);
+
+      await updateConfirmationEmailSentAt(created.id);
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.confirmationEmailSentAt).not.toBeNull();
+      expect(updated?.confirmationEmailSentAt).not.toBeUndefined();
+      expect(updated?.confirmationEmailSentAt).toBeInstanceOf(Date);
+    });
+
+    it('should overwrite existing confirmationEmailSentAt when called again', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      await updateConfirmationEmailSentAt(created.id);
+      const first = await getBookingById(created.id);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await updateConfirmationEmailSentAt(created.id);
+      const second = await getBookingById(created.id);
+
+      expect(second?.confirmationEmailSentAt).toBeInstanceOf(Date);
+      expect(second!.confirmationEmailSentAt!.getTime()).toBeGreaterThanOrEqual(
+        first!.confirmationEmailSentAt!.getTime()
+      );
+    });
+  });
+
+  describe('updatePaymentEmailSentAt', () => {
+    it('should set paymentEmailSentAt on booking', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      expect(created.paymentEmailSentAt).toBeOneOf([null, undefined]);
+
+      await updatePaymentEmailSentAt(created.id);
+
+      const updated = await getBookingById(created.id);
+      expect(updated?.paymentEmailSentAt).not.toBeNull();
+      expect(updated?.paymentEmailSentAt).not.toBeUndefined();
+      expect(updated?.paymentEmailSentAt).toBeInstanceOf(Date);
+    });
+
+    it('should overwrite existing paymentEmailSentAt when called again', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      await updatePaymentEmailSentAt(created.id);
+      const first = await getBookingById(created.id);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await updatePaymentEmailSentAt(created.id);
+      const second = await getBookingById(created.id);
+
+      expect(second?.paymentEmailSentAt).toBeInstanceOf(Date);
+      expect(second!.paymentEmailSentAt!.getTime()).toBeGreaterThanOrEqual(
+        first!.paymentEmailSentAt!.getTime()
+      );
     });
   });
 
