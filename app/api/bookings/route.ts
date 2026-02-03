@@ -9,7 +9,7 @@ import { z } from 'zod';
 const bookingSubmissionSchema = z.object({
   schoolId: z.number().min(1),
   menuId: z.number().min(1),
-  email: z.string().email(),
+  email: z.email(),
   students: z.array(
     z.object({
       lastName: z.string().min(1),
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     // If email is provided, get bookings by email
     if (email) {
       // Validate email format
-      const emailSchema = z.string().email();
+      const emailSchema = z.email();
       const emailValidation = emailSchema.safeParse(email);
       if (!emailValidation.success) {
         return NextResponse.json(

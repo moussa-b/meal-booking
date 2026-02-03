@@ -56,7 +56,7 @@ export function HistoryWizard({ code, email }: HistoryWizardProps) {
   // Handle query parameters on mount
   useEffect(() => {
     // Validate and pre-populate email if valid
-    const emailSchema = z.string().email();
+    const emailSchema = z.email();
     const emailValidation = email ? emailSchema.safeParse(email) : {success: false};
     const validEmail = emailValidation.success;
 

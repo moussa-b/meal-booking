@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -27,16 +28,68 @@ const CLASSES = [
   "3ème",
 ];
 
+// True if no students or all fields empty (don’t overwrite user input).
+function isStudentsEmpty(students: BookingFormData['students']): boolean {
+  if (!students?.length) return true;
+  return students.every(
+    (s) =>
+      !s.lastName?.trim() && !s.firstName?.trim() && !s.class?.trim()
+  );
+}
+
 export function StepChildren() {
-  const { control, watch } = useFormContext<BookingFormData>();
+  const { control, watch, setValue } = useFormContext<BookingFormData>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "students",
   });
-
+  const email = watch('email');
   const students = watch("students");
+  // Email we already prefilled for; ref avoids re-fetch on re-render.
+  const prefilledForEmail = useRef<string | null>(null);
 
-  // Check if the last student form is valid
+  // On mount/email change: fetch students by email and prefill when form is empty.
+  useEffect(() => {
+    if (!email?.trim()) return;
+
+    const trimmedEmail = email.trim();
+    if (prefilledForEmail.current === trimmedEmail) return; // Already did this email.
+    if (!isStudentsEmpty(students)) return; // User already filled; don’t overwrite.
+
+    let cancelled = false;
+
+    async function fetchAndPrefill() {
+      try {
+        const response = await fetch(`/api/students?parentEmail=${encodeURIComponent(trimmedEmail)}`);
+        if (!response.ok || cancelled) return;
+        const result = await response.json();
+        const fetched = result.data ?? [];
+        if (cancelled) return;
+
+        prefilledForEmail.current = trimmedEmail; // Mark so we don’t fetch again.
+        if (fetched.length > 0 && !cancelled) {
+          const formStudents = fetched.map(
+            (s: { lastName: string; firstName: string; class: string; feedingRegime?: string | null }) => ({
+              lastName: s.lastName ?? '',
+              firstName: s.firstName ?? '',
+              class: s.class ?? '',
+              feedingRegime: s.feedingRegime ?? '',
+            })
+          );
+          setValue('students', formStudents, {shouldDirty: true});
+        }
+      } catch {
+        // ignore; leave form as-is
+      }
+    }
+
+    fetchAndPrefill();
+    return () => {
+      cancelled = true; // Ignore result if effect re-runs or unmounts.
+    };
+  }, [email, setValue, students]);
+
+  // Last row must have lastName, firstName, class before "Add another" works.
   const isLastStudentValid = () => {
     if (fields.length === 0) return false;
     const lastIndex = fields.length - 1;
