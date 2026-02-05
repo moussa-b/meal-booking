@@ -38,7 +38,7 @@ function BookingReturnContent() {
 
         setStatus('success');
         if (typeof window !== 'undefined' && window.opener) {
-          window.opener.postMessage({type: 'payment_captured'}, window.location.origin);
+          window.opener.postMessage({type: 'payment_captured', bookingId: Number(bookingId)}, window.location.origin);
           window.close();
         }
       } catch (e) {

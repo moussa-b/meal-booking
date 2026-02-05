@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createBooking, getBookingsByEmail, getAllBookings } from '@/lib/services/booking.service';
-import type { BookingSubmission } from '@/lib/models/booking-submission';
+import { createBooking, getBookingsWithDetailsByEmailAndSchool } from '@/lib/services/booking.service';
 import { z } from 'zod';
 
 /**
@@ -97,41 +96,45 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/bookings
- * Get bookings by email or all bookings
- * Query params:
- *   - email: optional, if provided, returns bookings for that email only
- *   - if no email param, returns all bookings
+ * Returns BookingWithDetails[] for the given email and school.
+ * Query params (both required):
+ *   - email: valid email
+ *   - schoolId: positive integer
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
 
-    // If email is provided, get bookings by email
-    if (email) {
-      // Validate email format
-      const emailSchema = z.email();
-      const emailValidation = emailSchema.safeParse(email);
-      if (!emailValidation.success) {
-        return NextResponse.json(
-          {
-            error: 'Bad Request',
-            message: 'Invalid email format',
-          },
-          { status: 400 }
-        );
-      }
-
-      const bookings = await getBookingsByEmail(email);
-
-      return NextResponse.json({
-        data: bookings,
-        count: bookings.length,
-      });
+    const emailSchema = z.email();
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      return NextResponse.json(
+        {
+          error: 'Bad Request',
+          message: 'Invalid or missing email',
+        },
+        {status: 400}
+      );
     }
 
-    // If no email param, get all bookings
-    const bookings = await getAllBookings();
+    const schoolIdParam = searchParams.get('schoolId');
+    const schoolIdSchema = z.coerce.number().min(1);
+    const schoolIdValidation = schoolIdSchema.safeParse(schoolIdParam);
+    if (!schoolIdValidation.success) {
+      return NextResponse.json(
+        {
+          error: 'Bad Request',
+          message: 'Invalid or missing schoolId',
+        },
+        {status: 400}
+      );
+    }
+
+    const bookings = await getBookingsWithDetailsByEmailAndSchool(
+      emailValidation.data,
+      schoolIdValidation.data
+    );
 
     return NextResponse.json({
       data: bookings,

@@ -47,3 +47,14 @@ export interface BookingMenuSelection {
   weeklyMenuDayId: number;
   weeklyMenuDay?: WeeklyMenuDay;
 }
+
+/**
+ * Booking with computed, view-specific details used in history views.
+ */
+export interface BookingWithDetails extends Booking {
+  totalMeals: number;
+  totalAmount: number;
+  schoolName?: string;
+  weekStartDate?: Date;
+}
+

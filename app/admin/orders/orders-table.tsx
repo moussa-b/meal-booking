@@ -62,7 +62,7 @@ export function OrdersTable() {
 
         // Fetch bookings, menus, and schools in parallel
         const [bookingsResponse, menusResponse, schoolsResponse] = await Promise.all([
-          fetch('/api/bookings'),
+          fetch('/api/admin/bookings'),
           fetch('/api/weekly-menus'),
           fetch('/api/schools'),
         ]);

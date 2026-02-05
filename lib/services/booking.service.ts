@@ -1,5 +1,5 @@
 import { query, getConnection, type MysqlInsertResult } from '@/lib/db/connection';
-import type { Booking, BookingStudent, BookingMenuSelection } from '@/lib/models/booking';
+import type { Booking, BookingStudent, BookingMenuSelection, BookingWithDetails } from '@/lib/models/booking';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { createStudent } from './student.service';
@@ -358,3 +358,57 @@ export async function getAllBookings(): Promise<Booking[]> {
 
   return bookingsWithDetails.filter((booking): booking is Booking => booking !== null);
 }
+
+/**
+ * Get all bookings by email for a given school, with computed totals and weekStartDate.
+ * Used by history views both on the server (history page) and on the client (history wizard).
+ */
+export async function getBookingsWithDetailsByEmailAndSchool(
+  email: string,
+  schoolId: number
+): Promise<BookingWithDetails[]> {
+  const bookings = await getBookingsByEmail(email);
+
+  if (!bookings.length) {
+    return [];
+  }
+
+  const bookingsForSchool = await Promise.all(
+    bookings
+      .filter((booking) => booking.schoolId === schoolId)
+      .map(async (booking): Promise<BookingWithDetails> => {
+        const menu = await getWeeklyMenuById(booking.menuId);
+
+        const priceMap = new Map<number, number>();
+        let weekStartDate: Date | undefined;
+
+        if (menu?.days?.length) {
+          menu.days.forEach((day) => {
+            priceMap.set(day.id, day.price);
+          });
+          weekStartDate = menu.weekStartDate;
+        }
+
+        let totalMeals = 0;
+        let totalAmount = 0;
+
+        booking.students?.forEach((student) => {
+          student.menuSelections?.forEach((selection) => {
+            totalMeals++;
+            const price = priceMap.get(selection.weeklyMenuDayId) || 0;
+            totalAmount += price;
+          });
+        });
+
+        return {
+          ...booking,
+          totalMeals,
+          totalAmount,
+          weekStartDate,
+        };
+      })
+  );
+
+  return bookingsForSchool;
+}
+

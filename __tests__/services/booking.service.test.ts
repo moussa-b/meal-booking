@@ -3,6 +3,7 @@ import {
   createBooking,
   getBookingById,
   getBookingsByEmail,
+  getBookingsWithDetailsByEmailAndSchool,
   getAllBookings,
   updateBookingStatus,
   updateBookingOrderId,
@@ -638,6 +639,107 @@ describe('Booking Service', () => {
 
     it('should throw when booking does not exist', async () => {
       await expect(getBookingTotalAmount(99999)).rejects.toThrow('Booking not found');
+    });
+  });
+
+  describe('getBookingsWithDetailsByEmailAndSchool', () => {
+    it('should return empty array when no bookings exist for email', async () => {
+      const school = await createSchool(createTestSchoolData());
+      const result = await getBookingsWithDetailsByEmailAndSchool(
+        'nonexistent@example.com',
+        school.id
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('should return only bookings for the given schoolId', async () => {
+      const email = `test${Date.now()}@example.com`;
+      const bookingDataSchool1 = await createTestBookingData({ email });
+      const bookingDataSchool2 = await createTestBookingData({ email });
+      const created1 = await createBooking(bookingDataSchool1, false);
+      const created2 = await createBooking(bookingDataSchool2, false);
+      expect(bookingDataSchool1.schoolId).not.toBe(bookingDataSchool2.schoolId);
+
+      const result = await getBookingsWithDetailsByEmailAndSchool(
+        email,
+        bookingDataSchool1.schoolId
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe(created1.id);
+      expect(result[0].schoolId).toBe(bookingDataSchool1.schoolId);
+    });
+
+    it('should return bookings with totalMeals, totalAmount, and weekStartDate', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+
+      const result = await getBookingsWithDetailsByEmailAndSchool(
+        bookingData.email,
+        bookingData.schoolId
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe(created.id);
+      expect(typeof result[0].totalMeals).toBe('number');
+      expect(typeof result[0].totalAmount).toBe('number');
+      expect(result[0].weekStartDate).toBeDefined();
+      if (result[0].weekStartDate) {
+        expect(result[0].weekStartDate).toBeInstanceOf(Date);
+      }
+    });
+
+    it('should compute totalMeals and totalAmount from menu selections and menu prices', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      // Default: one student, Monday only, price 5.5
+      const result = await getBookingsWithDetailsByEmailAndSchool(
+        bookingData.email,
+        bookingData.schoolId
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].totalMeals).toBe(1);
+      expect(result[0].totalAmount).toBe(5.5);
+    });
+
+    it('should compute totals for multiple menu days correctly', async () => {
+      const bookingData = await createTestBookingData();
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const menuDays = menu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
+      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      bookingData.menuSelections = {
+        [studentKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+      };
+      await createBooking(bookingData, false);
+      // Monday 5.5 + Tuesday 4.5 = 10
+      const result = await getBookingsWithDetailsByEmailAndSchool(
+        bookingData.email,
+        bookingData.schoolId
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].totalMeals).toBe(2);
+      expect(result[0].totalAmount).toBe(10);
+    });
+
+    it('should include weekStartDate from the weekly menu', async () => {
+      const bookingData = await createTestBookingData();
+      const created = await createBooking(bookingData, false);
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const result = await getBookingsWithDetailsByEmailAndSchool(
+        bookingData.email,
+        bookingData.schoolId
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].weekStartDate).toBeDefined();
+      expect(menu?.weekStartDate).toBeDefined();
+      expect(result[0].weekStartDate?.getTime()).toBe(menu?.weekStartDate.getTime());
     });
   });
 });

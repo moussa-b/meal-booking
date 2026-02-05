@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StepSchoolInfo } from './step-school-info';
 import { StepHistory } from './step-history';
-import type { School } from '@/lib/models/school';
+import type { BookingWithDetails } from '@/lib/models/booking';
 
 // Define the form schema compatible with StepSchoolInfo
 const formSchema = z.object({
@@ -21,102 +21,76 @@ export type HistoryFormData = z.infer<typeof formSchema>;
 type Step = 1 | 2;
 
 type HistoryWizardProps = {
-  code?: string;
   email?: string;
+  initialBookings: BookingWithDetails[] | null;
+  initialSchoolId?: number;
 };
 
-export function HistoryWizard({ code, email }: HistoryWizardProps) {
-  const [currentStep, setCurrentStep] = useState<Step>(1);
-  const [hasBookings, setHasBookings] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+export function HistoryWizard({email, initialBookings, initialSchoolId,}: HistoryWizardProps) {
+  const [currentStep, setCurrentStep] = useState<Step>(initialBookings ? 2 : 1);
+  const [bookings, setBookings] = useState<BookingWithDetails[] | null>(initialBookings);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasBookings = !!(bookings && bookings.length > 0);
 
   const methods = useForm<HistoryFormData>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
-      schoolId: 0,
-      email: '',
+      schoolId: initialSchoolId ?? 0,
+      email: email ?? '',
     },
   });
 
-  async function validateSchoolCode(code: string): Promise<School | null> {
-    try {
-      const response = await fetch(`/api/schools/code/${code}`);
-      if (response.ok) {
-        const result = await response.json();
-        return result.data || null;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error validating school code:', error);
-      return null;
-    }
-  }
-
-  // Handle query parameters on mount
+  // Prefill email from query param when it becomes available (e.g. client-side nav)
   useEffect(() => {
-    // Validate and pre-populate email if valid
+    if (!email) return;
     const emailSchema = z.email();
-    const emailValidation = email ? emailSchema.safeParse(email) : {success: false};
-    const validEmail = emailValidation.success;
-
-    if (validEmail && email) {
+    if (emailSchema.safeParse(email).success) {
       methods.setValue('email', email);
     }
+  }, [email, methods]);
 
-    // Validate code and pre-populate school if valid
-    if (code) {
-      validateSchoolCode(code).then((school) => {
-        if (school) {
-          methods.setValue('schoolId', school.id);
+  const fetchBookingsForForm = async () => {
+    const { email: formEmail, schoolId } = methods.getValues();
 
-          // If both are valid, go directly to step 2
-          if (validEmail) {
-            // Use setTimeout to ensure form values are set before navigating
-            setTimeout(() => {
-              setCurrentStep(2);
-              setIsLoadingHistory(true); // Set loading when navigating to step 2
-              setHasBookings(false); // Reset bookings state
-            }, 100);
-          }
-        }
-      });
-    } else if (validEmail) {
-      // If only email is valid, stay on step 1 (already set email above)
+    if (!formEmail || !schoolId) {
+      return;
     }
-  }, [code, email, methods]);
+
+    try {
+      setLoading(true);
+      setError(null);
+      setBookings(null);
+
+      const response = await fetch(`/api/bookings?email=${encodeURIComponent(formEmail)}&schoolId=${schoolId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+
+      const result = await response.json();
+      setBookings(result.data ?? []);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+      setError('Erreur lors du chargement de l\'historique');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNext = async () => {
     const isValid = await methods.trigger(['schoolId', 'email']);
 
     if (isValid) {
       setCurrentStep(2);
-      setIsLoadingHistory(true); // Set loading when navigating to step 2
-      setHasBookings(false); // Reset bookings state
+      await fetchBookingsForForm();
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as Step);
-      setHasBookings(false); // Reset bookings state when going back
-      setIsLoadingHistory(false); // Reset loading state when going back
-    }
-  };
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <StepSchoolInfo/>;
-      case 2:
-        return (
-          <StepHistory
-            onBookingsLoaded={setHasBookings}
-            onLoadingChange={setIsLoadingHistory}
-          />
-        );
-      default:
-        return null;
     }
   };
 
@@ -128,6 +102,37 @@ export function HistoryWizard({ code, email }: HistoryWizardProps) {
         return 'Historique des réservations';
       default:
         return '';
+    }
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <StepSchoolInfo />;
+      case 2:
+        if (loading) {
+          return (
+            <div className="text-center py-8">
+              <p className="text-slate-600">Chargement de l&apos;historique...</p>
+            </div>
+          );
+        }
+
+        if (error) {
+          return (
+            <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 font-medium">{error}</p>
+            </div>
+          );
+        }
+
+        if (!bookings) {
+          return null;
+        }
+
+        return <StepHistory bookings={bookings} />;
+      default:
+        return null;
     }
   };
 
@@ -153,7 +158,7 @@ export function HistoryWizard({ code, email }: HistoryWizardProps) {
               {renderStep()}
 
               <div className="flex gap-3 mt-8">
-                {currentStep > 1 && !isLoadingHistory && !hasBookings && (
+                {currentStep > 1 && !loading && !hasBookings && (
                   <Button
                     type="button"
                     variant="outline"
