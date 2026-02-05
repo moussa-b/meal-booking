@@ -51,6 +51,9 @@ function BookingCancelContent() {
 
         if (!cancelled) {
           setStatus('ready');
+          if (typeof window !== 'undefined' && window.opener && !window.closed) {
+            window.opener.postMessage({ type: 'payment_cancelled', bookingId: id }, window.location.origin);
+          }
         }
       } catch (e) {
         if (!cancelled) {

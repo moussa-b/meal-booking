@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, Mail, School, User, UtensilsCrossed } from "lucide-react";
 import type { BookingFormData } from "./booking-wizard";
 import { toast } from "sonner";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { School as SchoolType } from "@/lib/models/school";
 import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
 import { DayOfWeek } from "@/lib/utils/date.utils";
@@ -109,6 +109,11 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   const [savingForLater, setSavingForLater] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [savedForLater, setSavedForLater] = useState(false);
+  const [savedBookingId, setSavedBookingId] = useState<number | null>(null);
+
+  const paypalPopupRef = useRef<Window | null>(null);
+  const paypalIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const payPalOutcomeRef = useRef<'none' | 'captured' | 'cancelled'>('none');
 
   const submissionData = {
     ...formData,
@@ -119,10 +124,27 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   const handlePaymentMessage = useCallback(
     (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      if (event.data?.type === "payment_captured") {
+      if (event.data?.type === 'payment_captured') {
+        payPalOutcomeRef.current = 'captured';
+        if (paypalIntervalRef.current) {
+          clearInterval(paypalIntervalRef.current);
+          paypalIntervalRef.current = null;
+        }
         setPaymentSuccess(true);
         toast.success("Réservation enregistrée et payée avec succès!", {
           description: "Vous recevrez une confirmation par email.",
+          duration: 5000,
+        });
+        onSubmitted?.();
+      } else if (event.data?.type === 'payment_cancelled') {
+        payPalOutcomeRef.current = 'cancelled';
+        if (paypalIntervalRef.current) {
+          clearInterval(paypalIntervalRef.current);
+          paypalIntervalRef.current = null;
+        }
+        setSavedForLater(true);
+        toast.success('Réservation enregistrée', {
+          description: 'Vous pourrez effectuer le paiement plus tard.',
           duration: 5000,
         });
         onSubmitted?.();
@@ -135,6 +157,15 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     window.addEventListener("message", handlePaymentMessage);
     return () => window.removeEventListener("message", handlePaymentMessage);
   }, [handlePaymentMessage]);
+
+  useEffect(() => {
+    return () => {
+      if (paypalIntervalRef.current) {
+        clearInterval(paypalIntervalRef.current);
+        paypalIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   /**
    * Validates, saves the booking via API, and returns the created booking id or null.
@@ -205,6 +236,9 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       return;
     }
 
+    setSavedBookingId(result.id);
+    payPalOutcomeRef.current = 'none';
+
     try {
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST",
@@ -234,11 +268,37 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       const height = 600;
       const left = Math.round((window.screen.width - width) / 2);
       const top = Math.round((window.screen.height - height) / 2);
-      window.open(
+      const popup = window.open(
         approvalUrl,
         "paypal-checkout",
         `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
       );
+      paypalPopupRef.current = popup;
+
+      if (popup) {
+        paypalIntervalRef.current = setInterval(() => {
+          if (paypalPopupRef.current?.closed) {
+            if (paypalIntervalRef.current) {
+              clearInterval(paypalIntervalRef.current);
+              paypalIntervalRef.current = null;
+            }
+            paypalPopupRef.current = null;
+            if (payPalOutcomeRef.current === 'none') {
+              setSavedForLater(true);
+              toast.success('Réservation enregistrée', {
+                description: 'Vous pourrez effectuer le paiement plus tard.',
+                duration: 5000,
+              });
+              onSubmitted?.();
+              if (result.id) {
+                fetch(`/api/bookings/${result.id}/send-pay-later-email`, {method: 'POST'}).catch(
+                  (err) => console.error('Failed to send pay-later email:', err)
+                );
+              }
+            }
+          }
+        }, 300);
+      }
     } catch (error) {
       console.error("Error starting PayPal:", error);
       toast.error("Erreur", {
@@ -250,12 +310,35 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   };
 
   const handleSaveAndPayLater = async () => {
+    if (savedBookingId !== null) {
+      setSavingForLater(true);
+      try {
+        const sendRes = await fetch(`/api/bookings/${savedBookingId}/send-pay-later-email`, {
+          method: "POST",
+        });
+        if (!sendRes.ok) {
+          console.error("Failed to send pay-later email:", await sendRes.text());
+        }
+      } catch (err) {
+        console.error("Failed to send pay-later email:", err);
+      }
+      setSavingForLater(false);
+      setSavedForLater(true);
+      toast.success("Réservation enregistrée", {
+        description: "Vous pourrez effectuer le paiement plus tard.",
+        duration: 5000,
+      });
+      onSubmitted?.();
+      return;
+    }
+
     setSavingForLater(true);
     const result = await saveBooking({ sendPayLaterEmail: true });
     setSavingForLater(false);
 
     if (!result) return;
 
+    setSavedBookingId(result.id);
     setSavedForLater(true);
     toast.success("Réservation enregistrée", {
       description: "Vous pourrez effectuer le paiement plus tard.",
