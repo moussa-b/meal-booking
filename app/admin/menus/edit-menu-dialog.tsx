@@ -65,7 +65,7 @@ export function EditMenuDialog({
   useEffect(() => {
     async function fetchSchools() {
       try {
-        const response = await fetch('/api/schools');
+        const response = await fetch('/api/admin/schools');
         if (response.ok) {
           const result = await response.json();
           setSchools(result.data || []);
