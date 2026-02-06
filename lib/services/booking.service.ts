@@ -340,6 +340,68 @@ export async function getBookingTotalAmount(bookingId: number): Promise<number> 
 }
 
 /**
+ * Get count of paid meals per weekday for a given menu.
+ * Returns a map dayOfWeek -> count (0 = Monday, 1 = Tuesday, etc.).
+ */
+export async function getPaidMealsByWeekdayForMenu(
+  menuId: number
+): Promise<Record<number, number>> {
+  const rows = await query<{ dayOfWeek: number; count: number }[]>(
+    `SELECT wmd.dayOfWeek, COUNT(*) as count
+     FROM booking_menu_selections bms
+     JOIN booking_students bs ON bs.id = bms.bookingStudentId
+     JOIN bookings b ON b.id = bs.bookingId AND b.menuId = ? AND b.status = ?
+     JOIN weekly_menu_days wmd ON wmd.id = bms.weeklyMenuDayId
+     GROUP BY wmd.dayOfWeek`,
+    [menuId, PaymentStatus.PAID]
+  );
+
+  const result: Record<number, number> = {};
+  for (const row of rows) {
+    result[row.dayOfWeek] = Number(row.count);
+  }
+  return result;
+}
+
+/**
+ * Get booking counts by payment status for a given menu.
+ * Returns a map status string -> count.
+ */
+export async function getBookingCountsByStatusForMenu(
+  menuId: number
+): Promise<Record<string, number>> {
+  const rows = await query<{ status: string; count: number }[]>(
+    'SELECT status, COUNT(*) as count FROM bookings WHERE menuId = ? GROUP BY status',
+    [menuId]
+  );
+
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    result[row.status] = Number(row.count);
+  }
+  return result;
+}
+
+/**
+ * Get the total amount (sum of menu day prices) for all PAID bookings for a given menu.
+ */
+export async function getTotalPaidAmountForMenu(menuId: number): Promise<number> {
+  const rows = await query<{ total: number | null }[]>(
+    `SELECT SUM(wmd.price) as total
+     FROM bookings b
+     JOIN booking_students bs ON bs.bookingId = b.id
+     JOIN booking_menu_selections bms ON bms.bookingStudentId = bs.id
+     JOIN weekly_menu_days wmd ON wmd.id = bms.weeklyMenuDayId
+     WHERE b.menuId = ? AND b.status = ?`,
+    [menuId, PaymentStatus.PAID]
+  );
+
+  const total = rows[0]?.total;
+  if (total == null) return 0;
+  return Math.round(Number(total) * 100) / 100;
+}
+
+/**
  * Get all bookings with full details
  */
 export async function getAllBookings(): Promise<Booking[]> {

@@ -2,6 +2,9 @@
  * Date utility functions for weekly menu management
  */
 
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
 /**
  * Day of week enum
  * Represents the days of the week (0 = Monday, 6 = Sunday)
@@ -139,4 +142,13 @@ export function formatDayWithDate(weekStartDate: Date, dayOfWeek: number): strin
   const monthName = date.toLocaleDateString('fr-FR', { month: 'long' });
 
   return `${dayName} ${dayNumber} ${monthName}`;
+}
+
+/**
+ * Formats a week title (e.g. "Semaine du 3 février 2026")
+ * @param date - The Monday date of the week
+ * @returns The formatted week title string
+ */
+export function formatWeekTitle(date: Date): string {
+  return `Semaine du ${format(date, 'd MMMM yyyy', { locale: fr })}`;
 }

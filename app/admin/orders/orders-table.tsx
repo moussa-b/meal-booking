@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatDayWithDate } from '@/lib/utils/date.utils';
+import { getStatusBadgeClass } from '@/lib/services/payment-status.service';
 
 interface DayStats {
   total: number;
@@ -32,20 +33,6 @@ interface MenuGroup {
   menu: WeeklyMenu;
   days: DayBookings[];
 }
-
-// Helper function to get badge className for payment status badges
-const getStatusBadgeClass = (type: 'paid' | 'pending' | 'error'): string => {
-  switch (type) {
-    case 'paid':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'error':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return '';
-  }
-};
 
 export function OrdersTable() {
   const [bookings, setBookings] = useState<Booking[]>([]);

@@ -10,6 +10,9 @@ import {
   updateConfirmationEmailSentAt,
   updatePaymentEmailSentAt,
   getBookingTotalAmount,
+  getPaidMealsByWeekdayForMenu,
+  getBookingCountsByStatusForMenu,
+  getTotalPaidAmountForMenu,
 } from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestMealData, createTestSchoolData, createTestWeeklyMenuData } from '../helpers/test-data';
@@ -740,6 +743,124 @@ describe('Booking Service', () => {
       expect(result[0].weekStartDate).toBeDefined();
       expect(menu?.weekStartDate).toBeDefined();
       expect(result[0].weekStartDate?.getTime()).toBe(menu?.weekStartDate.getTime());
+    });
+  });
+
+  describe('getPaidMealsByWeekdayForMenu', () => {
+    it('should return empty object when menu has no paid bookings', async () => {
+      const bookingData = await createTestBookingData();
+      await createBooking(bookingData, false); // PENDING
+      const result = await getPaidMealsByWeekdayForMenu(bookingData.menuId);
+      expect(result).toEqual({});
+      const totalPaid = await getTotalPaidAmountForMenu(bookingData.menuId);
+      expect(totalPaid).toBe(0);
+    });
+
+    it('should count paid meals per weekday for one PAID booking', async () => {
+      const bookingData = await createTestBookingData();
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const menuDays = menu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
+      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      bookingData.menuSelections = {
+        [studentKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+      };
+      const created = await createBooking(bookingData, false);
+      await updateBookingStatus(created.id, PaymentStatus.PAID, false);
+
+      const result = await getPaidMealsByWeekdayForMenu(bookingData.menuId);
+      expect(result[DayOfWeek.MONDAY]).toBe(1);
+      expect(result[DayOfWeek.TUESDAY]).toBe(1);
+      // 1 Monday (5.5) + 1 Tuesday (4.5) = 10
+      const totalPaid = await getTotalPaidAmountForMenu(bookingData.menuId);
+      expect(totalPaid).toBe(10);
+    });
+
+    it('should not count PENDING or other statuses', async () => {
+      const bookingData = await createTestBookingData();
+      await createBooking(bookingData, false); // PENDING, not updated to PAID
+      const result = await getPaidMealsByWeekdayForMenu(bookingData.menuId);
+      expect(result).toEqual({});
+      const totalPaid = await getTotalPaidAmountForMenu(bookingData.menuId);
+      expect(totalPaid).toBe(0);
+    });
+
+    it('should aggregate paid meals across multiple PAID bookings', async () => {
+      const bookingData = await createTestBookingData();
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const menuDays = menu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      bookingData.menuSelections = { [studentKey]: mondayDay ? [mondayDay.id] : [] };
+
+      const b1 = await createBooking(bookingData, false);
+      await updateBookingStatus(b1.id, PaymentStatus.PAID, false);
+
+      const bookingData2 = await createTestBookingData({
+        email: `other${Date.now()}@example.com`,
+        menuId: bookingData.menuId,
+        schoolId: bookingData.schoolId,
+        menuSelections: { [studentKey]: mondayDay ? [mondayDay.id] : [] },
+      });
+      const b2 = await createBooking(bookingData2, false);
+      await updateBookingStatus(b2.id, PaymentStatus.PAID, false);
+
+      const result = await getPaidMealsByWeekdayForMenu(bookingData.menuId);
+      expect(result[DayOfWeek.MONDAY]).toBe(2);
+      // 2 Mondays at 5.5 each = 11
+      const totalPaid = await getTotalPaidAmountForMenu(bookingData.menuId);
+      expect(totalPaid).toBe(11);
+    });
+  });
+
+  describe('getBookingCountsByStatusForMenu', () => {
+    it('should return empty object when menu has no bookings', async () => {
+      const bookingData = await createTestBookingData();
+      const school = await createSchool(createTestSchoolData());
+      const mainDish = await createMeal(createTestMealData({ type: MealType.MAIN_COURSE }));
+      const menu = await createWeeklyMenu(
+        createTestWeeklyMenuData({
+          schoolId: school.id,
+          days: [
+            { dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, appetizerId: null, dessertId: null, price: 5 },
+          ],
+        })
+      );
+      const result = await getBookingCountsByStatusForMenu(menu.id);
+      expect(result).toEqual({});
+    });
+
+    it('should return counts per status for a menu', async () => {
+      const bookingData = await createTestBookingData();
+      const b1 = await createBooking(bookingData, false);
+      const bookingData2 = await createTestBookingData({
+        email: `other${Date.now()}@example.com`,
+        menuId: bookingData.menuId,
+        schoolId: bookingData.schoolId,
+      });
+      const b2 = await createBooking(bookingData2, false);
+      await updateBookingStatus(b1.id, PaymentStatus.PAID, false);
+
+      const result = await getBookingCountsByStatusForMenu(bookingData.menuId);
+      expect(result[PaymentStatus.PENDING]).toBe(1);
+      expect(result[PaymentStatus.PAID]).toBe(1);
+    });
+
+    it('should aggregate multiple bookings with same status', async () => {
+      const bookingData = await createTestBookingData();
+      await createBooking(bookingData, false);
+      const bookingData2 = await createTestBookingData({
+        email: `other${Date.now()}@example.com`,
+        menuId: bookingData.menuId,
+        schoolId: bookingData.schoolId,
+      });
+      await createBooking(bookingData2, false);
+
+      const result = await getBookingCountsByStatusForMenu(bookingData.menuId);
+      expect(result[PaymentStatus.PENDING]).toBe(2);
     });
   });
 });
