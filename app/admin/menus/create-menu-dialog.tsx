@@ -38,6 +38,7 @@ interface CreateMenuDialogProps {
   createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialValues?: Partial<CreateWeeklyMenuInput> | null;
 }
 
 export function CreateMenuDialog({
@@ -45,6 +46,7 @@ export function CreateMenuDialog({
   createWeeklyMenuAction,
   open,
   onOpenChange,
+  initialValues,
 }: CreateMenuDialogProps) {
   const router = useRouter();
   const [schools, setSchools] = useState<School[]>([]);
@@ -101,6 +103,43 @@ export function CreateMenuDialog({
       })),
     },
   });
+
+  // When dialog opens, initialize or reset the form with either provided initial values (for duplication)
+  // or the default blank state.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    if (initialValues) {
+      form.reset({
+        schoolId: initialValues.schoolId ?? undefined,
+        weekStartDate: initialValues.weekStartDate ?? getDefaultMonday(),
+        days:
+          initialValues.days && initialValues.days.length > 0
+            ? initialValues.days
+            : DEFAULT_DAYS.map(dayOfWeek => ({
+                dayOfWeek,
+                mainDishId: 0,
+                appetizerId: null,
+                dessertId: null,
+                price: 0.0,
+              })),
+      });
+    } else {
+      form.reset({
+        schoolId: undefined,
+        weekStartDate: getDefaultMonday(),
+        days: DEFAULT_DAYS.map(dayOfWeek => ({
+          dayOfWeek,
+          mainDishId: 0,
+          appetizerId: null,
+          dessertId: null,
+          price: 0.0,
+        })),
+      });
+    }
+  }, [open, initialValues, form]);
 
   // Convert Date to ISO string in format "YYYY-MM-DDTHH:mm:ss.sssZ"
   // This ensures the date is sent as a string without timezone conversion issues

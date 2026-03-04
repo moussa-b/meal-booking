@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
+import { CopyIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
@@ -64,6 +64,7 @@ export function MenusTable({
   const [selectedMenu, setSelectedMenu] = useState<WeeklyMenu | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
+  const [createInitialValues, setCreateInitialValues] = useState<Partial<CreateWeeklyMenuInput> | null>(null);
 
   // Update menus when initialMenus changes (after revalidation)
   useEffect(() => {
@@ -86,6 +87,42 @@ export function MenusTable({
   const handleEditClose = () => {
     setIsEditDialogOpen(false);
     setSelectedMenu(null);
+  };
+
+  // Handle duplicate: open create dialog prefilled with selected menu data
+  const handleDuplicateClick = (menu: WeeklyMenu) => {
+    const days =
+      menu.days && menu.days.length > 0
+        ? DEFAULT_DAYS.map((dayOfWeek) => {
+            const existingDay = menu.days?.find((d) => d.dayOfWeek === dayOfWeek);
+            return {
+              dayOfWeek,
+              mainDishId: existingDay?.mainDishId ?? 0,
+              appetizerId: existingDay?.appetizerId ?? null,
+              dessertId: existingDay?.dessertId ?? null,
+              price: existingDay?.price ?? 0.0,
+            };
+          })
+        : DEFAULT_DAYS.map((dayOfWeek) => ({
+            dayOfWeek,
+            mainDishId: 0,
+            appetizerId: null,
+            dessertId: null,
+            price: 0.0,
+          }));
+
+    setCreateInitialValues({
+      schoolId: menu.schoolId,
+      days,
+    });
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setCreateInitialValues(null);
+    }
+    setIsCreateDialogOpen(open);
   };
 
   // Handle delete
@@ -175,7 +212,8 @@ export function MenusTable({
               meals={meals}
               createWeeklyMenuAction={createWeeklyMenuAction}
               open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
+              onOpenChange={handleCreateDialogOpenChange}
+              initialValues={createInitialValues}
             />
           </div>
         </CardHeader>
@@ -242,6 +280,14 @@ export function MenusTable({
                           onClick={() => handleEditClick(menu)}
                         >
                           <PencilIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicateClick(menu)}
+                          title="Dupliquer le menu"
+                        >
+                          <CopyIcon className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
