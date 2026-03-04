@@ -42,6 +42,7 @@ interface MenusTableProps {
   deleteWeeklyMenuAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
   errorDetail?: string | null;
+  openCreateOnMount?: boolean;
 }
 
 export function MenusTable({
@@ -53,6 +54,7 @@ export function MenusTable({
   deleteWeeklyMenuAction,
   error,
   errorDetail,
+  openCreateOnMount,
 }: MenusTableProps) {
   const router = useRouter();
   const [menus, setMenus] = useState(initialMenus);
@@ -67,6 +69,13 @@ export function MenusTable({
   useEffect(() => {
     setMenus(initialMenus);
   }, [initialMenus]);
+
+  // Optionally open create dialog on mount (e.g. from dashboard link)
+  useEffect(() => {
+    if (openCreateOnMount) {
+      setIsCreateDialogOpen(true);
+    }
+  }, [openCreateOnMount]);
 
   // Handle edit
   const handleEditClick = (menu: WeeklyMenu) => {

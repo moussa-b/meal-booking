@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, PlusIcon } from 'lucide-react';
 import { getMonday, getNextMonday, isMonday, formatDateLocal, formatWeekTitle } from '@/lib/utils/date.utils';
 import type { School } from '@/lib/models/school';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -187,8 +187,11 @@ export default function AdminDashboardPage() {
             {dashboardLoading ? (
               <p className="text-muted-foreground">Chargement…</p>
             ) : dashboardData?.week1.noData || !dashboardData?.week1.menus.length ? (
-              <p className="text-muted-foreground">
-                Aucun menu défini pour cette semaine.
+              <p className="text-muted-foreground flex items-center gap-2">
+                <span>Aucun menu défini pour cette semaine.</span>
+                <Button asChild>
+                  <Link href="/admin/menus?openCreateMenu=1"><PlusIcon className="mr-1 h-4 w-4" />Ajouter un menu</Link>
+                </Button>
               </p>
             ) : (
               <WeekColumnContent week={dashboardData.week1}/>
@@ -205,8 +208,11 @@ export default function AdminDashboardPage() {
             {dashboardLoading ? (
               <p className="text-muted-foreground">Chargement…</p>
             ) : dashboardData?.week2.noData || !dashboardData?.week2.menus.length ? (
-              <p className="text-muted-foreground">
-                Aucun menu défini pour cette semaine.
+              <p className="text-muted-foreground flex items-center gap-2">
+                <span>Aucun menu défini pour cette semaine.</span>
+                <Button asChild>
+                  <Link href="/admin/menus?openCreateMenu=1"><PlusIcon className="mr-1 h-4 w-4" /> Ajouter un menu</Link>
+                </Button>
               </p>
             ) : (
               <WeekColumnContent week={dashboardData.week2}/>
