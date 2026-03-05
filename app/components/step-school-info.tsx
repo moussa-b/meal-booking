@@ -22,7 +22,7 @@ export function StepSchoolInfo() {
   useEffect(() => {
     async function fetchSchools() {
       try {
-        const response = await fetch('/api/schools');
+        const response = await fetch('/api/public/schools');
         if (response.ok) {
           const result = await response.json();
           setSchools(result.data || []);

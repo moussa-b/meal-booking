@@ -10,8 +10,8 @@ const captureSchema = z.object({
 });
 
 /**
- * POST /api/payments/capture
- * Capture a PayPal order and set booking status to PAID
+ * POST /api/public/payments/capture
+ * Capture a PayPal order and set booking status to PAID.
  */
 export async function POST(request: NextRequest) {
   try {

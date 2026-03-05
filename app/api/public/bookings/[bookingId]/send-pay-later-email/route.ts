@@ -4,18 +4,18 @@ import { getSchoolById } from '@/lib/services/school.service';
 import { sendBookingPayLater } from '@/lib/services/email.service';
 
 /**
- * POST /api/bookings/[bookingId]/send-pay-later-email
+ * POST /api/public/bookings/[bookingId]/send-pay-later-email
  * Sends the pay-later email for the booking if it has not been sent yet (paymentEmailSentAt is null).
  */
-export async function POST(_request: NextRequest, {params}: { params: Promise<{ bookingId: string }> }) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ bookingId: string }> }) {
   try {
-    const {bookingId: idParam} = await params;
+    const { bookingId: idParam } = await params;
     const bookingId = parseInt(idParam, 10);
 
     if (isNaN(bookingId) || bookingId < 1) {
       return NextResponse.json(
-        {error: 'Bad Request', message: 'Invalid bookingId'},
-        {status: 400}
+        { error: 'Bad Request', message: 'Invalid bookingId' },
+        { status: 400 }
       );
     }
 
@@ -23,22 +23,22 @@ export async function POST(_request: NextRequest, {params}: { params: Promise<{ 
 
     if (!booking) {
       return NextResponse.json(
-        {error: 'Not Found', message: 'Booking not found'},
-        {status: 404}
+        { error: 'Not Found', message: 'Booking not found' },
+        { status: 404 }
       );
     }
 
     if (booking.paymentEmailSentAt) {
       return NextResponse.json({
-        data: {sent: false, message: 'Pay-later email was already sent'},
+        data: { sent: false, message: 'Pay-later email was already sent' },
       });
     }
 
     const school = await getSchoolById(booking.schoolId);
     if (!school) {
       return NextResponse.json(
-        {error: 'Not Found', message: 'School not found'},
-        {status: 404}
+        { error: 'Not Found', message: 'School not found' },
+        { status: 404 }
       );
     }
 
@@ -46,7 +46,7 @@ export async function POST(_request: NextRequest, {params}: { params: Promise<{ 
     await updatePaymentEmailSentAt(bookingId);
 
     return NextResponse.json({
-      data: {sent: true, message: 'Pay-later email sent'},
+      data: { sent: true, message: 'Pay-later email sent' },
     });
   } catch (error) {
     console.error('Error sending pay-later email:', error);
@@ -55,7 +55,7 @@ export async function POST(_request: NextRequest, {params}: { params: Promise<{ 
         error: 'Internal Server Error',
         message: 'Failed to send pay-later email',
       },
-      {status: 500}
+      { status: 500 }
     );
   }
 }

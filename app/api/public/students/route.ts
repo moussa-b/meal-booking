@@ -5,8 +5,8 @@ import { z } from 'zod';
 const emailSchema = z.email();
 
 /**
- * GET /api/students?parentEmail=...
- * Get students by parent email (for prefilling the booking form)
+ * GET /api/public/students?parentEmail=...
+ * Get students by parent email (for prefilling the booking form).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
           error: 'Validation Error',
           message: 'parentEmail query parameter is required',
         },
-        {status: 400}
+        { status: 400 }
       );
     }
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
           error: 'Validation Error',
           message: 'Invalid email format',
         },
-        {status: 400}
+        { status: 400 }
       );
     }
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         error: 'Internal Server Error',
         message: 'Failed to fetch students',
       },
-      {status: 500}
+      { status: 500 }
     );
   }
 }

@@ -44,7 +44,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   useEffect(() => {
     async function fetchSchools() {
       try {
-        const response = await fetch("/api/schools");
+        const response = await fetch("/api/public/schools");
         if (response.ok) {
           const result = await response.json();
           setSchools(result.data || []);
@@ -64,7 +64,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       }
 
       try {
-        const response = await fetch(`/api/weekly-menus?current=true&schoolId=${formData.schoolId}`);
+        const response = await fetch(`/api/public/weekly-menus?current=true&schoolId=${formData.schoolId}`);
         if (response.ok) {
           const result = await response.json();
           setWeeklyMenu(result.data);
@@ -195,7 +195,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     };
 
     try {
-      const bookingRes = await fetch("/api/bookings", {
+      const bookingRes = await fetch("/api/public/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -240,7 +240,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     payPalOutcomeRef.current = 'none';
 
     try {
-      const orderRes = await fetch("/api/payments/create-order", {
+      const orderRes = await fetch("/api/public/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: result.id }),
@@ -291,7 +291,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
               });
               onSubmitted?.();
               if (result.id) {
-                fetch(`/api/bookings/${result.id}/send-pay-later-email`, {method: 'POST'}).catch(
+                fetch(`/api/public/bookings/${result.id}/send-pay-later-email`, {method: 'POST'}).catch(
                   (err) => console.error('Failed to send pay-later email:', err)
                 );
               }
@@ -313,7 +313,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     if (savedBookingId !== null) {
       setSavingForLater(true);
       try {
-        const sendRes = await fetch(`/api/bookings/${savedBookingId}/send-pay-later-email`, {
+        const sendRes = await fetch(`/api/public/bookings/${savedBookingId}/send-pay-later-email`, {
           method: "POST",
         });
         if (!sendRes.ok) {

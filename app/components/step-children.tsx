@@ -60,7 +60,7 @@ export function StepChildren() {
 
     async function fetchAndPrefill() {
       try {
-        const response = await fetch(`/api/students?parentEmail=${encodeURIComponent(trimmedEmail)}`);
+        const response = await fetch(`/api/public/students?parentEmail=${encodeURIComponent(trimmedEmail)}`);
         if (!response.ok || cancelled) return;
         const result = await response.json();
         const fetched = result.data ?? [];

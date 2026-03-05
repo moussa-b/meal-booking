@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getMealById,
-  updateMeal,
-  deleteMeal,
-} from '@/lib/services/meal.service';
-import {
-  updateMealSchema,
-} from '@/lib/validations/meal.validation';
+  getSchoolById,
+  updateSchool,
+  deleteSchool,
+} from '@/lib/services/school.service';
+import { updateSchoolSchema } from '@/lib/validations/school.validation';
 
 /**
- * GET /api/meals/[id]
- * Get a meal by ID
+ * GET /api/admin/schools/[id]
+ * Get a school by ID (admin).
  */
 export async function GET(
   request: NextRequest,
@@ -19,38 +17,38 @@ export async function GET(
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam, 10);
-    
+
     if (isNaN(id)) {
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Invalid meal ID',
+          message: 'Invalid school ID',
         },
         { status: 400 }
       );
     }
-    
-    const meal = await getMealById(id);
-    
-    if (!meal) {
+
+    const school = await getSchoolById(id);
+
+    if (!school) {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'Meal not found',
+          message: 'School not found',
         },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({
-      data: meal,
+      data: school,
     });
   } catch (error) {
-    console.error('Error fetching meal:', error);
+    console.error('Error fetching school:', error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to fetch meal',
+        message: 'Failed to fetch school',
       },
       { status: 500 }
     );
@@ -58,8 +56,8 @@ export async function GET(
 }
 
 /**
- * PUT /api/meals/[id]
- * Update a meal
+ * PUT /api/admin/schools/[id]
+ * Update a school (admin).
  */
 export async function PUT(
   request: NextRequest,
@@ -68,21 +66,21 @@ export async function PUT(
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam, 10);
-    
+
     if (isNaN(id)) {
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Invalid meal ID',
+          message: 'Invalid school ID',
         },
         { status: 400 }
       );
     }
-    
+
     const body = await request.json();
-    
+
     // Validate input
-    const validationResult = updateMealSchema.safeParse(body);
+    const validationResult = updateSchoolSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         {
@@ -92,30 +90,41 @@ export async function PUT(
         { status: 400 }
       );
     }
-    
-    const meal = await updateMeal(id, validationResult.data);
-    
+
+    const school = await updateSchool(id, validationResult.data);
+
     return NextResponse.json({
-      data: meal,
-      message: 'Meal updated successfully',
+      data: school,
+      message: 'School updated successfully',
     });
   } catch (error) {
-    console.error('Error updating meal:', error);
-    
-    if (error instanceof Error && error.message === 'Meal not found') {
+    console.error('Error updating school:', error);
+
+    if (error instanceof Error && error.message === 'School not found') {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'Meal not found',
+          message: 'School not found',
         },
         { status: 404 }
       );
     }
-    
+
+    // Handle duplicate code error
+    if (error instanceof Error && error.message.includes('Duplicate entry')) {
+      return NextResponse.json(
+        {
+          error: 'Validation Error',
+          message: 'Un school avec ce code existe déjà',
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to update meal',
+        message: 'Failed to update school',
       },
       { status: 500 }
     );
@@ -123,8 +132,8 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/meals/[id]
- * Delete a meal
+ * DELETE /api/admin/schools/[id]
+ * Delete a school (admin).
  */
 export async function DELETE(
   request: NextRequest,
@@ -133,42 +142,42 @@ export async function DELETE(
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam, 10);
-    
+
     if (isNaN(id)) {
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Invalid meal ID',
+          message: 'Invalid school ID',
         },
         { status: 400 }
       );
     }
-    
-    await deleteMeal(id);
-    
+
+    await deleteSchool(id);
+
     return NextResponse.json(
       {
-        message: 'Meal deleted successfully',
+        message: 'School deleted successfully',
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting meal:', error);
-    
-    if (error instanceof Error && error.message === 'Meal not found') {
+    console.error('Error deleting school:', error);
+
+    if (error instanceof Error && error.message === 'School not found') {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'Meal not found',
+          message: 'School not found',
         },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to delete meal',
+        message: 'Failed to delete school',
       },
       { status: 500 }
     );

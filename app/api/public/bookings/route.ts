@@ -23,8 +23,8 @@ const bookingSubmissionSchema = z.object({
 });
 
 /**
- * POST /api/bookings
- * Create a new booking
+ * POST /api/public/bookings
+ * Create a new booking (public flow).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -48,16 +48,19 @@ export async function POST(request: NextRequest) {
     // Create booking
     const booking = await createBooking(data, data.saveChildrenInfo, sendPayLaterEmail);
 
-    return NextResponse.json({
-      data: {
-        id: booking.id,
-        created: booking.created,
-        email: booking.email,
-        schoolId: booking.schoolId,
-        menuId: booking.menuId,
-        status: booking.status,
+    return NextResponse.json(
+      {
+        data: {
+          id: booking.id,
+          created: booking.created,
+          email: booking.email,
+          schoolId: booking.schoolId,
+          menuId: booking.menuId,
+          status: booking.status,
+        },
       },
-    }, { status: 201 });
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating booking:', error);
 
@@ -95,8 +98,8 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/bookings
- * Returns BookingWithDetails[] for the given email and school.
+ * GET /api/public/bookings
+ * Returns BookingWithDetails[] for the given email and school (public history flow).
  * Query params (both required):
  *   - email: valid email
  *   - schoolId: positive integer
@@ -114,7 +117,7 @@ export async function GET(request: NextRequest) {
           error: 'Bad Request',
           message: 'Invalid or missing email',
         },
-        {status: 400}
+        { status: 400 }
       );
     }
 
@@ -127,7 +130,7 @@ export async function GET(request: NextRequest) {
           error: 'Bad Request',
           message: 'Invalid or missing schoolId',
         },
-        {status: 400}
+        { status: 400 }
       );
     }
 

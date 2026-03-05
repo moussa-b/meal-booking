@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getAllMeals,
-  createMeal,
-} from '@/lib/services/meal.service';
-import {
-  createMealSchema,
-} from '@/lib/validations/meal.validation';
+import { getAllMeals, createMeal } from '@/lib/services/meal.service';
+import { createMealSchema } from '@/lib/validations/meal.validation';
 
 /**
- * GET /api/meals
- * Get all meals
+ * GET /api/admin/meals
+ * Get all meals (admin).
  */
 export async function GET() {
   try {
@@ -31,8 +26,8 @@ export async function GET() {
 }
 
 /**
- * POST /api/meals
- * Create a new meal
+ * POST /api/admin/meals
+ * Create a new meal (admin).
  */
 export async function POST(request: NextRequest) {
   try {

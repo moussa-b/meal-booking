@@ -29,7 +29,7 @@ function BookingCancelContent() {
       setStatus('loading');
 
       try {
-        const res = await fetch(`/api/bookings/${id}`);
+        const res = await fetch(`/api/public/bookings/${id}`);
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           setStatus('error');
@@ -41,7 +41,7 @@ function BookingCancelContent() {
         const paymentEmailSentAt = json?.data?.paymentEmailSentAt ?? null;
 
         if (!paymentEmailSentAt) {
-          const sendRes = await fetch(`/api/bookings/${id}/send-pay-later-email`, {
+          const sendRes = await fetch(`/api/public/bookings/${id}/send-pay-later-email`, {
             method: 'POST',
           });
           if (!sendRes.ok) {

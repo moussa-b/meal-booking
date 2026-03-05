@@ -123,7 +123,7 @@ export function BookingWizard() {
 
       try {
         setIsLoadingMenu(true);
-        const response = await fetch(`/api/weekly-menus?current=true&schoolId=${schoolId}`);
+        const response = await fetch(`/api/public/weekly-menus?current=true&schoolId=${schoolId}`);
         if (!response.ok) {
           setWeeklyMenu(null);
           return;

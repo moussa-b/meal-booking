@@ -4,13 +4,11 @@ import {
   updateWeeklyMenu,
   deleteWeeklyMenu,
 } from '@/lib/services/weekly-menu.service';
-import {
-  updateWeeklyMenuSchema,
-} from '@/lib/validations/weekly-menu.validation';
+import { updateWeeklyMenuSchema } from '@/lib/validations/weekly-menu.validation';
 
 /**
- * GET /api/weekly-menus/[id]
- * Get a weekly menu by ID
+ * GET /api/admin/weekly-menus/[id]
+ * Get a weekly menu by ID (admin).
  */
 export async function GET(
   request: NextRequest,
@@ -58,8 +56,8 @@ export async function GET(
 }
 
 /**
- * PUT /api/weekly-menus/[id]
- * Update a weekly menu
+ * PUT /api/admin/weekly-menus/[id]
+ * Update a weekly menu (admin).
  */
 export async function PUT(
   request: NextRequest,
@@ -101,7 +99,7 @@ export async function PUT(
     const menuData = {
       ...validationResult.data,
       days: validationResult.data.days
-        ? validationResult.data.days.map(day => ({
+        ? validationResult.data.days.map((day) => ({
             ...day,
             price: typeof day.price === 'string' ? parseFloat(day.price) : day.price,
           }))
@@ -148,8 +146,8 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/weekly-menus/[id]
- * Delete a weekly menu
+ * DELETE /api/admin/weekly-menus/[id]
+ * Delete a weekly menu (admin).
  */
 export async function DELETE(
   request: NextRequest,

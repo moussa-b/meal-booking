@@ -64,7 +64,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
       setError(null);
       setBookings(null);
 
-      const response = await fetch(`/api/bookings?email=${encodeURIComponent(formEmail)}&schoolId=${schoolId}`);
+      const response = await fetch(`/api/public/bookings?email=${encodeURIComponent(formEmail)}&schoolId=${schoolId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');
       }

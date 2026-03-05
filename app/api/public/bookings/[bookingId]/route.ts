@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getBookingById } from '@/lib/services/booking.service';
 
 /**
- * GET /api/bookings/[bookingId]
- * Get a booking by ID.
+ * GET /api/public/bookings/[bookingId]
+ * Get a booking by ID (public cancel/pay-later flows).
  */
-export async function GET(_request: NextRequest, {params}: { params: Promise<{ bookingId: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ bookingId: string }> }) {
   try {
-    const {bookingId: idParam} = await params;
+    const { bookingId: idParam } = await params;
     const bookingId = parseInt(idParam, 10);
 
     if (isNaN(bookingId) || bookingId < 1) {
       return NextResponse.json(
-        {error: 'Bad Request', message: 'Invalid bookingId'},
-        {status: 400}
+        { error: 'Bad Request', message: 'Invalid bookingId' },
+        { status: 400 }
       );
     }
 
@@ -21,8 +21,8 @@ export async function GET(_request: NextRequest, {params}: { params: Promise<{ b
 
     if (!booking) {
       return NextResponse.json(
-        {error: 'Not Found', message: 'Booking not found'},
-        {status: 404}
+        { error: 'Not Found', message: 'Booking not found' },
+        { status: 404 }
       );
     }
 
@@ -34,12 +34,12 @@ export async function GET(_request: NextRequest, {params}: { params: Promise<{ b
       confirmationEmailSentAt: booking.confirmationEmailSentAt?.toISOString() ?? null,
     };
 
-    return NextResponse.json({data});
+    return NextResponse.json({ data });
   } catch (error) {
     console.error('Error fetching booking:', error);
     return NextResponse.json(
-      {error: 'Internal Server Error', message: 'Failed to fetch booking'},
-      {status: 500}
+      { error: 'Internal Server Error', message: 'Failed to fetch booking' },
+      { status: 500 }
     );
   }
 }

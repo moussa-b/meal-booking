@@ -22,7 +22,7 @@ function getApprovalUrl(orderJson: { links?: Array<{ href: string; rel: string }
 }
 
 /**
- * POST /api/payments/create-order
+ * POST /api/public/payments/create-order
  * Create a PayPal order for an unpaid booking, or reuse existing valid orderId if stored.
  * Returns { orderId, approvalUrl } for redirect/popup flow.
  */

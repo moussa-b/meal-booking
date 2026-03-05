@@ -22,7 +22,7 @@ function BookingReturnContent() {
 
     const capture = async () => {
       try {
-        const res = await fetch('/api/payments/capture', {
+        const res = await fetch('/api/public/payments/capture', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({

@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSchoolByCode } from '@/lib/services/school.service';
 
 /**
- * GET /api/schools/code/[code]
- * Get a school by code
+ * GET /api/admin/schools/code/[code]
+ * Get a school by code (admin).
  */
 export async function GET(
   request: NextRequest,
-  {params}: { params: Promise<{ code: string }> }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const {code} = await params;
+    const { code } = await params;
 
     if (!code) {
       return NextResponse.json(
@@ -18,7 +18,7 @@ export async function GET(
           error: 'Bad Request',
           message: 'School code is required',
         },
-        {status: 400}
+        { status: 400 }
       );
     }
 
@@ -30,7 +30,7 @@ export async function GET(
           error: 'Not Found',
           message: 'School not found',
         },
-        {status: 404}
+        { status: 404 }
       );
     }
 
@@ -44,7 +44,7 @@ export async function GET(
         error: 'Internal Server Error',
         message: 'Failed to fetch school',
       },
-      {status: 500}
+      { status: 500 }
     );
   }
 }

@@ -81,7 +81,7 @@ export function StepHistory({ bookings }: StepHistoryProps) {
   async function handlePayWithPayPal(bookingId: number): Promise<void> {
     setPayingBookingId(bookingId);
     try {
-      const res = await fetch('/api/payments/create-order', {
+      const res = await fetch('/api/public/payments/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId }),
