@@ -25,16 +25,10 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { useAdminUser } from '@/hooks/use-admin-user';
+import { AdminUserProvider, useAdminUser } from '@/hooks/use-admin-user';
 import { NavUser } from './nav-user';
 
-export default function AdminLayout({children,}: {
-  children: React.ReactNode;
-}) {
-  const pathname = usePathname();
-  const adminUser = useAdminUser();
-
-  const menuItems = [
+const menuItems = [
     {
       title: 'Tableau de bord',
       href: '/admin',
@@ -65,7 +59,27 @@ export default function AdminLayout({children,}: {
       href: '/admin/students',
       icon: Users,
     },
-  ];
+];
+
+export default function AdminLayout({children,}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+
+  return (
+    <AdminUserProvider>
+      <AdminLayoutInner pathname={pathname}>
+        {children}
+      </AdminLayoutInner>
+    </AdminUserProvider>
+  );
+}
+
+function AdminLayoutInner({pathname, children,}: {
+  pathname: string;
+  children: React.ReactNode;
+}) {
+  const adminUser = useAdminUser();
 
   const currentPage = menuItems.find((item) => item.href === pathname);
   const pageTitle = currentPage?.title || 'Administration';
@@ -98,7 +112,7 @@ export default function AdminLayout({children,}: {
                         tooltip={item.title}
                       >
                         <Link href={item.href}>
-                          <Icon/>
+                          <Icon />
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -110,14 +124,14 @@ export default function AdminLayout({children,}: {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={adminUser}/>
+          <NavUser user={adminUser} />
         </SidebarFooter>
-        <SidebarRail/>
+        <SidebarRail />
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1"/>
-          {PageIcon && <PageIcon className="h-5 w-5"/>}
+          <SidebarTrigger className="-ml-1" />
+          {PageIcon && <PageIcon className="h-5 w-5" />}
           <h1 className="text-xl font-semibold">{pageTitle}</h1>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">

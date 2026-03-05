@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAdminUserSetter } from '@/hooks/use-admin-user';
 
 type AdminLoginFormProps = {
   nextPath: string;
@@ -13,6 +14,7 @@ type AdminLoginFormProps = {
 
 function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
   const router = useRouter();
+  const setAdminUser = useAdminUserSetter();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,13 +47,7 @@ function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
       }
 
       if (data?.user) {
-        try {
-          if (typeof window !== 'undefined') {
-            window.sessionStorage.setItem('adminUser', JSON.stringify(data.user));
-          }
-        } catch {
-          // Ignore storage errors
-        }
+        setAdminUser(data.user);
       }
 
       router.push(nextPath);

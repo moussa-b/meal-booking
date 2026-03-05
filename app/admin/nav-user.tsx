@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -22,6 +23,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import type { AdminUser } from '@/hooks/use-admin-user';
+import { useAdminUserLoaded, useAdminUserSetter } from '@/hooks/use-admin-user';
 
 function capitalize(value: string): string {
   if (!value) return '';
@@ -42,6 +44,8 @@ interface NavUserProps {
 export function NavUser({user}: NavUserProps) {
   const {isMobile} = useSidebar();
   const router = useRouter();
+  const setAdminUser = useAdminUserSetter();
+  const hasLoadedFromStorage = useAdminUserLoaded();
 
   const handleProfileClick = () => {
     router.push('/admin/profile');
@@ -53,17 +57,26 @@ export function NavUser({user}: NavUserProps) {
         method: 'POST',
       });
     } finally {
-      try {
-        if (typeof window !== 'undefined') {
-          window.sessionStorage.removeItem('adminUser');
-        }
-      } catch {
-        // Ignore storage errors
-      }
+      setAdminUser(null);
       router.push('/admin/login');
       router.refresh();
     }
   };
+
+  if (!hasLoadedFromStorage) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" className="pointer-events-none" asChild>
+            <div className="flex w-full items-center gap-2">
+              <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+              <Skeleton className="h-4 flex-1 rounded" />
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   if (!user) {
     return (
