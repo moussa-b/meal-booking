@@ -86,3 +86,25 @@ export function createTestStudentData(overrides?: {
     parentEmail: overrides?.parentEmail !== undefined ? overrides.parentEmail : `test${Date.now()}@example.com`,
   };
 }
+
+/**
+ * Test data factory for creating user test data
+ */
+export function createTestUserData(overrides?: {
+  username?: string;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  password?: string;
+}) {
+  const timestamp = Date.now();
+
+  return {
+    username: overrides?.username ?? `testuser${timestamp}`,
+    firstname: overrides?.firstname ?? 'Test',
+    lastname: overrides?.lastname ?? 'User',
+    email: overrides?.email ?? `test${timestamp}@example.com`,
+    // Use a deterministic default hashed password value; tests can override as needed
+    password: overrides?.password ?? 'hashed-password',
+  };
+}
