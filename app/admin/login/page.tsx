@@ -1,14 +1,18 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function AdminLoginPage() {
+type AdminLoginFormProps = {
+  nextPath: string;
+};
+
+function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,7 @@ export default function AdminLoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({identifier, password}),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await res.json().catch(() => null);
@@ -50,7 +54,6 @@ export default function AdminLoginPage() {
         }
       }
 
-      const nextPath = searchParams.get('next') || '/admin';
       router.push(nextPath);
     } catch {
       setError('Erreur réseau lors de la connexion');
@@ -67,14 +70,12 @@ export default function AdminLoginPage() {
         </h1>
 
         {error && (
-          <p className="mb-4 text-sm text-destructive"
-             role="alert">
+          <p className="mb-4 text-sm text-destructive" role="alert">
             {error}
           </p>
         )}
 
-        <form onSubmit={handleSubmit}
-              className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="identifier">Identifiant ou email</Label>
             <Input
@@ -101,14 +102,27 @@ export default function AdminLoginPage() {
             />
           </div>
 
-          <Button type="submit"
-                  className="w-full"
-                  disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </Button>
         </form>
       </div>
     </div>
+  );
+}
+
+function AdminLoginPageContent() {
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get('next') || '/admin';
+
+  return <AdminLoginForm nextPath={nextPath} />;
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<AdminLoginForm nextPath="/admin" />}>
+      <AdminLoginPageContent />
+    </Suspense>
   );
 }
 
