@@ -1,0 +1,78 @@
+import { query } from '@/lib/db/connection';
+import type { User } from '@/lib/models/user';
+
+/**
+ * Database row type for User (as returned from MySQL)
+ */
+interface UserRow {
+  id: number;
+  created: string | Date;
+  username: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  password: string;
+}
+
+export interface UserWithPassword extends User {
+  password: string;
+}
+
+function mapUserRow(row: UserRow): UserWithPassword {
+  return {
+    id: row.id,
+    created: new Date(row.created),
+    username: row.username,
+    firstname: row.firstname,
+    lastname: row.lastname,
+    email: row.email,
+    password: row.password,
+  };
+}
+
+/**
+ * Get a user by username or email, including password hash
+ */
+export async function getUserWithPasswordByUsernameOrEmail(identifier: string): Promise<UserWithPassword | null> {
+  const results = await query<UserRow[]>(
+    'SELECT id, created, username, firstname, lastname, email, password FROM users WHERE username = ? OR email = ? LIMIT 1',
+    [identifier, identifier]
+  );
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return mapUserRow(results[0]);
+}
+
+/**
+ * Insert a new user and return it including password hash.
+ *
+ * This is primarily intended for internal use (e.g. tests or seeding)
+ * where we already have a hashed password value.
+ */
+export async function insertUser(data: {
+  username: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  password: string;
+}): Promise<UserWithPassword> {
+  const result = await query<{ insertId: number }>(
+    'INSERT INTO users (username, firstname, lastname, email, password) VALUES (?, ?, ?, ?, ?)',
+    [data.username, data.firstname, data.lastname, data.email, data.password]
+  );
+
+  const rows = await query<UserRow[]>(
+    'SELECT id, created, username, firstname, lastname, email, password FROM users WHERE id = ?',
+    [result.insertId]
+  );
+
+  if (!rows[0]) {
+    throw new Error('Failed to load inserted user');
+  }
+
+  return mapUserRow(rows[0]);
+}
+

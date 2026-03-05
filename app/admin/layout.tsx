@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   School,
@@ -9,10 +9,11 @@ import {
   ChefHat,
   ShoppingCart,
   Users,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -23,51 +24,56 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
+import { useAdminUser } from '@/hooks/use-admin-user';
+import { NavUser } from './nav-user';
 
-export default function AdminLayout({
-  children,
-}: {
+export default function AdminLayout({children,}: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const adminUser = useAdminUser();
 
   const menuItems = [
     {
-      title: "Tableau de bord",
-      href: "/admin",
+      title: 'Tableau de bord',
+      href: '/admin',
       icon: LayoutDashboard,
     },
     {
-      title: "Établissement scolaire",
-      href: "/admin/schools",
+      title: 'Établissement scolaire',
+      href: '/admin/schools',
       icon: School,
     },
     {
-      title: "Repas",
-      href: "/admin/meals",
+      title: 'Repas',
+      href: '/admin/meals',
       icon: Utensils,
     },
     {
-      title: "Menus",
-      href: "/admin/menus",
+      title: 'Menus',
+      href: '/admin/menus',
       icon: ChefHat,
     },
     {
-      title: "Commandes",
-      href: "/admin/orders",
+      title: 'Commandes',
+      href: '/admin/orders',
       icon: ShoppingCart,
     },
     {
-      title: "Élèves enregistrés",
-      href: "/admin/students",
+      title: 'Élèves enregistrés',
+      href: '/admin/students',
       icon: Users,
     },
   ];
 
   const currentPage = menuItems.find((item) => item.href === pathname);
-  const pageTitle = currentPage?.title || "Administration";
+  const pageTitle = currentPage?.title || 'Administration';
   const PageIcon = currentPage?.icon;
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
 
   return (
     <SidebarProvider>
@@ -92,7 +98,7 @@ export default function AdminLayout({
                         tooltip={item.title}
                       >
                         <Link href={item.href}>
-                          <Icon />
+                          <Icon/>
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -103,12 +109,15 @@ export default function AdminLayout({
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarRail />
+        <SidebarFooter>
+          <NavUser user={adminUser}/>
+        </SidebarFooter>
+        <SidebarRail/>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          {PageIcon && <PageIcon className="h-5 w-5" />}
+          <SidebarTrigger className="-ml-1"/>
+          {PageIcon && <PageIcon className="h-5 w-5"/>}
           <h1 className="text-xl font-semibold">{pageTitle}</h1>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
