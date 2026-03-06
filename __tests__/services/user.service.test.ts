@@ -3,7 +3,9 @@ import {
   getUserWithPasswordByUsernameOrEmail,
   insertUser,
   getUserById,
+  getUserWithPasswordById,
   updateUser,
+  updateUserCredentials,
 } from '@/lib/services/user.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestUserData } from '../helpers/test-data';
@@ -148,5 +150,91 @@ describe('user.service', () => {
         email: 'second@example.com',
       })
     ).rejects.toThrow('Cet email est déjà utilisé.');
+  });
+
+  it('getUserWithPasswordById returns null when no user exists for id', async () => {
+    const user = await getUserWithPasswordById(999999);
+    expect(user).toBeNull();
+  });
+
+  it('getUserWithPasswordById returns user including password when found', async () => {
+    const userData = createTestUserData({
+      username: 'credbyiduser',
+      email: 'credbyid@example.com',
+      password: 'hashed-secret',
+    });
+    const created = await insertUser(userData);
+
+    const found = await getUserWithPasswordById(created.id);
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe(created.id);
+    expect(found!.username).toBe(created.username);
+    expect(found!.email).toBe(created.email);
+    expect(found!.password).toBe(created.password);
+  });
+
+  it('updateUserCredentials updates username and password and returns user without password', async () => {
+    const userData = createTestUserData({
+      username: 'creduser',
+      email: 'cred@example.com',
+      password: 'old-hash',
+    });
+    const created = await insertUser(userData);
+
+    const updated = await updateUserCredentials(created.id, {
+      username: 'newusername',
+      passwordHash: 'new-hash',
+    });
+
+    expect(updated.id).toBe(created.id);
+    expect(updated.username).toBe('newusername');
+    expect(updated.firstname).toBe(created.firstname);
+    expect(updated.email).toBe(created.email);
+    expect('password' in updated).toBe(false);
+
+    const withPassword = await getUserWithPasswordById(created.id);
+    expect(withPassword!.username).toBe('newusername');
+    expect(withPassword!.password).toBe('new-hash');
+  });
+
+  it('updateUserCredentials can update username without changing password', async () => {
+    const userData = createTestUserData({
+      username: 'credusernopw',
+      email: 'crednopw@example.com',
+      password: 'old-hash-nopw',
+    });
+    const created = await insertUser(userData);
+
+    const updated = await updateUserCredentials(created.id, {
+      username: 'newusername-nopw',
+    });
+
+    expect(updated.id).toBe(created.id);
+    expect(updated.username).toBe('newusername-nopw');
+    expect('password' in updated).toBe(false);
+
+    const withPassword = await getUserWithPasswordById(created.id);
+    expect(withPassword!.username).toBe('newusername-nopw');
+    expect(withPassword!.password).toBe('old-hash-nopw');
+  });
+
+  it('updateUserCredentials throws clear error on duplicate username', async () => {
+    const userData1 = createTestUserData({
+      username: 'creduser1',
+      email: 'cred1@example.com',
+    });
+    const userData2 = createTestUserData({
+      username: 'creduser2',
+      email: 'cred2@example.com',
+    });
+    const created1 = await insertUser(userData1);
+    await insertUser(userData2);
+
+    expect(
+      updateUserCredentials(created1.id, {
+        username: 'creduser2',
+        passwordHash: 'any-hash',
+      })
+    ).rejects.toThrow('Cet identifiant est déjà utilisé.');
   });
 });

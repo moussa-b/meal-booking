@@ -103,6 +103,50 @@ export async function getUserById(id: number): Promise<User | null> {
 }
 
 /**
+ * Get a user by id, including password hash
+ */
+export async function getUserWithPasswordById(id: number): Promise<UserWithPassword | null> {
+  const rows = await query<UserRow[]>(
+    'SELECT id, created, username, firstname, lastname, email, password FROM users WHERE id = ? LIMIT 1',
+    [id]
+  );
+  if (rows.length === 0) {
+    return null;
+  }
+  return mapUserRow(rows[0]);
+}
+
+/**
+ * Update username and password for a user. Returns the updated user (without password).
+ * Throws with a clear message on duplicate username.
+ */
+export async function updateUserCredentials(id: number, data: { username: string; passwordHash?: string | null }): Promise<User> {
+  try {
+    if (data.passwordHash) {
+      await query('UPDATE users SET username = ?, password = ? WHERE id = ?', [
+        data.username,
+        data.passwordHash,
+        id,
+      ]);
+    } else {
+      await query('UPDATE users SET username = ? WHERE id = ?', [data.username, id]);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('Duplicate') || message.includes('ER_DUP_ENTRY') || message.includes('1062')) {
+      throw new Error('Cet identifiant est déjà utilisé.');
+    }
+    throw err;
+  }
+
+  const updated = await getUserById(id);
+  if (!updated) {
+    throw new Error('User not found after update');
+  }
+  return updated;
+}
+
+/**
  * Update firstname, lastname, and email for a user. Returns the updated user (without password).
  * Throws with a clear message on duplicate email.
  */

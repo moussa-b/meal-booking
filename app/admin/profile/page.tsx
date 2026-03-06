@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getAdminJwtCookieName, verifyAdminJwt } from '@/lib/auth/jwt';
 import { getUserById } from '@/lib/services/user.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChangeCredentialsDialog } from './change-credentials-dialog';
 import { ProfileForm } from './profile-form';
 
 export default async function AdminProfilePage() {
@@ -29,7 +30,10 @@ export default async function AdminProfilePage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profil</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Mon Profil</CardTitle>
+          <ChangeCredentialsDialog initialUsername={user.username} />
+        </div>
       </CardHeader>
       <CardContent>
         <ProfileForm

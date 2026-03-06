@@ -133,7 +133,7 @@ export function NavUser({user}: NavUserProps) {
             <DropdownMenuSeparator/>
             <DropdownMenuItem onClick={handleProfileClick}>
               <User2 className="mr-2 h-4 w-4"/>
-              <span>Profil</span>
+              <span>Mon Profil</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogoutClick}>
               <LogOut className="mr-2 h-4 w-4"/>
