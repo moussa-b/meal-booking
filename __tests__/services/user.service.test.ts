@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { getUserWithPasswordByUsernameOrEmail, insertUser } from '@/lib/services/user.service';
+import {
+  getUserWithPasswordByUsernameOrEmail,
+  insertUser,
+  getUserById,
+  updateUser,
+} from '@/lib/services/user.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestUserData } from '../helpers/test-data';
 
@@ -43,4 +48,105 @@ describe('user.service', () => {
     expect(found!.email).toBe(created.email);
     expect(found!.password).toBe(created.password);
   });
-})
+
+  it('insertUser stores lastname uppercased', async () => {
+    const userData = createTestUserData({
+      username: 'insertupper',
+      lastname: 'jones',
+      email: 'insertupper@example.com',
+    });
+    const created = await insertUser(userData);
+    expect(created.lastname).toBe('JONES');
+
+    const found = await getUserById(created.id);
+    expect(found!.lastname).toBe('JONES');
+  });
+
+  it('getUserById returns null when no user exists for id', async () => {
+    const user = await getUserById(999999);
+    expect(user).toBeNull();
+  });
+
+  it('getUserById returns user without password when found', async () => {
+    const userData = createTestUserData({
+      username: 'getbyiduser',
+      email: 'getbyid@example.com',
+    });
+    const created = await insertUser(userData);
+
+    const found = await getUserById(created.id);
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe(created.id);
+    expect(found!.username).toBe(created.username);
+    expect(found!.firstname).toBe(created.firstname);
+    expect(found!.lastname).toBe(created.lastname);
+    expect(found!.email).toBe(created.email);
+    expect('password' in (found ?? {})).toBe(false);
+  });
+
+  it('updateUser updates firstname, lastname, email and returns user without password', async () => {
+    const userData = createTestUserData({
+      username: 'updateuser',
+      firstname: 'OldFirst',
+      lastname: 'OldLast',
+      email: 'old@example.com',
+    });
+    const created = await insertUser(userData);
+
+    const updated = await updateUser(created.id, {
+      firstname: 'NewFirst',
+      lastname: 'NewLast',
+      email: 'new@example.com',
+    });
+
+    expect(updated.id).toBe(created.id);
+    expect(updated.username).toBe(created.username);
+    expect(updated.firstname).toBe('NewFirst');
+    expect(updated.lastname).toBe('NEWLAST');
+    expect(updated.email).toBe('new@example.com');
+    expect('password' in updated).toBe(false);
+
+    const refetched = await getUserById(created.id);
+    expect(refetched!.firstname).toBe('NewFirst');
+    expect(refetched!.lastname).toBe('NEWLAST');
+    expect(refetched!.email).toBe('new@example.com');
+  });
+
+  it('updateUser stores lastname uppercased', async () => {
+    const userData = createTestUserData({
+      username: 'loweruser',
+      lastname: 'smith',
+      email: 'lower@example.com',
+    });
+    const created = await insertUser(userData);
+
+    const updated = await updateUser(created.id, {
+      firstname: created.firstname,
+      lastname: 'smith',
+      email: created.email,
+    });
+
+    expect(updated.lastname).toBe('SMITH');
+  });
+
+  it('updateUser throws clear error on duplicate email', async () => {
+    const userData1 = createTestUserData({
+      username: 'user1dup',
+      email: 'first@example.com',
+    });
+    const userData2 = createTestUserData({
+      username: 'user2dup',
+      email: 'second@example.com',
+    });
+    const created1 = await insertUser(userData1);
+    await insertUser(userData2);
+
+    expect(
+      updateUser(created1.id, {
+        firstname: 'F',
+        lastname: 'L',
+        email: 'second@example.com',
+      })
+    ).rejects.toThrow('Cet email est déjà utilisé.');
+  });
+});

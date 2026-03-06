@@ -25,12 +25,6 @@ import {
 import type { AdminUser } from '@/hooks/use-admin-user';
 import { useAdminUserLoaded, useAdminUserSetter } from '@/hooks/use-admin-user';
 
-function capitalize(value: string): string {
-  if (!value) return '';
-  const lower = value.toLowerCase();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
-}
-
 function getInitials(firstname: string, lastname: string): string {
   const firstInitial = firstname?.trim().charAt(0) ?? '';
   const lastInitial = lastname?.trim().charAt(0) ?? '';
@@ -94,7 +88,7 @@ export function NavUser({user}: NavUserProps) {
     );
   }
 
-  const fullName = `${user.firstname} ${capitalize(user.lastname)}`;
+  const fullName = `${user.firstname} ${user.lastname.toUpperCase()}`;
   const initials = getInitials(user.firstname, user.lastname);
 
   return (
