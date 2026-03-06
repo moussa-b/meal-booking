@@ -521,15 +521,15 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
               type="button"
               onClick={handlePayWithPayPal}
               disabled={paying || savingForLater || totalPrice <= 0}
-              className="w-full h-12 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white"
+              className="w-full min-h-12 h-auto py-3 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white whitespace-normal text-center"
             >
               {paying ? (
                 "Enregistrement et préparation du paiement..."
               ) : (
-                <>
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Soumettre la réservation et payer avec PayPal
-                </>
+                <span className="flex items-center justify-center gap-2 w-full min-w-0">
+                  <CheckCircle2 className="h-5 w-5 shrink-0" />
+                  <span className="min-w-0 text-center">Soumettre la réservation et payer avec PayPal</span>
+                </span>
               )}
             </Button>
             <Button
