@@ -26,7 +26,7 @@ const formSchema = z.object({
         feedingRegime: z.string().optional(),
       })
     )
-    .min(1, "Au moins un étudiant est requis"),
+    .min(1, "Au moins un élève est requis"),
   menuSelections: z
     .record(z.string(), z.array(z.number()))
     .refine(
@@ -37,7 +37,7 @@ const formSchema = z.object({
         );
       },
       {
-        message: "Veuillez sélectionner au moins un jour pour au moins un étudiant",
+        message: "Veuillez sélectionner au moins un jour pour au moins un élève",
       }
     ),
   saveChildrenInfo: z.boolean().optional(),
@@ -179,7 +179,7 @@ export function BookingWizard() {
       case 99:
         return "Aucun menu disponible";
       case 2:
-        return "Informations des enfants";
+        return "Informations des élèves";
       case 3:
         return "Sélection des repas";
       case 100:

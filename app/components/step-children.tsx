@@ -117,7 +117,7 @@ export function StepChildren() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-slate-700">
-                Étudiant {index + 1}
+                Élève {index + 1}
               </CardTitle>
               {index > 0 && (
                 <Button
@@ -221,7 +221,7 @@ export function StepChildren() {
         className="w-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-colors"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Ajouter un autre étudiant
+        Ajouter un autre élève
       </Button>
 
       <div className="mt-6 pt-4">

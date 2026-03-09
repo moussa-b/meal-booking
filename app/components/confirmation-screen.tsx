@@ -396,7 +396,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         <CardHeader className="bg-blue-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
-            Étudiants inscrits
+            Élèves inscrits
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-6">
