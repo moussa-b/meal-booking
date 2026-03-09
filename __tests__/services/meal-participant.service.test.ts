@@ -4,8 +4,8 @@ import {
   deleteMealParticipant,
   getAllMealParticipants,
   getMealParticipantById,
-  getMealParticipantsByParentEmail,
-  getMealParticipantsGroupedByParentEmail,
+  getMealParticipantsByEmail,
+  getMealParticipantsGroupedByEmail,
   updateMealParticipant,
 } from '@/lib/services/meal-participant.service';
 import { setupTestIsolation } from '../helpers/db.setup';
@@ -53,7 +53,7 @@ describe('MealParticipant Service', () => {
       expect(mealParticipant?.class).toBe(testData.class);
       expect(mealParticipant?.type).toBe(testData.type);
       expect(mealParticipant?.feedingRegime).toBe(testData.feedingRegime);
-      expect(mealParticipant?.parentEmail).toBe(testData.parentEmail);
+      expect(mealParticipant?.email).toBe(testData.email);
       expect(mealParticipant?.created).toBeInstanceOf(Date);
     });
   });
@@ -77,25 +77,25 @@ describe('MealParticipant Service', () => {
       expect(mealParticipant?.class).toBe(testData.class);
       expect(mealParticipant?.type).toBe(testData.type);
       expect(mealParticipant?.feedingRegime).toBe(testData.feedingRegime);
-      expect(mealParticipant?.parentEmail).toBe(testData.parentEmail);
+      expect(mealParticipant?.email).toBe(testData.email);
       expect(mealParticipant?.created).toBeInstanceOf(Date);
     });
   });
 
-  describe('getMealParticipantsByParentEmail', () => {
+  describe('getMealParticipantsByEmail', () => {
     it('should return empty array when no mealParticipants exist for email', async () => {
-      const mealParticipants = await getMealParticipantsByParentEmail('nonexistent@example.com');
+      const mealParticipants = await getMealParticipantsByEmail('nonexistent@example.com');
       expect(mealParticipants).toEqual([]);
     });
 
-    it('should return mealParticipants for a specific parent email', async () => {
-      const parentEmail = `parent${Date.now()}@example.com`;
-      const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({ parentEmail, firstName: 'Child1' }));
-      const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({ parentEmail, firstName: 'Child2' }));
-      // Create a mealParticipant with different parent email
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: 'other@example.com', firstName: 'Other' }));
+    it('should return mealParticipants for a specific email', async () => {
+      const email = `parent${Date.now()}@example.com`;
+      const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({ email, firstName: 'Child1' }));
+      const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({ email, firstName: 'Child2' }));
+      // Create a mealParticipant with different email
+      await createMealParticipant(createTestMealParticipantData({ email: 'other@example.com', firstName: 'Other' }));
 
-      const mealParticipants = await getMealParticipantsByParentEmail(parentEmail);
+      const mealParticipants = await getMealParticipantsByEmail(email);
 
       expect(mealParticipants.length).toBe(2);
       const mealParticipantIds = mealParticipants.map((s) => s.id);
@@ -103,40 +103,40 @@ describe('MealParticipant Service', () => {
       expect(mealParticipantIds).toContain(mealParticipant2.id);
     });
 
-    it('should return only mealParticipants with matching parent email', async () => {
-      const parentEmail1 = `parent1${Date.now()}@example.com`;
-      const parentEmail2 = `parent2${Date.now()}@example.com`;
+    it('should return only mealParticipants with matching email', async () => {
+      const email1 = `parent1${Date.now()}@example.com`;
+      const email2 = `parent2${Date.now()}@example.com`;
 
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail1, firstName: 'Child1' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail1, firstName: 'Child2' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail2, firstName: 'Child3' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email1, firstName: 'Child1' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email1, firstName: 'Child2' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email2, firstName: 'Child3' }));
 
-      const mealParticipants = await getMealParticipantsByParentEmail(parentEmail1);
+      const mealParticipants = await getMealParticipantsByEmail(email1);
       expect(mealParticipants.length).toBe(2);
       mealParticipants.forEach((mealParticipant) => {
-        expect(mealParticipant.parentEmail).toBe(parentEmail1);
+        expect(mealParticipant.email).toBe(email1);
       });
     });
 
-    it('should preserve mealParticipant type when filtering by parent email', async () => {
-      const parentEmail = `parent${Date.now()}@example.com`;
+    it('should preserve mealParticipant type when filtering by email', async () => {
+      const email = `parent${Date.now()}@example.com`;
 
       await createMealParticipant(
         createTestMealParticipantData({
-          parentEmail,
+          email,
           firstName: 'School Participant',
           type: 'school',
         })
       );
       await createMealParticipant(
         createTestMealParticipantData({
-          parentEmail,
+          email,
           firstName: 'Company Participant',
           type: 'company',
         })
       );
 
-      const mealParticipants = await getMealParticipantsByParentEmail(parentEmail);
+      const mealParticipants = await getMealParticipantsByEmail(email);
 
       expect(mealParticipants).toHaveLength(2);
       expect(mealParticipants.map((mealParticipant) => mealParticipant.type).sort()).toEqual([
@@ -146,98 +146,98 @@ describe('MealParticipant Service', () => {
     });
   });
 
-  describe('getMealParticipantsGroupedByParentEmail', () => {
+  describe('getMealParticipantsGroupedByEmail', () => {
     it('should return empty array when no mealParticipants exist', async () => {
-      const groups = await getMealParticipantsGroupedByParentEmail();
+      const groups = await getMealParticipantsGroupedByEmail();
       expect(groups).toEqual([]);
     });
 
-    it('should group mealParticipants by parent email', async () => {
-      const parentEmail1 = `parent1${Date.now()}@example.com`;
-      const parentEmail2 = `parent2${Date.now()}@example.com`;
+    it('should group mealParticipants by email', async () => {
+      const email1 = `parent1${Date.now()}@example.com`;
+      const email2 = `parent2${Date.now()}@example.com`;
 
-      const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail1, firstName: 'Alice', lastName: 'Smith' }));
-      const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail1, firstName: 'Bob', lastName: 'Smith' }));
-      const mealParticipant3 = await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail2, firstName: 'Charlie', lastName: 'Brown' }));
+      const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({ email: email1, firstName: 'Alice', lastName: 'Smith' }));
+      const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({ email: email1, firstName: 'Bob', lastName: 'Smith' }));
+      const mealParticipant3 = await createMealParticipant(createTestMealParticipantData({ email: email2, firstName: 'Charlie', lastName: 'Brown' }));
 
-      const groups = await getMealParticipantsGroupedByParentEmail();
+      const groups = await getMealParticipantsGroupedByEmail();
 
       expect(groups.length).toBe(2);
 
-      const group1 = groups.find(g => g.parentEmail === parentEmail1);
+      const group1 = groups.find(g => g.email === email1);
       expect(group1).toBeDefined();
       expect(group1?.mealParticipants.length).toBe(2);
       expect(group1?.mealParticipants.map(s => s.id)).toContain(mealParticipant1.id);
       expect(group1?.mealParticipants.map(s => s.id)).toContain(mealParticipant2.id);
 
-      const group2 = groups.find(g => g.parentEmail === parentEmail2);
+      const group2 = groups.find(g => g.email === email2);
       expect(group2).toBeDefined();
       expect(group2?.mealParticipants.length).toBe(1);
       expect(group2?.mealParticipants[0].id).toBe(mealParticipant3.id);
     });
 
-    it('should group mealParticipants without parent email together', async () => {
-      const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({ parentEmail: null, firstName: 'NoEmail1', lastName: 'MealParticipant' }));
-      const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({ parentEmail: null, firstName: 'NoEmail2', lastName: 'MealParticipant' }));
-      const mealParticipant3 = await createMealParticipant(createTestMealParticipantData({ parentEmail: 'parent@example.com', firstName: 'WithEmail', lastName: 'MealParticipant' }));
+    it('should group mealParticipants without email together', async () => {
+      const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({ email: null, firstName: 'NoEmail1', lastName: 'MealParticipant' }));
+      const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({ email: null, firstName: 'NoEmail2', lastName: 'MealParticipant' }));
+      const mealParticipant3 = await createMealParticipant(createTestMealParticipantData({ email: 'parent@example.com', firstName: 'WithEmail', lastName: 'MealParticipant' }));
 
-      const groups = await getMealParticipantsGroupedByParentEmail();
+      const groups = await getMealParticipantsGroupedByEmail();
 
       expect(groups.length).toBe(2);
 
-      const nullGroup = groups.find(g => g.parentEmail === null);
+      const nullGroup = groups.find(g => g.email === null);
       expect(nullGroup).toBeDefined();
       expect(nullGroup?.mealParticipants.length).toBe(2);
       expect(nullGroup?.mealParticipants.map(s => s.id)).toContain(mealParticipant1.id);
       expect(nullGroup?.mealParticipants.map(s => s.id)).toContain(mealParticipant2.id);
 
-      const emailGroup = groups.find(g => g.parentEmail === 'parent@example.com');
+      const emailGroup = groups.find(g => g.email === 'parent@example.com');
       expect(emailGroup).toBeDefined();
       expect(emailGroup?.mealParticipants.length).toBe(1);
       expect(emailGroup?.mealParticipants[0].id).toBe(mealParticipant3.id);
     });
 
-    it('should sort groups alphabetically by parent email with null emails last', async () => {
-      const parentEmailA = `a_parent${Date.now()}@example.com`;
-      const parentEmailZ = `z_parent${Date.now()}@example.com`;
+    it('should sort groups alphabetically by email with null emails last', async () => {
+      const emailA = `a_parent${Date.now()}@example.com`;
+      const emailZ = `z_parent${Date.now()}@example.com`;
 
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmailZ, firstName: 'Z' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: null, firstName: 'Null' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmailA, firstName: 'A' }));
+      await createMealParticipant(createTestMealParticipantData({ email: emailZ, firstName: 'Z' }));
+      await createMealParticipant(createTestMealParticipantData({ email: null, firstName: 'Null' }));
+      await createMealParticipant(createTestMealParticipantData({ email: emailA, firstName: 'A' }));
 
-      const groups = await getMealParticipantsGroupedByParentEmail();
+      const groups = await getMealParticipantsGroupedByEmail();
 
       expect(groups.length).toBe(3);
-      // First group should be parentEmailA (alphabetically first)
-      expect(groups[0].parentEmail).toBe(parentEmailA);
-      // Second group should be parentEmailZ (alphabetically second)
-      expect(groups[1].parentEmail).toBe(parentEmailZ);
+      // First group should be emailA (alphabetically first)
+      expect(groups[0].email).toBe(emailA);
+      // Second group should be emailZ (alphabetically second)
+      expect(groups[1].email).toBe(emailZ);
       // Last group should be null (null emails last)
-      expect(groups[2].parentEmail).toBeNull();
+      expect(groups[2].email).toBeNull();
     });
 
     it('should sort mealParticipants within each group by last name then first name', async () => {
-      const parentEmail = `parent${Date.now()}@example.com`;
+      const email = `parent${Date.now()}@example.com`;
 
       // Create mealParticipants in non-alphabetical order
       const mealParticipant1 = await createMealParticipant(createTestMealParticipantData({
-        parentEmail,
+        email,
         firstName: 'Charlie',
         lastName: 'Zebra'
       }));
       const mealParticipant2 = await createMealParticipant(createTestMealParticipantData({
-        parentEmail,
+        email,
         firstName: 'Alice',
         lastName: 'Apple'
       }));
       const mealParticipant3 = await createMealParticipant(createTestMealParticipantData({
-        parentEmail,
+        email,
         firstName: 'Bob',
         lastName: 'Apple'
       }));
 
-      const groups = await getMealParticipantsGroupedByParentEmail();
-      const group = groups.find(g => g.parentEmail === parentEmail);
+      const groups = await getMealParticipantsGroupedByEmail();
+      const group = groups.find(g => g.email === email);
 
       expect(group).toBeDefined();
       expect(group?.mealParticipants.length).toBe(3);
@@ -251,42 +251,42 @@ describe('MealParticipant Service', () => {
       expect(group?.mealParticipants[2].firstName).toBe('Charlie');
     });
 
-    it('should handle multiple groups with different parent emails', async () => {
-      const parentEmail1 = `parent1${Date.now()}@example.com`;
-      const parentEmail2 = `parent2${Date.now()}@example.com`;
-      const parentEmail3 = `parent3${Date.now()}@example.com`;
+    it('should handle multiple groups with different emails', async () => {
+      const email1 = `parent1${Date.now()}@example.com`;
+      const email2 = `parent2${Date.now()}@example.com`;
+      const email3 = `parent3${Date.now()}@example.com`;
 
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail1, firstName: 'Child1' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail1, firstName: 'Child2' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail2, firstName: 'Child3' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail3, firstName: 'Child4' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail3, firstName: 'Child5' }));
-      await createMealParticipant(createTestMealParticipantData({ parentEmail: parentEmail3, firstName: 'Child6' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email1, firstName: 'Child1' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email1, firstName: 'Child2' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email2, firstName: 'Child3' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email3, firstName: 'Child4' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email3, firstName: 'Child5' }));
+      await createMealParticipant(createTestMealParticipantData({ email: email3, firstName: 'Child6' }));
 
-      const groups = await getMealParticipantsGroupedByParentEmail();
+      const groups = await getMealParticipantsGroupedByEmail();
 
       expect(groups.length).toBe(3);
 
-      const group1 = groups.find(g => g.parentEmail === parentEmail1);
+      const group1 = groups.find(g => g.email === email1);
       expect(group1?.mealParticipants.length).toBe(2);
 
-      const group2 = groups.find(g => g.parentEmail === parentEmail2);
+      const group2 = groups.find(g => g.email === email2);
       expect(group2?.mealParticipants.length).toBe(1);
 
-      const group3 = groups.find(g => g.parentEmail === parentEmail3);
+      const group3 = groups.find(g => g.email === email3);
       expect(group3?.mealParticipants.length).toBe(3);
     });
 
     it('should return correct data structure for each group', async () => {
-      const parentEmail = `parent${Date.now()}@example.com`;
-      const testData = createTestMealParticipantData({ parentEmail, firstName: 'Test', lastName: 'MealParticipant' });
+      const email = `parent${Date.now()}@example.com`;
+      const testData = createTestMealParticipantData({ email, firstName: 'Test', lastName: 'MealParticipant' });
       const created = await createMealParticipant(testData);
 
-      const groups = await getMealParticipantsGroupedByParentEmail();
-      const group = groups.find(g => g.parentEmail === parentEmail);
+      const groups = await getMealParticipantsGroupedByEmail();
+      const group = groups.find(g => g.email === email);
 
       expect(group).toBeDefined();
-      expect(group?.parentEmail).toBe(parentEmail);
+      expect(group?.email).toBe(email);
       expect(group?.mealParticipants.length).toBe(1);
 
       const mealParticipant = group?.mealParticipants[0];
@@ -296,7 +296,7 @@ describe('MealParticipant Service', () => {
       expect(mealParticipant?.class).toBe(testData.class);
       expect(mealParticipant?.type).toBe(testData.type);
       expect(mealParticipant?.feedingRegime).toBe(testData.feedingRegime);
-      expect(mealParticipant?.parentEmail).toBe(parentEmail);
+      expect(mealParticipant?.email).toBe(email);
       expect(mealParticipant?.created).toBeInstanceOf(Date);
     });
   });
@@ -313,25 +313,25 @@ describe('MealParticipant Service', () => {
       expect(mealParticipant.class).toBe(testData.class);
       expect(mealParticipant.type).toBe(testData.type);
       expect(mealParticipant.feedingRegime).toBe(testData.feedingRegime);
-      expect(mealParticipant.parentEmail).toBe(testData.parentEmail);
+      expect(mealParticipant.email).toBe(testData.email);
       expect(mealParticipant.created).toBeInstanceOf(Date);
     });
 
-    it('should create mealParticipant with parentEmail', async () => {
-      const parentEmail = `parent${Date.now()}@example.com`;
-      const testData = createTestMealParticipantData({ parentEmail });
+    it('should create mealParticipant with email', async () => {
+      const email = `parent${Date.now()}@example.com`;
+      const testData = createTestMealParticipantData({ email });
 
       const mealParticipant = await createMealParticipant(testData);
 
-      expect(mealParticipant.parentEmail).toBe(parentEmail);
+      expect(mealParticipant.email).toBe(email);
     });
 
-    it('should create mealParticipant without parentEmail', async () => {
-      const testData = createTestMealParticipantData({ parentEmail: null });
+    it('should create mealParticipant without email', async () => {
+      const testData = createTestMealParticipantData({ email: null });
 
       const mealParticipant = await createMealParticipant(testData);
 
-      expect(mealParticipant.parentEmail).toBeUndefined();
+      expect(mealParticipant.email).toBeUndefined();
     });
 
     it('should create mealParticipant with feedingRegime', async () => {
@@ -403,14 +403,14 @@ describe('MealParticipant Service', () => {
       expect(updated.feedingRegime).toBe(newFeedingRegime);
     });
 
-    it('should update mealParticipant parentEmail', async () => {
+    it('should update mealParticipant email', async () => {
       const created = await createMealParticipant(createTestMealParticipantData());
-      const newParentEmail = `newparent${Date.now()}@example.com`;
+      const newEmail = `newparent${Date.now()}@example.com`;
 
-      const updated = await updateMealParticipant(created.id, { parentEmail: newParentEmail });
+      const updated = await updateMealParticipant(created.id, { email: newEmail });
 
       expect(updated.id).toBe(created.id);
-      expect(updated.parentEmail).toBe(newParentEmail);
+      expect(updated.email).toBe(newEmail);
     });
 
     it('should update mealParticipant type', async () => {

@@ -70,7 +70,7 @@ export function StepChildren({ organizationType }: StepChildrenProps) {
 
     async function fetchAndPrefill() {
       try {
-        const response = await fetch(`/api/public/meal-participants?parentEmail=${encodeURIComponent(trimmedEmail)}`);
+        const response = await fetch(`/api/public/meal-participants?email=${encodeURIComponent(trimmedEmail)}`);
         if (!response.ok || cancelled) return;
         const result = await response.json();
         const fetched = result.data ?? [];

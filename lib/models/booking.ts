@@ -33,7 +33,7 @@ export interface BookingMealParticipant {
   class: string;
   type: OrganizationType;
   feedingRegime: string | null;
-  parentEmail: string;
+  email: string;
   mealParticipant?: MealParticipant | null;
   menuSelections?: BookingMenuSelection[];
 }

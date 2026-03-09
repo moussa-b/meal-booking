@@ -10,7 +10,7 @@ export const updateMealParticipantSchema = z.object({
   class: z.string().min(1, 'La classe est requise').optional(),
   type: z.enum(ORGANIZATION_TYPES).optional(),
   feedingRegime: z.string().optional().nullable(),
-  parentEmail: z.email('Email invalide').optional().nullable(),
+  email: z.email('Email invalide').optional().nullable(),
 });
 
 export type UpdateMealParticipantInput = z.infer<typeof updateMealParticipantSchema>;

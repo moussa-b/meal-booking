@@ -4,7 +4,7 @@ import { Fragment, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ChevronDownIcon, ChevronRightIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import type { MealParticipantsByParentEmail } from '@/lib/services/meal-participant.service';
+import type { MealParticipantsByEmail } from '@/lib/services/meal-participant.service';
 import type { MealParticipant } from '@/lib/models/meal-participant';
 import { type ActionResult } from './actions';
 import { type UpdateMealParticipantInput, } from '@/lib/validations/meal-participant.validation';
@@ -26,7 +26,7 @@ import { formatDate } from '@/lib/utils/date.utils';
 import { EditMealParticipantDialog } from './edit-meal-participant-dialog';
 
 interface MealParticipantsTableProps {
-  groups: MealParticipantsByParentEmail[];
+  groups: MealParticipantsByEmail[];
   updateMealParticipantAction: (id: number, data: UpdateMealParticipantInput) => Promise<ActionResult>;
   deleteMealParticipantAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
@@ -84,8 +84,8 @@ export function MealParticipantsTable({
     }
   };
 
-  const toggleGroup = (parentEmail: string | null) => {
-    const key = parentEmail ?? '__null__';
+  const toggleGroup = (email: string | null) => {
+    const key = email ?? '__null__';
     setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -97,13 +97,13 @@ export function MealParticipantsTable({
     });
   };
 
-  const isGroupExpanded = (parentEmail: string | null): boolean => {
-    const key = parentEmail ?? '__null__';
+  const isGroupExpanded = (email: string | null): boolean => {
+    const key = email ?? '__null__';
     return expandedGroups.has(key);
   };
 
-  const getGroupLabel = (parentEmail: string | null): string => {
-    return parentEmail ?? 'email inconnu';
+  const getGroupLabel = (email: string | null): string => {
+    return email ?? 'email inconnu';
   };
 
   const totalMealParticipants = groups.reduce((sum, group) => sum + group.mealParticipants.length, 0);
@@ -152,16 +152,16 @@ export function MealParticipantsTable({
             </TableHeader>
             <TableBody>
               {groups.map((group) => {
-                const isExpanded = isGroupExpanded(group.parentEmail);
-                const groupKey = group.parentEmail ?? '__null__';
-                const groupLabel = getGroupLabel(group.parentEmail);
+                const isExpanded = isGroupExpanded(group.email);
+                const groupKey = group.email ?? '__null__';
+                const groupLabel = getGroupLabel(group.email);
 
                 return (
                   <Fragment key={groupKey}>
                     {/* Group Header Row */}
                     <TableRow
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => toggleGroup(group.parentEmail)}
+                      onClick={() => toggleGroup(group.email)}
                     >
                       <TableCell>
                         {isExpanded ? (

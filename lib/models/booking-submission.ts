@@ -8,7 +8,7 @@ export interface BookingSubmission {
   organizationId: number;
   menuId: number;
   email: string;
-  mealParticipants: Omit<MealParticipant, 'id' | 'created' | 'parentEmail'>[];
+  mealParticipants: Omit<MealParticipant, 'id' | 'created' | 'email'>[];
   menuSelections: Record<string, number[]>; // Array of WeeklyMenuDay IDs
   saveChildrenInfo: boolean;
 }

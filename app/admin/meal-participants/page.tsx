@@ -1,16 +1,16 @@
-import { getMealParticipantsGroupedByParentEmail, type MealParticipantsByParentEmail } from '@/lib/services/meal-participant.service';
+import { getMealParticipantsGroupedByEmail, type MealParticipantsByEmail } from '@/lib/services/meal-participant.service';
 import { MealParticipantsTable } from "./meal-participants-table";
 import { updateMealParticipantAction, deleteMealParticipantAction, } from "./actions";
 
 export const dynamic = 'force-dynamic';
 
 export default async function MealParticipantsPage() {
-  let groups: MealParticipantsByParentEmail[] = [];
+  let groups: MealParticipantsByEmail[] = [];
   let error: string | null = null;
   let errorDetail: string | null = null;
 
   try {
-    groups = await getMealParticipantsGroupedByParentEmail();
+    groups = await getMealParticipantsGroupedByEmail();
   } catch (err) {
     console.error("Error fetching meal participants:", err);
     error = "Erreur lors du chargement des participants";

@@ -10,7 +10,7 @@ interface MealParticipantRow {
   class: string;
   type: string | null;
   feedingRegime: string | null;
-  parentEmail: string | null;
+  email: string | null;
 }
 
 function normalizeMealParticipantType(type: string | null): OrganizationType {
@@ -26,20 +26,20 @@ function mapMealParticipantRow(row: MealParticipantRow): MealParticipant {
     class: row.class,
     type: normalizeMealParticipantType(row.type),
     feedingRegime: row.feedingRegime,
-    parentEmail: row.parentEmail || undefined,
+    email: row.email || undefined,
   };
 }
 
 export async function getAllMealParticipants(): Promise<MealParticipant[]> {
   const results = await query<MealParticipantRow[]>(
-    'SELECT id, created, lastName, firstName, class, type, feedingRegime, parentEmail FROM meal_participants ORDER BY created DESC'
+    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email FROM meal_participants ORDER BY created DESC'
   );
   return results.map(mapMealParticipantRow);
 }
 
 export async function getMealParticipantById(id: number): Promise<MealParticipant | null> {
   const results = await query<MealParticipantRow[]>(
-    'SELECT id, created, lastName, firstName, class, type, feedingRegime, parentEmail FROM meal_participants WHERE id = ?',
+    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email FROM meal_participants WHERE id = ?',
     [id]
   );
 
@@ -50,9 +50,9 @@ export async function getMealParticipantById(id: number): Promise<MealParticipan
   return mapMealParticipantRow(results[0]);
 }
 
-export async function getMealParticipantsByParentEmail(email: string): Promise<MealParticipant[]> {
+export async function getMealParticipantsByEmail(email: string): Promise<MealParticipant[]> {
   const results = await query<MealParticipantRow[]>(
-    'SELECT id, created, lastName, firstName, class, type, feedingRegime, parentEmail FROM meal_participants WHERE parentEmail = ? ORDER BY created DESC',
+    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email FROM meal_participants WHERE email = ? ORDER BY created DESC',
     [email]
   );
   return results.map(mapMealParticipantRow);
@@ -64,17 +64,17 @@ export async function createMealParticipant(data: {
   class: string;
   type: OrganizationType;
   feedingRegime?: string | null;
-  parentEmail?: string | null;
+  email?: string | null;
 }): Promise<MealParticipant> {
   const result = await query<MysqlInsertResult>(
-    'INSERT INTO meal_participants (lastName, firstName, class, type, feedingRegime, parentEmail) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO meal_participants (lastName, firstName, class, type, feedingRegime, email) VALUES (?, ?, ?, ?, ?, ?)',
     [
       data.lastName,
       data.firstName,
       data.class,
       data.type,
       data.feedingRegime || null,
-      data.parentEmail || null,
+      data.email || null,
     ]
   );
 
@@ -93,7 +93,7 @@ export async function updateMealParticipant(
     class?: string;
     type?: OrganizationType;
     feedingRegime?: string | null;
-    parentEmail?: string | null;
+    email?: string | null;
   }
 ): Promise<MealParticipant> {
   const updates: string[] = [];
@@ -119,9 +119,9 @@ export async function updateMealParticipant(
     updates.push('feedingRegime = ?');
     values.push(data.feedingRegime || null);
   }
-  if (data.parentEmail !== undefined) {
-    updates.push('parentEmail = ?');
-    values.push(data.parentEmail || null);
+  if (data.email !== undefined) {
+    updates.push('email = ?');
+    values.push(data.email || null);
   }
 
   if (updates.length === 0) {
@@ -149,17 +149,17 @@ export async function deleteMealParticipant(id: number): Promise<void> {
   }
 }
 
-export interface MealParticipantsByParentEmail {
-  parentEmail: string | null;
+export interface MealParticipantsByEmail {
+  email: string | null;
   mealParticipants: MealParticipant[];
 }
 
-export async function getMealParticipantsGroupedByParentEmail(): Promise<MealParticipantsByParentEmail[]> {
+export async function getMealParticipantsGroupedByEmail(): Promise<MealParticipantsByEmail[]> {
   const mealParticipants = await getAllMealParticipants();
   const grouped = new Map<string | null, MealParticipant[]>();
 
   for (const mealParticipant of mealParticipants) {
-    const email = mealParticipant.parentEmail || null;
+    const email = mealParticipant.email || null;
     if (!grouped.has(email)) {
       grouped.set(email, []);
     }
@@ -167,8 +167,8 @@ export async function getMealParticipantsGroupedByParentEmail(): Promise<MealPar
   }
 
   return Array.from(grouped.entries())
-    .map(([parentEmail, items]) => ({
-      parentEmail,
+    .map(([email, items]) => ({
+      email,
       mealParticipants: items.sort((a, b) => {
         const lastNameCompare = a.lastName.localeCompare(b.lastName);
         if (lastNameCompare !== 0) return lastNameCompare;
@@ -176,9 +176,9 @@ export async function getMealParticipantsGroupedByParentEmail(): Promise<MealPar
       }),
     }))
     .sort((a, b) => {
-      if (a.parentEmail === null && b.parentEmail !== null) return 1;
-      if (a.parentEmail !== null && b.parentEmail === null) return -1;
-      if (a.parentEmail === null && b.parentEmail === null) return 0;
-      return (a.parentEmail || '').localeCompare(b.parentEmail || '');
+      if (a.email === null && b.email !== null) return 1;
+      if (a.email !== null && b.email === null) return -1;
+      if (a.email === null && b.email === null) return 0;
+      return (a.email || '').localeCompare(b.email || '');
     });
 }

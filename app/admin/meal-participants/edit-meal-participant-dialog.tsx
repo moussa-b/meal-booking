@@ -39,7 +39,7 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
       class: '',
       feedingRegime: '',
       type: 'school',
-      parentEmail: '',
+      email: '',
     },
   });
 
@@ -52,7 +52,7 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
         class: mealParticipant.class,
         type: mealParticipant.type,
         feedingRegime: mealParticipant.feedingRegime || '',
-        parentEmail: mealParticipant.parentEmail || '',
+        email: mealParticipant.email || '',
       });
     }
   }, [mealParticipant, open, form]);
@@ -166,7 +166,7 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
             />
             <FormField
               control={form.control}
-              name="parentEmail"
+              name="email"
               render={({field}) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>

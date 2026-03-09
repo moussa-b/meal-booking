@@ -80,7 +80,7 @@ export function createTestMealParticipantData(overrides?: {
   class?: string;
   type?: OrganizationType;
   feedingRegime?: string | null;
-  parentEmail?: string | null;
+  email?: string | null;
 }) {
   return {
     lastName: overrides?.lastName || `Doe${Date.now()}`,
@@ -88,7 +88,7 @@ export function createTestMealParticipantData(overrides?: {
     class: overrides?.class || 'CM1',
     type: overrides?.type || 'school',
     feedingRegime: overrides?.feedingRegime !== undefined ? overrides.feedingRegime : null,
-    parentEmail: overrides?.parentEmail !== undefined ? overrides.parentEmail : `test${Date.now()}@example.com`,
+    email: overrides?.email !== undefined ? overrides.email : `test${Date.now()}@example.com`,
   };
 }
 

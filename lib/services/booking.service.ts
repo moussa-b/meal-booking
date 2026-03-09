@@ -35,7 +35,7 @@ interface BookingMealParticipantRow {
   class: string;
   type: 'school' | 'company';
   feedingRegime: string | null;
-  parentEmail: string;
+  email: string;
 }
 
 /**
@@ -114,13 +114,13 @@ export async function createBooking(
           class: mealParticipant.class,
           type: organization.type,
           feedingRegime: mealParticipant.feedingRegime || null,
-          parentEmail: data.email,
+          email: data.email,
         });
         savedMealParticipantId = savedMealParticipant.id;
       }
 
       const [mealParticipantResult] = await connection.execute(
-        'INSERT INTO booking_meal_participants (bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, parentEmail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO booking_meal_participants (bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           bookingId,
           savedMealParticipantId,
@@ -186,7 +186,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
 
   // Get all meal participants for this booking
   const mealParticipantsRows = await query<BookingMealParticipantRow[]>(
-    'SELECT id, bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, parentEmail FROM booking_meal_participants WHERE bookingId = ?',
+    'SELECT id, bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, email FROM booking_meal_participants WHERE bookingId = ?',
     [id]
   );
 
@@ -220,7 +220,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     class: mealParticipantRow.class,
     type: mealParticipantRow.type,
     feedingRegime: mealParticipantRow.feedingRegime,
-    parentEmail: mealParticipantRow.parentEmail,
+    email: mealParticipantRow.email,
     mealParticipant: null,
     menuSelections: selectionsByMealParticipantId.get(mealParticipantRow.id) || [],
   }));

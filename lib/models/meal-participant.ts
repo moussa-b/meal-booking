@@ -12,5 +12,5 @@ export interface MealParticipant {
   class: string;
   type: OrganizationType;
   feedingRegime?: string | null;
-  parentEmail?: string | null;
+  email?: string | null;
 }
