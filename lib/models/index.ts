@@ -4,7 +4,7 @@
  */
 export * from './user';
 export * from './organization';
-export * from './student';
+export * from './meal-participant';
 export * from './booking-submission';
 export * from './booking';
 export * from './payment-status';

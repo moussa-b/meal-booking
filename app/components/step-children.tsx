@@ -28,10 +28,10 @@ const CLASSES = [
   "3ème",
 ];
 
-// True if no students or all fields empty (don’t overwrite user input).
-function isStudentsEmpty(students: BookingFormData['students']): boolean {
-  if (!students?.length) return true;
-  return students.every(
+// True if no meal participants or all fields empty (don’t overwrite user input).
+function isMealParticipantsEmpty(mealParticipants: BookingFormData['mealParticipants']): boolean {
+  if (!mealParticipants?.length) return true;
+  return mealParticipants.every(
     (s) =>
       !s.lastName?.trim() && !s.firstName?.trim() && !s.class?.trim()
   );
@@ -41,26 +41,26 @@ export function StepChildren() {
   const { control, watch, setValue } = useFormContext<BookingFormData>();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "students",
+    name: "mealParticipants",
   });
   const email = watch('email');
-  const students = watch("students");
+  const mealParticipants = watch("mealParticipants");
   // Email we already prefilled for; ref avoids re-fetch on re-render.
   const prefilledForEmail = useRef<string | null>(null);
 
-  // On mount/email change: fetch students by email and prefill when form is empty.
+  // On mount/email change: fetch meal participants by email and prefill when form is empty.
   useEffect(() => {
     if (!email?.trim()) return;
 
     const trimmedEmail = email.trim();
     if (prefilledForEmail.current === trimmedEmail) return; // Already did this email.
-    if (!isStudentsEmpty(students)) return; // User already filled; don’t overwrite.
+    if (!isMealParticipantsEmpty(mealParticipants)) return; // User already filled; don’t overwrite.
 
     let cancelled = false;
 
     async function fetchAndPrefill() {
       try {
-        const response = await fetch(`/api/public/students?parentEmail=${encodeURIComponent(trimmedEmail)}`);
+        const response = await fetch(`/api/public/meal-participants?parentEmail=${encodeURIComponent(trimmedEmail)}`);
         if (!response.ok || cancelled) return;
         const result = await response.json();
         const fetched = result.data ?? [];
@@ -68,15 +68,16 @@ export function StepChildren() {
 
         prefilledForEmail.current = trimmedEmail; // Mark so we don’t fetch again.
         if (fetched.length > 0 && !cancelled) {
-          const formStudents = fetched.map(
-            (s: { lastName: string; firstName: string; class: string; feedingRegime?: string | null }) => ({
+          const formMealParticipants = fetched.map(
+            (s: { lastName: string; firstName: string; class: string; type: 'school' | 'company'; feedingRegime?: string | null }) => ({
               lastName: s.lastName ?? '',
               firstName: s.firstName ?? '',
               class: s.class ?? '',
               feedingRegime: s.feedingRegime ?? '',
+              type: s.type ?? 'school',
             })
           );
-          setValue('students', formStudents, {shouldDirty: true});
+          setValue('mealParticipants', formMealParticipants, {shouldDirty: true});
         }
       } catch {
         // ignore; leave form as-is
@@ -87,26 +88,27 @@ export function StepChildren() {
     return () => {
       cancelled = true; // Ignore result if effect re-runs or unmounts.
     };
-  }, [email, setValue, students]);
+  }, [email, setValue, mealParticipants]);
 
   // Last row must have lastName, firstName, class before "Add another" works.
   const isLastStudentValid = () => {
     if (fields.length === 0) return false;
     const lastIndex = fields.length - 1;
-    const lastStudent = students[lastIndex];
+    const lastMealParticipant = mealParticipants[lastIndex];
     return (
-      lastStudent?.lastName?.trim() !== "" &&
-      lastStudent?.firstName?.trim() !== "" &&
-      lastStudent?.class?.trim() !== ""
+      lastMealParticipant?.lastName?.trim() !== "" &&
+      lastMealParticipant?.firstName?.trim() !== "" &&
+      lastMealParticipant?.class?.trim() !== ""
     );
   };
 
-  const addStudent = () => {
+  const addMealParticipant = () => {
     append({
       lastName: "",
       firstName: "",
       class: "",
       feedingRegime: "",
+      type: mealParticipants[0]?.type ?? "school",
     });
   };
 
@@ -136,7 +138,7 @@ export function StepChildren() {
           <CardContent className="space-y-4">
             <FormField
               control={control}
-              name={`students.${index}.lastName`}
+              name={`mealParticipants.${index}.lastName`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nom de famille</FormLabel>
@@ -149,7 +151,7 @@ export function StepChildren() {
 
             <FormField
               control={control}
-              name={`students.${index}.firstName`}
+              name={`mealParticipants.${index}.firstName`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Prénom</FormLabel>
@@ -162,7 +164,7 @@ export function StepChildren() {
 
             <FormField
               control={control}
-              name={`students.${index}.class`}
+              name={`mealParticipants.${index}.class`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Classe</FormLabel>
@@ -190,7 +192,7 @@ export function StepChildren() {
 
             <FormField
               control={control}
-              name={`students.${index}.feedingRegime`}
+              name={`mealParticipants.${index}.feedingRegime`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
@@ -216,7 +218,7 @@ export function StepChildren() {
       <Button
         type="button"
         variant="outline"
-        onClick={addStudent}
+        onClick={addMealParticipant}
         disabled={!isLastStudentValid()}
         className="w-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-colors"
       >

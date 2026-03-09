@@ -148,7 +148,7 @@ export function StepHistory({ bookings }: StepHistoryProps) {
                 </p>
               )}
               <p className="text-sm text-slate-600 mt-1">
-                {booking.students
+                {booking.mealParticipants
                   ?.map((s) => `${s.firstName} ${s.lastName}`)
                   .join(', ')}
               </p>

@@ -4,7 +4,7 @@ import type { Booking } from '@/lib/models/booking';
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
 import { DAY_NAMES } from '@/lib/utils/date.utils';
 import { PayLaterEmail } from '@/lib/emails/pay-later-email';
-import { BookingConfirmationPaidEmail, type StudentSummary, } from '@/lib/emails/booking-confirmation-paid-email';
+import { BookingConfirmationPaidEmail, type MealParticipantSummary, } from '@/lib/emails/booking-confirmation-paid-email';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -66,17 +66,17 @@ export async function sendBookingPayLater(
 function buildBookingSummary(
   booking: Booking,
   menu: WeeklyMenu
-): { studentSummaries: StudentSummary[]; totalAmount: number } {
+): { mealParticipantSummaries: MealParticipantSummary[]; totalAmount: number } {
   const daysById = new Map<number, WeeklyMenuDay>(
     (menu.days ?? []).map((d) => [d.id, d])
   );
-  const studentSummaries: StudentSummary[] = [];
+  const mealParticipantSummaries: MealParticipantSummary[] = [];
   let totalAmount = 0;
 
-  for (const student of booking.students ?? []) {
+  for (const mealParticipant of booking.mealParticipants ?? []) {
     const dayNames: string[] = [];
     let amount = 0;
-    for (const sel of student.menuSelections ?? []) {
+    for (const sel of mealParticipant.menuSelections ?? []) {
       const day = daysById.get(sel.weeklyMenuDayId);
       if (day) {
         dayNames.push(DAY_NAMES[day.dayOfWeek] ?? `Jour ${day.dayOfWeek}`);
@@ -85,15 +85,15 @@ function buildBookingSummary(
     }
     dayNames.sort();
     totalAmount += amount;
-    studentSummaries.push({
-      firstName: student.firstName,
-      lastName: student.lastName,
+    mealParticipantSummaries.push({
+      firstName: mealParticipant.firstName,
+      lastName: mealParticipant.lastName,
       dayNames,
       amount,
     });
   }
 
-  return {studentSummaries, totalAmount};
+  return {mealParticipantSummaries, totalAmount};
 }
 
 /**
@@ -109,7 +109,7 @@ export async function sendBookingConfirmationPaid(
   if (!resend) return;
 
   const historyUrl = buildHistoryUrl(booking.email, organizationCode);
-  const {studentSummaries, totalAmount} = buildBookingSummary(booking, menu);
+  const {mealParticipantSummaries, totalAmount} = buildBookingSummary(booking, menu);
   const weekLabel = menu.weekStartDate
     ? (() => {
       const formatted = format(new Date(menu.weekStartDate), 'EEEE d MMMM', {locale: fr});
@@ -126,7 +126,7 @@ export async function sendBookingConfirmationPaid(
         historyUrl,
         organizationName,
         totalAmount,
-        studentSummaries,
+        mealParticipantSummaries,
         weekLabel,
       }),
     });

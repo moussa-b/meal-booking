@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStudentsByParentEmail } from '@/lib/services/student.service';
+import { getMealParticipantsByParentEmail } from '@/lib/services/meal-participant.service';
 import { z } from 'zod';
 
 const emailSchema = z.email();
 
 /**
- * GET /api/public/students?parentEmail=...
- * Get students by parent email (for prefilling the booking form).
+ * GET /api/public/meal-participants?parentEmail=...
+ * Get meal participants by parent email (for prefilling the booking form).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -32,17 +32,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const students = await getStudentsByParentEmail(emailValidation.data);
+    const mealParticipants = await getMealParticipantsByParentEmail(emailValidation.data);
     return NextResponse.json({
-      data: students,
-      count: students.length,
+      data: mealParticipants,
+      count: mealParticipants.length,
     });
   } catch (error) {
-    console.error('Error fetching students by parent email:', error);
+    console.error('Error fetching meal participants by parent email:', error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to fetch students',
+        message: 'Failed to fetch meal participants',
       },
       { status: 500 }
     );

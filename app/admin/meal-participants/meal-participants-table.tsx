@@ -4,10 +4,10 @@ import { Fragment, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ChevronDownIcon, ChevronRightIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import type { StudentsByParentEmail } from '@/lib/services/student.service';
-import type { Student } from '@/lib/models/student';
+import type { MealParticipantsByParentEmail } from '@/lib/services/meal-participant.service';
+import type { MealParticipant } from '@/lib/models/meal-participant';
 import { type ActionResult } from './actions';
-import { type UpdateStudentInput, } from '@/lib/validations/student.validation';
+import { type UpdateMealParticipantInput, } from '@/lib/validations/meal-participant.validation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,29 +23,29 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { formatDate } from '@/lib/utils/date.utils';
-import { EditStudentDialog } from './edit-student-dialog';
+import { EditMealParticipantDialog } from './edit-meal-participant-dialog';
 
-interface StudentsTableProps {
-  groups: StudentsByParentEmail[];
-  updateStudentAction: (id: number, data: UpdateStudentInput) => Promise<ActionResult>;
-  deleteStudentAction: (id: number) => Promise<ActionResult<void>>;
+interface MealParticipantsTableProps {
+  groups: MealParticipantsByParentEmail[];
+  updateMealParticipantAction: (id: number, data: UpdateMealParticipantInput) => Promise<ActionResult>;
+  deleteMealParticipantAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
   errorDetail?: string | null;
 }
 
-export function StudentsTable({
+export function MealParticipantsTable({
   groups: initialGroups,
-  updateStudentAction,
-  deleteStudentAction,
+  updateMealParticipantAction,
+  deleteMealParticipantAction,
   error,
   errorDetail,
-}: StudentsTableProps) {
+}: MealParticipantsTableProps) {
   const router = useRouter();
   const [groups, setGroups] = useState(initialGroups);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedMealParticipant, setSelectedMealParticipant] = useState<MealParticipant | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Update groups when initialGroups changes (after revalidation)
@@ -54,14 +54,14 @@ export function StudentsTable({
   }, [initialGroups]);
 
   // Handle edit
-  const handleEditClick = (student: Student) => {
-    setSelectedStudent(student);
+  const handleEditClick = (mealParticipant: MealParticipant) => {
+    setSelectedMealParticipant(mealParticipant);
     setIsEditDialogOpen(true);
   };
 
   const handleEditClose = () => {
     setIsEditDialogOpen(false);
-    setSelectedStudent(null);
+    setSelectedMealParticipant(null);
   };
 
   // Handle delete
@@ -73,9 +73,9 @@ export function StudentsTable({
   const handleDeleteConfirm = async () => {
     if (deleteId === null) return;
 
-    const result = await deleteStudentAction(deleteId);
+    const result = await deleteMealParticipantAction(deleteId);
     if (result.success) {
-      toast.success("Élève supprimé avec succès");
+      toast.success("Participant supprimé avec succès");
       setIsDeleteDialogOpen(false);
       setDeleteId(null);
       router.refresh();
@@ -106,11 +106,11 @@ export function StudentsTable({
     return parentEmail ?? 'email du parent inconnu';
   };
 
-  const totalStudents = groups.reduce((sum, group) => sum + group.students.length, 0);
+  const totalMealParticipants = groups.reduce((sum, group) => sum + group.mealParticipants.length, 0);
 
-  const studentToDelete = deleteId
+  const mealParticipantToDelete = deleteId
     ? groups
-        .flatMap((g) => g.students)
+        .flatMap((g) => g.mealParticipants)
         .find((s) => s.id === deleteId)
     : null;
 
@@ -118,7 +118,7 @@ export function StudentsTable({
     <>
     <Card>
       <CardHeader>
-        <CardTitle>Gestion des élèves</CardTitle>
+        <CardTitle>Gestion des participants</CardTitle>
       </CardHeader>
       <CardContent>
         {error && (
@@ -131,9 +131,9 @@ export function StudentsTable({
             )}
           </div>
         )}
-        {totalStudents === 0 ? (
+        {totalMealParticipants === 0 ? (
           <p className="text-center text-muted-foreground">
-            Aucun élève enregistré.
+            Aucun participant enregistré.
           </p>
         ) : (
           <Table>
@@ -144,6 +144,7 @@ export function StudentsTable({
                 <TableHead>Prénom</TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>Classe</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Régime alimentaire</TableHead>
                 <TableHead>Date de création</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -174,28 +175,31 @@ export function StudentsTable({
                           <span>{groupLabel}</span>
                           <Badge variant="secondary"
                                  className="ml-2 shrink-0">
-                            {group.students.length}
+                            {group.mealParticipants.length}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell colSpan={6}></TableCell>
+                      <TableCell colSpan={7}></TableCell>
                     </TableRow>
-                    {/* Student Rows (only visible when expanded) */}
+                    {/* MealParticipant Rows (only visible when expanded) */}
                     {isExpanded &&
-                      group.students.map((student) => (
-                        <TableRow key={student.id}
+                      group.mealParticipants.map((mealParticipant) => (
+                        <TableRow key={mealParticipant.id}
                                   className="bg-muted/30">
                           <TableCell className="bg-white"></TableCell>
                           <TableCell className="pl-8 w-[1%] bg-white"></TableCell>
-                          <TableCell>{student.firstName}</TableCell>
-                          <TableCell>{student.lastName}</TableCell>
-                          <TableCell>{student.class}</TableCell>
+                          <TableCell>{mealParticipant.firstName}</TableCell>
+                          <TableCell>{mealParticipant.lastName}</TableCell>
+                          <TableCell>{mealParticipant.class}</TableCell>
                           <TableCell>
-                            {student.feedingRegime || (
+                            {mealParticipant.type && <Badge variant="outline">{mealParticipant.type === 'school' ? 'École' : 'Entreprise'}</Badge>}
+                          </TableCell>
+                          <TableCell>
+                            {mealParticipant.feedingRegime || (
                               <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
-                          <TableCell>{formatDate(student.created)}</TableCell>
+                          <TableCell>{formatDate(mealParticipant.created)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
@@ -203,7 +207,7 @@ export function StudentsTable({
                                 size="icon"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleEditClick(student);
+                                  handleEditClick(mealParticipant);
                                 }}
                               >
                                 <PencilIcon className="h-4 w-4" />
@@ -213,7 +217,7 @@ export function StudentsTable({
                                 size="icon"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteClick(student.id);
+                                  handleDeleteClick(mealParticipant.id);
                                 }}
                               >
                                 <TrashIcon className="h-4 w-4" />
@@ -232,9 +236,9 @@ export function StudentsTable({
     </Card>
 
     {/* Edit Dialog */}
-    <EditStudentDialog
-      student={selectedStudent}
-      updateStudentAction={updateStudentAction}
+    <EditMealParticipantDialog
+      mealParticipant={selectedMealParticipant}
+      updateMealParticipantAction={updateMealParticipantAction}
       open={isEditDialogOpen}
       onOpenChange={handleEditClose}
     />
@@ -245,10 +249,10 @@ export function StudentsTable({
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
           <AlertDialogDescription>
-            Êtes-vous sûr de vouloir supprimer l&apos;élève{" "}
+            Êtes-vous sûr de vouloir supprimer le participant{" "}
             <strong>
-              {studentToDelete
-                ? `${studentToDelete.firstName} ${studentToDelete.lastName}`
+              {mealParticipantToDelete
+                ? `${mealParticipantToDelete.firstName} ${mealParticipantToDelete.lastName}`
                 : ""}
             </strong> ? Cette action est irréversible.
           </AlertDialogDescription>

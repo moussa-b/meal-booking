@@ -72,12 +72,13 @@ export function createTestWeeklyMenuData(overrides?: {
 }
 
 /**
- * Test data factory for creating student test data
+ * Test data factory for creating meal participant test data
  */
-export function createTestStudentData(overrides?: {
+export function createTestMealParticipantData(overrides?: {
   lastName?: string;
   firstName?: string;
   class?: string;
+  type?: OrganizationType;
   feedingRegime?: string | null;
   parentEmail?: string | null;
 }) {
@@ -85,6 +86,7 @@ export function createTestStudentData(overrides?: {
     lastName: overrides?.lastName || `Doe${Date.now()}`,
     firstName: overrides?.firstName || `John${Date.now()}`,
     class: overrides?.class || 'CM1',
+    type: overrides?.type || 'school',
     feedingRegime: overrides?.feedingRegime !== undefined ? overrides.feedingRegime : null,
     parentEmail: overrides?.parentEmail !== undefined ? overrides.parentEmail : `test${Date.now()}@example.com`,
   };

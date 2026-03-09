@@ -1,4 +1,5 @@
-import { Student } from './student';
+import type { MealParticipant } from './meal-participant';
+import type { OrganizationType } from './organization';
 import { WeeklyMenuDay } from './weekly-menu';
 import { PaymentStatus } from '@/lib/models/payment-status';
 
@@ -12,7 +13,7 @@ export interface Booking {
   email: string;
   organizationId: number;
   menuId: number;
-  students?: BookingStudent[];
+  mealParticipants?: BookingMealParticipant[];
   status: PaymentStatus;
   paypalOrderId?: string | null;
   paymentEmailSentAt?: Date | null;
@@ -23,16 +24,17 @@ export interface Booking {
  * BookingStudent model interface
  * Represents a student associated with a booking
  */
-export interface BookingStudent {
+export interface BookingMealParticipant {
   id: number;
   bookingId: number;
-  studentId: number | null;
+  mealParticipantId: number | null;
   lastName: string;
   firstName: string;
   class: string;
+  type: OrganizationType;
   feedingRegime: string | null;
   parentEmail: string;
-  student?: Student | null;
+  mealParticipant?: MealParticipant | null;
   menuSelections?: BookingMenuSelection[];
 }
 
@@ -43,7 +45,7 @@ export interface BookingStudent {
 export interface BookingMenuSelection {
   id: number;
   bookingId: number;
-  bookingStudentId: number;
+  bookingMealParticipantId: number;
   weeklyMenuDayId: number;
   weeklyMenuDay?: WeeklyMenuDay;
 }
@@ -57,4 +59,3 @@ export interface BookingWithDetails extends Booking {
   organizationName?: string;
   weekStartDate?: Date;
 }
-

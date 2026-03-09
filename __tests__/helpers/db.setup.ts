@@ -7,12 +7,12 @@ import { execSync } from 'child_process';
  */
 const TABLES_TO_CLEAN = [
   'booking_menu_selections',
-  'booking_students',
+  'booking_meal_participants',
   'bookings',
   'menu_selections',
   'weekly_menu_days',
   'weekly_menus',
-  'students',
+  'meal_participants',
   'meals',
   'organizations',
   'users',

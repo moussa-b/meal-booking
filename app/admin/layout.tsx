@@ -55,8 +55,8 @@ const menuItems = [
       icon: ShoppingCart,
     },
     {
-      title: 'Élèves enregistrés',
-      href: '/admin/students',
+      title: 'Bénéficiaires de repas',
+      href: '/admin/meal-participants',
       icon: Users,
     },
 ];

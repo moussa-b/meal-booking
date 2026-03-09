@@ -25,7 +25,7 @@ interface DayBookings {
   stats: DayStats;
   bookings: Array<{
     booking: Booking;
-    studentIds: number[];
+    mealParticipantIds: number[];
   }>;
 }
 
@@ -102,8 +102,8 @@ export function OrdersTable() {
       const dayBookingsMap = new Map<number, DayBookings>();
 
       menuBookings.forEach((booking) => {
-        booking.students?.forEach((student) => {
-          student.menuSelections?.forEach((selection) => {
+        booking.mealParticipants?.forEach((mealParticipant) => {
+          mealParticipant.menuSelections?.forEach((selection) => {
             const dayOfWeek = dayMap.get(selection.weeklyMenuDayId);
             if (dayOfWeek === undefined) return;
 
@@ -144,16 +144,16 @@ export function OrdersTable() {
             if (!existingBooking) {
               dayData.bookings.push({
                 booking,
-                studentIds: [],
+                mealParticipantIds: [],
               });
             }
 
-            // Track which students have selections for this day
+            // Track which meal participants have selections for this day
             const bookingData = dayData.bookings.find(
               (b) => b.booking.id === booking.id
             )!;
-            if (!bookingData.studentIds.includes(student.id)) {
-              bookingData.studentIds.push(student.id);
+            if (!bookingData.mealParticipantIds.includes(mealParticipant.id)) {
+              bookingData.mealParticipantIds.push(mealParticipant.id);
             }
           });
         });
@@ -306,9 +306,9 @@ export function OrdersTable() {
                       {isExpanded && (
                         <div className="px-4 pb-4 pt-2 border-t">
                           <div className="space-y-4 mt-2">
-                            {dayData.bookings.map(({booking, studentIds}) => {
-                              const students = booking.students?.filter((s) =>
-                                studentIds.includes(s.id)
+                            {dayData.bookings.map(({booking, mealParticipantIds}) => {
+                              const mealParticipants = booking.mealParticipants?.filter((participant) =>
+                                mealParticipantIds.includes(participant.id)
                               ) || [];
 
                               return (
@@ -320,10 +320,10 @@ export function OrdersTable() {
                                     {booking.email}
                                   </div>
                                   <div className="text-sm text-muted-foreground space-y-1">
-                                    {students.map((student) => (
-                                      <div key={student.id}>
-                                        {student.firstName} {student.lastName}
-                                        {student.class && ` (${student.class})`}
+                                    {mealParticipants.map((mealParticipant) => (
+                                      <div key={mealParticipant.id}>
+                                        {mealParticipant.firstName} {mealParticipant.lastName}
+                                        {mealParticipant.class && ` (${mealParticipant.class})`}
                                       </div>
                                     ))}
                                   </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { ORGANIZATION_TYPES } from "@/lib/models/organization";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StepOrganizationInfo } from "./step-organization-info";
@@ -17,13 +18,14 @@ import { DAY_KEYS } from "@/lib/utils/date.utils";
 const formSchema = z.object({
   organizationId: z.number().min(1, "L'établissement est requis"),
   email: z.string().email("Email invalide"),
-  students: z
+  mealParticipants: z
     .array(
       z.object({
         lastName: z.string().min(1, "Le nom de famille est requis"),
         firstName: z.string().min(1, "Le prénom est requis"),
         class: z.string().min(1, "La classe est requise"),
         feedingRegime: z.string().optional(),
+        type: z.enum(ORGANIZATION_TYPES),
       })
     )
     .min(1, "Au moins un élève est requis"),
@@ -59,12 +61,13 @@ export function BookingWizard() {
     defaultValues: {
       organizationId: 0,
       email: "",
-      students: [
+      mealParticipants: [
         {
           lastName: "",
           firstName: "",
           class: "",
           feedingRegime: "",
+          type: "school",
         },
       ],
       menuSelections: {},
@@ -78,7 +81,7 @@ export function BookingWizard() {
     if (currentStep === 1) {
       fieldsToValidate = ["organizationId", "email"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["students"];
+      fieldsToValidate = ["mealParticipants"];
     } else if (currentStep === 3) {
       fieldsToValidate = ["menuSelections"];
     }

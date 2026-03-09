@@ -33,7 +33,8 @@ describe('Booking Service', () => {
     email?: string;
     organizationId?: number;
     menuId?: number;
-    students?: Array<{
+    mealParticipants?: Array<{
+      type: 'school' | 'company';
       lastName: string;
       firstName: string;
       class: string;
@@ -88,15 +89,16 @@ describe('Booking Service', () => {
     const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
     const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
 
-    // Default students
-    const students =
-      overrides?.students ||
+    // Default mealParticipants
+    const mealParticipants =
+      overrides?.mealParticipants ||
       [
         {
           lastName: 'Doe',
           firstName: 'John',
           class: 'CM1',
           feedingRegime: null,
+          type: 'school',
         },
       ];
 
@@ -105,7 +107,7 @@ describe('Booking Service', () => {
       overrides?.menuSelections ||
       (mondayDay
         ? {
-            [`${students[0].firstName}-${students[0].lastName}-0`]: [mondayDay.id],
+            [`${mealParticipants[0].firstName}-${mealParticipants[0].lastName}-0`]: [mondayDay.id],
           }
         : {});
 
@@ -113,10 +115,10 @@ describe('Booking Service', () => {
       organizationId: organizationId!,
       menuId: menuId!,
       email: overrides?.email || `test${Date.now()}@example.com`,
-      students: students.map((student) => ({
+      mealParticipants: mealParticipants.map((mealParticipant) => ({
         id: 0, // Not used in submission
         created: new Date(),
-        ...student,
+        ...mealParticipant,
       })),
       menuSelections,
       saveChildrenInfo: overrides?.saveChildrenInfo ?? false,
@@ -134,60 +136,62 @@ describe('Booking Service', () => {
       expect(booking.organizationId).toBe(bookingData.organizationId);
       expect(booking.menuId).toBe(bookingData.menuId);
       expect(booking.status).toBe(PaymentStatus.PENDING);
-      expect(booking.students).toBeDefined();
-      expect(booking.students?.length).toBe(bookingData.students.length);
-      expect(booking.students?.[0].studentId).toBeNull(); // Should not have studentId
+      expect(booking.mealParticipants).toBeDefined();
+      expect(booking.mealParticipants?.length).toBe(bookingData.mealParticipants.length);
+      expect(booking.mealParticipants?.[0].mealParticipantId).toBeNull(); // Should not have mealParticipantId
     });
 
-    it('should create a booking with saveChildrenInfo = true and create students', async () => {
+    it('should create a booking with saveChildrenInfo = true and create mealParticipants', async () => {
       const bookingData = await createTestBookingData({ saveChildrenInfo: true });
 
       const booking = await createBooking(bookingData, true);
 
       expect(booking.id).toBeGreaterThan(0);
       expect(booking.status).toBe(PaymentStatus.PENDING);
-      expect(booking.students).toBeDefined();
-      expect(booking.students?.length).toBe(bookingData.students.length);
-      expect(booking.students?.[0].studentId).not.toBeNull(); // Should have studentId
+      expect(booking.mealParticipants).toBeDefined();
+      expect(booking.mealParticipants?.length).toBe(bookingData.mealParticipants.length);
+      expect(booking.mealParticipants?.[0].mealParticipantId).not.toBeNull(); // Should have mealParticipantId
 
       // Verify student was created
-      const { getStudentsByParentEmail } = await import('@/lib/services/student.service');
-      const students = await getStudentsByParentEmail(bookingData.email);
-      expect(students.length).toBeGreaterThan(0);
-      expect(students[0].parentEmail).toBe(bookingData.email);
+      const { getMealParticipantsByParentEmail } = await import('@/lib/services/meal-participant.service');
+      const mealParticipants = await getMealParticipantsByParentEmail(bookingData.email);
+      expect(mealParticipants.length).toBeGreaterThan(0);
+      expect(mealParticipants[0].parentEmail).toBe(bookingData.email);
     });
 
-    it('should create booking with multiple students', async () => {
+    it('should create booking with multiple mealParticipants', async () => {
       const bookingData = await createTestBookingData({
-        students: [
+        mealParticipants: [
           {
             lastName: 'Doe',
             firstName: 'John',
             class: 'CM1',
             feedingRegime: null,
+            type: 'school',
           },
           {
             lastName: 'Doe',
             firstName: 'Jane',
             class: 'CE2',
             feedingRegime: 'Végétarien',
+            type: 'school',
           },
         ],
       });
 
       const booking = await createBooking(bookingData, false);
 
-      expect(booking.students?.length).toBe(2);
-      expect(booking.students?.[0].firstName).toBe('John');
-      expect(booking.students?.[1].firstName).toBe('Jane');
+      expect(booking.mealParticipants?.length).toBe(2);
+      expect(booking.mealParticipants?.[0].firstName).toBe('John');
+      expect(booking.mealParticipants?.[1].firstName).toBe('Jane');
     });
 
     it('should create booking with menu selections', async () => {
       const bookingData = await createTestBookingData();
       const booking = await createBooking(bookingData, false);
 
-      expect(booking.students?.[0].menuSelections).toBeDefined();
-      expect(booking.students?.[0].menuSelections?.length).toBeGreaterThan(0);
+      expect(booking.mealParticipants?.[0].menuSelections).toBeDefined();
+      expect(booking.mealParticipants?.[0].menuSelections?.length).toBeGreaterThan(0);
     });
 
     it('should throw error when organization does not exist', async () => {
@@ -260,7 +264,7 @@ describe('Booking Service', () => {
       const bookingData = await createTestBookingData();
       // Use invalid menu day ID
       bookingData.menuSelections = {
-        [`${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`]: [99999],
+        [`${bookingData.mealParticipants[0].firstName}-${bookingData.mealParticipants[0].lastName}-0`]: [99999],
       };
 
       await expect(createBooking(bookingData, false)).rejects.toThrow(
@@ -287,8 +291,8 @@ describe('Booking Service', () => {
       expect(booking?.organizationId).toBe(bookingData.organizationId);
       expect(booking?.menuId).toBe(bookingData.menuId);
       expect(booking?.status).toBe(PaymentStatus.PENDING);
-      expect(booking?.students).toBeDefined();
-      expect(booking?.students?.length).toBe(bookingData.students.length);
+      expect(booking?.mealParticipants).toBeDefined();
+      expect(booking?.mealParticipants?.length).toBe(bookingData.mealParticipants.length);
     });
 
     it('should return booking with menu selections', async () => {
@@ -297,8 +301,8 @@ describe('Booking Service', () => {
 
       const booking = await getBookingById(created.id);
 
-      expect(booking?.students?.[0].menuSelections).toBeDefined();
-      expect(booking?.students?.[0].menuSelections?.length).toBeGreaterThan(0);
+      expect(booking?.mealParticipants?.[0].menuSelections).toBeDefined();
+      expect(booking?.mealParticipants?.[0].menuSelections?.length).toBeGreaterThan(0);
     });
   });
 
@@ -394,14 +398,15 @@ describe('Booking Service', () => {
       expect(booking2Index).toBeLessThan(booking1Index);
     });
 
-    it('should return bookings with full details (students, menu selections, status)', async () => {
+    it('should return bookings with full details (mealParticipants, menu selections, status)', async () => {
       const bookingData = await createTestBookingData({
-        students: [
+        mealParticipants: [
           {
             lastName: 'Doe',
             firstName: 'John',
             class: 'CM1',
             feedingRegime: null,
+            type: 'school',
           },
         ],
       });
@@ -416,10 +421,10 @@ describe('Booking Service', () => {
       expect(booking?.organizationId).toBe(bookingData.organizationId);
       expect(booking?.menuId).toBe(bookingData.menuId);
       expect(booking?.status).toBe(PaymentStatus.PENDING);
-      expect(booking?.students).toBeDefined();
-      expect(booking?.students?.length).toBe(1);
-      expect(booking?.students?.[0].menuSelections).toBeDefined();
-      expect(booking?.students?.[0].menuSelections?.length).toBeGreaterThan(0);
+      expect(booking?.mealParticipants).toBeDefined();
+      expect(booking?.mealParticipants?.length).toBe(1);
+      expect(booking?.mealParticipants?.[0].menuSelections).toBeDefined();
+      expect(booking?.mealParticipants?.[0].menuSelections?.length).toBeGreaterThan(0);
     });
   });
 
@@ -555,9 +560,9 @@ describe('Booking Service', () => {
       const menuDays = menu?.days ?? [];
       const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
       const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
-      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      const mealParticipantKey = `${bookingData.mealParticipants[0].firstName}-${bookingData.mealParticipants[0].lastName}-0`;
       bookingData.menuSelections = {
-        [studentKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+        [mealParticipantKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
       };
       const created = await createBooking(bookingData, false);
       // Monday 5.5 + Tuesday 4.5 = 10
@@ -565,11 +570,11 @@ describe('Booking Service', () => {
       expect(total).toBe(10);
     });
 
-    it('should return total amount for booking with multiple students and selections', async () => {
+    it('should return total amount for booking with multiple mealParticipants and selections', async () => {
       const bookingData = await createTestBookingData({
-        students: [
-          { lastName: 'Doe', firstName: 'John', class: 'CM1', feedingRegime: null },
-          { lastName: 'Doe', firstName: 'Jane', class: 'CE2', feedingRegime: null },
+        mealParticipants: [
+          { lastName: 'Doe', firstName: 'John', class: 'CM1', feedingRegime: null, type: 'school' },
+          { lastName: 'Doe', firstName: 'Jane', class: 'CE2', feedingRegime: null, type: 'school' },
         ],
       });
       const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
@@ -713,9 +718,9 @@ describe('Booking Service', () => {
       const menuDays = menu?.days ?? [];
       const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
       const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
-      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      const mealParticipantKey = `${bookingData.mealParticipants[0].firstName}-${bookingData.mealParticipants[0].lastName}-0`;
       bookingData.menuSelections = {
-        [studentKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+        [mealParticipantKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
       };
       await createBooking(bookingData, false);
       // Monday 5.5 + Tuesday 4.5 = 10
@@ -763,9 +768,9 @@ describe('Booking Service', () => {
       const menuDays = menu?.days ?? [];
       const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
       const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
-      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
+      const mealParticipantKey = `${bookingData.mealParticipants[0].firstName}-${bookingData.mealParticipants[0].lastName}-0`;
       bookingData.menuSelections = {
-        [studentKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+        [mealParticipantKey]: mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
       };
       const created = await createBooking(bookingData, false);
       await updateBookingStatus(created.id, PaymentStatus.PAID, false);
@@ -793,8 +798,8 @@ describe('Booking Service', () => {
       const menu = await getWeeklyMenuById(bookingData.menuId);
       const menuDays = menu?.days ?? [];
       const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
-      const studentKey = `${bookingData.students[0].firstName}-${bookingData.students[0].lastName}-0`;
-      bookingData.menuSelections = { [studentKey]: mondayDay ? [mondayDay.id] : [] };
+      const mealParticipantKey = `${bookingData.mealParticipants[0].firstName}-${bookingData.mealParticipants[0].lastName}-0`;
+      bookingData.menuSelections = { [mealParticipantKey]: mondayDay ? [mondayDay.id] : [] };
 
       const b1 = await createBooking(bookingData, false);
       await updateBookingStatus(b1.id, PaymentStatus.PAID, false);
@@ -803,7 +808,7 @@ describe('Booking Service', () => {
         email: `other${Date.now()}@example.com`,
         menuId: bookingData.menuId,
         organizationId: bookingData.organizationId,
-        menuSelections: { [studentKey]: mondayDay ? [mondayDay.id] : [] },
+        menuSelections: { [mealParticipantKey]: mondayDay ? [mondayDay.id] : [] },
       });
       const b2 = await createBooking(bookingData2, false);
       await updateBookingStatus(b2.id, PaymentStatus.PAID, false);

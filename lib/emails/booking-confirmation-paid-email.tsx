@@ -13,7 +13,7 @@ import {
   Text,
 } from '@react-email/components';
 
-export interface StudentSummary {
+export interface MealParticipantSummary {
   firstName: string;
   lastName: string;
   dayNames: string[];
@@ -24,7 +24,7 @@ export interface BookingConfirmationPaidEmailProps {
   historyUrl: string;
   organizationName: string;
   totalAmount: number;
-  studentSummaries: StudentSummary[];
+  mealParticipantSummaries: MealParticipantSummary[];
   weekLabel?: string;
 }
 
@@ -32,7 +32,7 @@ export function BookingConfirmationPaidEmail({
                                                historyUrl,
                                                organizationName,
                                                totalAmount,
-                                               studentSummaries,
+                                               mealParticipantSummaries,
                                                weekLabel,
                                              }: BookingConfirmationPaidEmailProps) {
   const previewText = `Paiement confirmé – Réservation ${organizationName}`;
@@ -54,7 +54,7 @@ export function BookingConfirmationPaidEmail({
           )}
           <Section style={summaryBox}>
             <Text style={summaryTitle}>Récapitulatif</Text>
-            {studentSummaries.map((s, i) => (
+            {mealParticipantSummaries.map((s, i) => (
               <Text key={i}
                     style={summaryRow}>
                 {s.firstName} {s.lastName} : {s.dayNames.join(', ')} – {s.amount.toFixed(2).replace('.', ',')} €

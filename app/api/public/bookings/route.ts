@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createBooking, getBookingsWithDetailsByEmailAndOrganization } from '@/lib/services/booking.service';
 import { z } from 'zod';
+import { ORGANIZATION_TYPES } from '@/lib/models/organization';
 
 /**
  * Validation schema for booking submission
@@ -9,12 +10,13 @@ const bookingSubmissionSchema = z.object({
   organizationId: z.number().min(1),
   menuId: z.number().min(1),
   email: z.email(),
-  students: z.array(
+  mealParticipants: z.array(
     z.object({
       lastName: z.string().min(1),
       firstName: z.string().min(1),
       class: z.string().min(1),
       feedingRegime: z.string().optional().nullable(),
+      type: z.enum(ORGANIZATION_TYPES),
     })
   ).min(1),
   menuSelections: z.record(z.string(), z.array(z.number())),

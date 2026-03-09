@@ -85,9 +85,9 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     if (!weeklyMenu?.days) return 0;
 
     let total = 0;
-    formData.students.forEach((student, index) => {
-      const studentKey = `${student.firstName}-${student.lastName}-${index}`;
-      const selectedIds = formData.menuSelections[studentKey] || [];
+    formData.mealParticipants.forEach((mealParticipant, index) => {
+      const mealParticipantKey = `${mealParticipant.firstName}-${mealParticipant.lastName}-${index}`;
+      const selectedIds = formData.menuSelections[mealParticipantKey] || [];
 
       if (!Array.isArray(selectedIds)) return;
 
@@ -396,13 +396,13 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         <CardHeader className="bg-blue-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
-            Élèves inscrits
+            Participants inscrits
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-6">
-          {formData.students.map((student, index) => {
-            const studentKey = `${student.firstName}-${student.lastName}-${index}`;
-            const selectedIds = formData.menuSelections[studentKey] || [];
+          {formData.mealParticipants.map((mealParticipant, index) => {
+            const mealParticipantKey = `${mealParticipant.firstName}-${mealParticipant.lastName}-${index}`;
+            const selectedIds = formData.menuSelections[mealParticipantKey] || [];
             const selectedIdsArray = Array.isArray(selectedIds) ? selectedIds : [];
 
             // Create array of selected days with their prices
@@ -427,23 +427,23 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
               .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
             return (
-              <div key={studentKey}>
+              <div key={mealParticipantKey}>
                 {index > 0 && <Separator className="my-4" />}
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <User className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div className="flex-1">
                       <div className="font-semibold text-lg text-slate-900">
-                        {student.firstName} {student.lastName}
+                        {mealParticipant.firstName} {mealParticipant.lastName}
                       </div>
                       <div className="text-sm text-slate-600 mt-1">
-                        Classe: <span className="font-medium">{student.class}</span>
+                        Classe: <span className="font-medium">{mealParticipant.class}</span>
                       </div>
-                      {student.feedingRegime && (
+                      {mealParticipant.feedingRegime && (
                         <div className="text-sm text-slate-600 mt-1">
                           Régime alimentaire:{" "}
                           <span className="font-medium">
-                            {student.feedingRegime}
+                            {mealParticipant.feedingRegime}
                           </span>
                         </div>
                       )}

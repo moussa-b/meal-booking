@@ -1,8 +1,8 @@
 import { query, getConnection, type MysqlInsertResult } from '@/lib/db/connection';
-import type { Booking, BookingStudent, BookingMenuSelection, BookingWithDetails } from '@/lib/models/booking';
+import type { Booking, BookingMealParticipant, BookingMenuSelection, BookingWithDetails } from '@/lib/models/booking';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 import { PaymentStatus } from '@/lib/models/payment-status';
-import { createStudent } from './student.service';
+import { createMealParticipant } from './meal-participant.service';
 import { getOrganizationById } from './organization.service';
 import { getWeeklyMenuById } from './weekly-menu.service';
 import { sendBookingPayLater, sendBookingConfirmationPaid } from './email.service';
@@ -24,15 +24,16 @@ interface BookingRow {
 }
 
 /**
- * Database row type for BookingStudent (as returned from MySQL)
+ * Database row type for BookingMealParticipant (as returned from MySQL)
  */
-interface BookingStudentRow {
+interface BookingMealParticipantRow {
   id: number;
   bookingId: number;
-  studentId: number | null;
+  mealParticipantId: number | null;
   lastName: string;
   firstName: string;
   class: string;
+  type: 'school' | 'company';
   feedingRegime: string | null;
   parentEmail: string;
 }
@@ -43,12 +44,12 @@ interface BookingStudentRow {
 interface BookingMenuSelectionRow {
   id: number;
   bookingId: number;
-  bookingStudentId: number;
+  bookingMealParticipantId: number;
   weeklyMenuDayId: number;
 }
 
 /**
- * Create a new booking with students and menu selections.
+ * Create a new booking with meal participants and menu selections.
  * When sendEmail is true, sends a "pay later" email with link to history page.
  */
 export async function createBooking(
@@ -98,49 +99,46 @@ export async function createBooking(
 
     const bookingId = bookingResult.insertId;
 
-    // Process each student
-    const studentIds: number[] = [];
-    for (let index = 0; index < data.students.length; index++) {
-      const student = data.students[index];
-      const studentKey = `${student.firstName}-${student.lastName}-${index}`;
-      const selectedMenuDayIds = data.menuSelections[studentKey] || [];
+    // Process each meal participant
+    for (let index = 0; index < data.mealParticipants.length; index++) {
+      const mealParticipant = data.mealParticipants[index];
+      const mealParticipantKey = `${mealParticipant.firstName}-${mealParticipant.lastName}-${index}`;
+      const selectedMenuDayIds = data.menuSelections[mealParticipantKey] || [];
 
-      let savedStudentId: number | null = null;
+      let savedMealParticipantId: number | null = null;
 
-      // If saveChildrenInfo is true, create or find student
       if (saveChildrenInfo) {
-        const savedStudent = await createStudent({
-          lastName: student.lastName,
-          firstName: student.firstName,
-          class: student.class,
-          feedingRegime: student.feedingRegime || null,
+        const savedMealParticipant = await createMealParticipant({
+          lastName: mealParticipant.lastName,
+          firstName: mealParticipant.firstName,
+          class: mealParticipant.class,
+          type: organization.type,
+          feedingRegime: mealParticipant.feedingRegime || null,
           parentEmail: data.email,
         });
-        savedStudentId = savedStudent.id;
+        savedMealParticipantId = savedMealParticipant.id;
       }
 
-      // Insert booking student
-      const [studentResult] = await connection.execute(
-        'INSERT INTO booking_students (bookingId, studentId, lastName, firstName, class, feedingRegime, parentEmail) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      const [mealParticipantResult] = await connection.execute(
+        'INSERT INTO booking_meal_participants (bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, parentEmail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           bookingId,
-          savedStudentId,
-          student.lastName,
-          student.firstName,
-          student.class,
-          student.feedingRegime || null,
+          savedMealParticipantId,
+          mealParticipant.lastName,
+          mealParticipant.firstName,
+          mealParticipant.class,
+          organization.type,
+          mealParticipant.feedingRegime || null,
           data.email,
         ]
       ) as [MysqlInsertResult, FieldPacket[]];
 
-      const bookingStudentId = studentResult.insertId;
-      studentIds.push(bookingStudentId);
+      const bookingMealParticipantId = mealParticipantResult.insertId;
 
-      // Insert menu selections for this student
       for (const weeklyMenuDayId of selectedMenuDayIds) {
         await connection.execute(
-          'INSERT INTO booking_menu_selections (bookingId, bookingStudentId, weeklyMenuDayId) VALUES (?, ?, ?)',
-          [bookingId, bookingStudentId, weeklyMenuDayId]
+          'INSERT INTO booking_menu_selections (bookingId, bookingMealParticipantId, weeklyMenuDayId) VALUES (?, ?, ?)',
+          [bookingId, bookingMealParticipantId, weeklyMenuDayId]
         );
       }
     }
@@ -186,44 +184,45 @@ export async function getBookingById(id: number): Promise<Booking | null> {
 
   const bookingRow = bookings[0];
 
-  // Get all students for this booking
-  const studentsRows = await query<BookingStudentRow[]>(
-    'SELECT id, bookingId, studentId, lastName, firstName, class, feedingRegime, parentEmail FROM booking_students WHERE bookingId = ?',
+  // Get all meal participants for this booking
+  const mealParticipantsRows = await query<BookingMealParticipantRow[]>(
+    'SELECT id, bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, parentEmail FROM booking_meal_participants WHERE bookingId = ?',
     [id]
   );
 
   // Get all menu selections
   const selectionsRows = await query<BookingMenuSelectionRow[]>(
-    'SELECT id, bookingId, bookingStudentId, weeklyMenuDayId FROM booking_menu_selections WHERE bookingId = ?',
+    'SELECT id, bookingId, bookingMealParticipantId, weeklyMenuDayId FROM booking_menu_selections WHERE bookingId = ?',
     [id]
   );
 
-  // Group selections by student
-  const selectionsByStudentId = new Map<number, BookingMenuSelection[]>();
+  // Group selections by meal participant
+  const selectionsByMealParticipantId = new Map<number, BookingMenuSelection[]>();
   for (const selection of selectionsRows) {
-    if (!selectionsByStudentId.has(selection.bookingStudentId)) {
-      selectionsByStudentId.set(selection.bookingStudentId, []);
+    if (!selectionsByMealParticipantId.has(selection.bookingMealParticipantId)) {
+      selectionsByMealParticipantId.set(selection.bookingMealParticipantId, []);
     }
-    selectionsByStudentId.get(selection.bookingStudentId)!.push({
+    selectionsByMealParticipantId.get(selection.bookingMealParticipantId)!.push({
       id: selection.id,
       bookingId: selection.bookingId,
-      bookingStudentId: selection.bookingStudentId,
+      bookingMealParticipantId: selection.bookingMealParticipantId,
       weeklyMenuDayId: selection.weeklyMenuDayId,
     });
   }
 
-  // Build students with their selections
-  const students: BookingStudent[] = studentsRows.map((studentRow) => ({
-    id: studentRow.id,
-    bookingId: studentRow.bookingId,
-    studentId: studentRow.studentId,
-    lastName: studentRow.lastName,
-    firstName: studentRow.firstName,
-    class: studentRow.class,
-    feedingRegime: studentRow.feedingRegime,
-    parentEmail: studentRow.parentEmail,
-    student: null, // Can be populated later if needed
-    menuSelections: selectionsByStudentId.get(studentRow.id) || [],
+  // Build meal participants with their selections
+  const mealParticipants: BookingMealParticipant[] = mealParticipantsRows.map((mealParticipantRow) => ({
+    id: mealParticipantRow.id,
+    bookingId: mealParticipantRow.bookingId,
+    mealParticipantId: mealParticipantRow.mealParticipantId,
+    lastName: mealParticipantRow.lastName,
+    firstName: mealParticipantRow.firstName,
+    class: mealParticipantRow.class,
+    type: mealParticipantRow.type,
+    feedingRegime: mealParticipantRow.feedingRegime,
+    parentEmail: mealParticipantRow.parentEmail,
+    mealParticipant: null,
+    menuSelections: selectionsByMealParticipantId.get(mealParticipantRow.id) || [],
   }));
 
   // Map status string to PaymentStatus enum
@@ -236,7 +235,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     organizationId: bookingRow.organizationId,
     menuId: bookingRow.menuId,
     status,
-    students,
+    mealParticipants,
     paypalOrderId: bookingRow.paypalOrderId ?? null,
     paymentEmailSentAt: bookingRow.paymentEmailSentAt ? new Date(bookingRow.paymentEmailSentAt) : null,
     confirmationEmailSentAt: bookingRow.confirmationEmailSentAt ? new Date(bookingRow.confirmationEmailSentAt) : null,
@@ -329,8 +328,8 @@ export async function getBookingTotalAmount(bookingId: number): Promise<number> 
   const priceMap = new Map(menu.days.map((day) => [day.id, day.price]));
   let total = 0;
 
-  for (const student of booking.students ?? []) {
-    for (const selection of student.menuSelections ?? []) {
+  for (const mealParticipant of booking.mealParticipants ?? []) {
+    for (const selection of mealParticipant.menuSelections ?? []) {
       const price = priceMap.get(selection.weeklyMenuDayId) ?? 0;
       total += price;
     }
@@ -349,8 +348,8 @@ export async function getPaidMealsByWeekdayForMenu(
   const rows = await query<{ dayOfWeek: number; count: number }[]>(
     `SELECT wmd.dayOfWeek, COUNT(*) as count
      FROM booking_menu_selections bms
-     JOIN booking_students bs ON bs.id = bms.bookingStudentId
-     JOIN bookings b ON b.id = bs.bookingId AND b.menuId = ? AND b.status = ?
+     JOIN booking_meal_participants bmp ON bmp.id = bms.bookingMealParticipantId
+     JOIN bookings b ON b.id = bmp.bookingId AND b.menuId = ? AND b.status = ?
      JOIN weekly_menu_days wmd ON wmd.id = bms.weeklyMenuDayId
      GROUP BY wmd.dayOfWeek`,
     [menuId, PaymentStatus.PAID]
@@ -389,8 +388,8 @@ export async function getTotalPaidAmountForMenu(menuId: number): Promise<number>
   const rows = await query<{ total: number | null }[]>(
     `SELECT SUM(wmd.price) as total
      FROM bookings b
-     JOIN booking_students bs ON bs.bookingId = b.id
-     JOIN booking_menu_selections bms ON bms.bookingStudentId = bs.id
+     JOIN booking_meal_participants bmp ON bmp.bookingId = b.id
+     JOIN booking_menu_selections bms ON bms.bookingMealParticipantId = bmp.id
      JOIN weekly_menu_days wmd ON wmd.id = bms.weeklyMenuDayId
      WHERE b.menuId = ? AND b.status = ?`,
     [menuId, PaymentStatus.PAID]
@@ -454,8 +453,8 @@ export async function getBookingsWithDetailsByEmailAndOrganization(
         let totalMeals = 0;
         let totalAmount = 0;
 
-        booking.students?.forEach((student) => {
-          student.menuSelections?.forEach((selection) => {
+        booking.mealParticipants?.forEach((mealParticipant) => {
+          mealParticipant.menuSelections?.forEach((selection) => {
             totalMeals++;
             const price = priceMap.get(selection.weeklyMenuDayId) || 0;
             totalAmount += price;

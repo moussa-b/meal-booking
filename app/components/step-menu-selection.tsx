@@ -26,18 +26,18 @@ type StepMenuSelectionProps = {
 
 export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionProps) {
   const { watch, setValue } = useFormContext<BookingFormData>();
-  const students = watch("students");
+  const mealParticipants = watch("mealParticipants");
   const menuSelections = watch("menuSelections");
 
-  // Initialize menu selections for all students if not already set
+  // Initialize menu selections for all meal participants if not already set
   useEffect(() => {
     const selections = { ...menuSelections };
     let needsUpdate = false;
 
-    students.forEach((student, index) => {
-      const studentKey = `${student.firstName}-${student.lastName}-${index}`;
-      if (!selections[studentKey] || !Array.isArray(selections[studentKey])) {
-        selections[studentKey] = [];
+    mealParticipants.forEach((mealParticipant, index) => {
+      const mealParticipantKey = `${mealParticipant.firstName}-${mealParticipant.lastName}-${index}`;
+      if (!selections[mealParticipantKey] || !Array.isArray(selections[mealParticipantKey])) {
+        selections[mealParticipantKey] = [];
         needsUpdate = true;
       }
     });
@@ -45,21 +45,21 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
     if (needsUpdate) {
       setValue("menuSelections", selections);
     }
-  }, [students, menuSelections, setValue]);
+  }, [mealParticipants, menuSelections, setValue]);
 
   const handleDayChange = (
-    studentKey: string,
+    mealParticipantKey: string,
     weeklyMenuDayId: number,
     checked: boolean
   ) => {
-    const currentSelection = menuSelections[studentKey] || [];
+    const currentSelection = menuSelections[mealParticipantKey] || [];
     const newSelection = checked
       ? [...currentSelection, weeklyMenuDayId]
       : currentSelection.filter((id) => id !== weeklyMenuDayId);
-    setValue(`menuSelections.${studentKey}`, newSelection);
+    setValue(`menuSelections.${mealParticipantKey}`, newSelection);
   };
 
-  const handleSelectAll = (studentKey: string, checked: boolean) => {
+  const handleSelectAll = (mealParticipantKey: string, checked: boolean) => {
     if (!weeklyMenu || !weeklyMenu.days) return;
 
     const menuDays = weeklyMenu.days.filter(
@@ -68,15 +68,15 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
 
     if (checked) {
       const allIds = menuDays.map((day) => day.id);
-      setValue(`menuSelections.${studentKey}`, allIds);
+      setValue(`menuSelections.${mealParticipantKey}`, allIds);
     } else {
-      setValue(`menuSelections.${studentKey}`, []);
+      setValue(`menuSelections.${mealParticipantKey}`, []);
     }
   };
 
-  const isAllSelected = (studentKey: string) => {
+  const isAllSelected = (mealParticipantKey: string) => {
     if (!weeklyMenu || !weeklyMenu.days) return false;
-    const selection = menuSelections[studentKey] || [];
+    const selection = menuSelections[mealParticipantKey] || [];
     if (!Array.isArray(selection)) return false;
 
     const menuDays = weeklyMenu.days.filter(
@@ -122,23 +122,23 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
 
   return (
     <div className="space-y-6">
-      {students.map((student, index) => {
-        const studentKey = `${student.firstName}-${student.lastName}-${index}`;
-        const selection = menuSelections[studentKey] || [];
+      {mealParticipants.map((mealParticipant, index) => {
+        const mealParticipantKey = `${mealParticipant.firstName}-${mealParticipant.lastName}-${index}`;
+        const selection = menuSelections[mealParticipantKey] || [];
         const selectedIds = Array.isArray(selection) ? selection : [];
 
         return (
           <Card
-            key={studentKey}
+            key={mealParticipantKey}
             className="border-2 border-blue-200 bg-blue-50/30 pt-0 gap-1"
           >
             <CardHeader className="bg-blue-100/50 gap-1 rounded-t-xl">
               <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2">
-                Menu pour {student.firstName} {student.lastName}
+                Menu pour {mealParticipant.firstName} {mealParticipant.lastName}
               </CardTitle>
-              {student.feedingRegime && (
+              {mealParticipant.feedingRegime && (
                 <p className="text-sm text-blue-700 my-1 text-center">
-                  Régime alimentaire: {student.feedingRegime}
+                  Régime alimentaire: {mealParticipant.feedingRegime}
                 </p>
               )}
             </CardHeader>
@@ -146,14 +146,14 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
               {/* Select All Option */}
               <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border-2 border-blue-300">
                 <Checkbox
-                  id={`${studentKey}-select-all`}
-                  checked={isAllSelected(studentKey)}
+                  id={`${mealParticipantKey}-select-all`}
+                  checked={isAllSelected(mealParticipantKey)}
                   onCheckedChange={(checked) =>
-                    handleSelectAll(studentKey, checked as boolean)
+                    handleSelectAll(mealParticipantKey, checked as boolean)
                   }
                 />
                 <Label
-                  htmlFor={`${studentKey}-select-all`}
+                  htmlFor={`${mealParticipantKey}-select-all`}
                   className="text-base font-semibold cursor-pointer flex-1"
                 >
                   Sélectionner tous les jours
@@ -179,11 +179,11 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
                       <CardHeader className="p-4 pb-3 pt-0">
                         <div className="flex items-center space-x-3">
                           <Checkbox
-                            id={`${studentKey}-${dayMenu.id}`}
+                            id={`${mealParticipantKey}-${dayMenu.id}`}
                             checked={selectedIds.includes(dayMenu.id)}
                             onCheckedChange={(checked) =>
                               handleDayChange(
-                                studentKey,
+                                mealParticipantKey,
                                 dayMenu.id,
                                 checked as boolean
                               )

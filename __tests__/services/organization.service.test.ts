@@ -47,6 +47,17 @@ describe('Organization Service', () => {
       expect(organization?.description).toBe(testData.description);
       expect(organization?.created).toBeInstanceOf(Date);
     });
+
+    it('should preserve organization types for mixed results', async () => {
+      await createOrganization(createTestOrganizationData({ name: 'School Org', type: 'school' }));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await createOrganization(createTestOrganizationData({ name: 'Company Org', type: 'company' }));
+
+      const organizations = await getAllOrganizations();
+
+      expect(organizations.map((organization) => organization.type)).toContain('school');
+      expect(organizations.map((organization) => organization.type)).toContain('company');
+    });
   });
 
   describe('getOrganizationById', () => {
@@ -110,6 +121,17 @@ describe('Organization Service', () => {
       expect(foundOrganization2).not.toBeNull();
       expect(foundOrganization2?.id).toBe(organization2.id);
       expect(foundOrganization2?.name).toBe('Organization B');
+    });
+
+    it('should preserve organization type when fetched by code', async () => {
+      const created = await createOrganization(
+        createTestOrganizationData({ type: 'company' })
+      );
+
+      const organization = await getOrganizationByCode(created.code);
+
+      expect(organization).not.toBeNull();
+      expect(organization?.type).toBe('company');
     });
   });
 
@@ -179,6 +201,17 @@ describe('Organization Service', () => {
 
       expect(updated.id).toBe(created.id);
       expect(updated.type).toBe('company');
+    });
+
+    it('should update organization type back to school', async () => {
+      const created = await createOrganization(
+        createTestOrganizationData({ type: 'company' })
+      );
+
+      const updated = await updateOrganization(created.id, { type: 'school' });
+
+      expect(updated.id).toBe(created.id);
+      expect(updated.type).toBe('school');
     });
 
     it('should update multiple fields at once', async () => {

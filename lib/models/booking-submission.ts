@@ -1,4 +1,4 @@
-import { Student } from './student';
+import { MealParticipant } from './meal-participant';
 
 /**
  * Booking submission input model interface
@@ -8,7 +8,7 @@ export interface BookingSubmission {
   organizationId: number;
   menuId: number;
   email: string;
-  students: Omit<Student, 'id' | 'created' | 'parentEmail'>[];
+  mealParticipants: Omit<MealParticipant, 'id' | 'created' | 'parentEmail'>[];
   menuSelections: Record<string, number[]>; // Array of WeeklyMenuDay IDs
   saveChildrenInfo: boolean;
 }
