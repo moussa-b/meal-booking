@@ -103,7 +103,7 @@ export function MealParticipantsTable({
   };
 
   const getGroupLabel = (parentEmail: string | null): string => {
-    return parentEmail ?? 'email du parent inconnu';
+    return parentEmail ?? 'email inconnu';
   };
 
   const totalMealParticipants = groups.reduce((sum, group) => sum + group.mealParticipants.length, 0);
@@ -140,7 +140,7 @@ export function MealParticipantsTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[50px]"></TableHead>
-                <TableHead className="w-[1%]">Email du parent</TableHead>
+                <TableHead className="w-[1%]">Email</TableHead>
                 <TableHead>Prénom</TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>Classe</TableHead>

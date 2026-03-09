@@ -14,10 +14,15 @@ import {
 import type { BookingFormData } from './booking-wizard';
 import type { Organization } from '@/lib/models/organization';
 
-export function StepOrganizationInfo() {
-  const { control } = useFormContext<BookingFormData>();
+interface StepOrganizationInfoProps {
+  onOrganizationSelect?: (organization: Organization | null) => void;
+}
+
+export function StepOrganizationInfo({ onOrganizationSelect }: StepOrganizationInfoProps) {
+  const { control, watch } = useFormContext<BookingFormData>();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const organizationId = watch('organizationId');
 
   useEffect(() => {
     async function fetchOrganizations() {
@@ -37,6 +42,17 @@ export function StepOrganizationInfo() {
     fetchOrganizations();
   }, []);
 
+  useEffect(() => {
+    if (!organizationId) {
+      onOrganizationSelect?.(null);
+      return;
+    }
+
+    const selectedOrganization =
+      organizations.find((organization) => organization.id === organizationId) ?? null;
+    onOrganizationSelect?.(selectedOrganization);
+  }, [onOrganizationSelect, organizationId, organizations]);
+
   return (
     <div className="space-y-6">
       <FormField
@@ -47,7 +63,13 @@ export function StepOrganizationInfo() {
             <FormLabel>Établissement</FormLabel>
             <FormControl>
               <Select
-                onValueChange={(value) => field.onChange(Number(value))}
+                onValueChange={(value) => {
+                  const selectedOrganizationId = Number(value);
+                  field.onChange(selectedOrganizationId);
+                  const selectedOrganization =
+                    organizations.find((organization) => organization.id === selectedOrganizationId) ?? null;
+                  onOrganizationSelect?.(selectedOrganization);
+                }}
                 value={field.value ? String(field.value) : ""}
                 disabled={loading}
               >

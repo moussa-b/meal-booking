@@ -159,6 +159,38 @@ describe('Booking Service', () => {
       expect(mealParticipants[0].parentEmail).toBe(bookingData.email);
     });
 
+    it('should create a booking for a company organization with an empty class', async () => {
+      const organization = await createOrganization(
+        createTestOrganizationData({ type: 'company' })
+      );
+      const bookingData = await createTestBookingData({
+        organizationId: organization.id,
+        saveChildrenInfo: true,
+        mealParticipants: [
+          {
+            lastName: 'Doe',
+            firstName: 'John',
+            class: '',
+            feedingRegime: null,
+            type: 'company',
+          },
+        ],
+      });
+
+      const booking = await createBooking(bookingData, true);
+
+      expect(booking.mealParticipants?.[0].type).toBe('company');
+      expect(booking.mealParticipants?.[0].class).toBe('');
+      expect(booking.mealParticipants?.[0].mealParticipantId).not.toBeNull();
+
+      const { getMealParticipantsByParentEmail } = await import('@/lib/services/meal-participant.service');
+      const mealParticipants = await getMealParticipantsByParentEmail(bookingData.email);
+
+      expect(mealParticipants).toHaveLength(1);
+      expect(mealParticipants[0].type).toBe('company');
+      expect(mealParticipants[0].class).toBe('');
+    });
+
     it('should create booking with multiple mealParticipants', async () => {
       const bookingData = await createTestBookingData({
         mealParticipants: [

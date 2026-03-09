@@ -436,9 +436,11 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                       <div className="font-semibold text-lg text-slate-900">
                         {mealParticipant.firstName} {mealParticipant.lastName}
                       </div>
-                      <div className="text-sm text-slate-600 mt-1">
-                        Classe: <span className="font-medium">{mealParticipant.class}</span>
-                      </div>
+                      {organization?.type !== 'company' && (
+                        <div className="text-sm text-slate-600 mt-1">
+                          Classe: <span className="font-medium">{mealParticipant.class}</span>
+                        </div>
+                      )}
                       {mealParticipant.feedingRegime && (
                         <div className="text-sm text-slate-600 mt-1">
                           Régime alimentaire:{" "}

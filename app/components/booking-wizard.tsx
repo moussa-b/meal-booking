@@ -12,22 +12,31 @@ import { StepChildren } from "./step-children";
 import { StepMenuSelection } from "./step-menu-selection";
 import { ConfirmationScreen } from "./confirmation-screen";
 import type { WeeklyMenu } from "@/lib/models/weekly-menu";
+import type { Organization } from "@/lib/models/organization";
 import { DAY_KEYS } from "@/lib/utils/date.utils";
 
 // Define the complete form schema
+const mealParticipantSchema = z.object({
+  lastName: z.string().min(1, "Le nom de famille est requis"),
+  firstName: z.string().min(1, "Le prénom est requis"),
+  class: z.string(),
+  feedingRegime: z.string().optional(),
+  type: z.enum(ORGANIZATION_TYPES),
+}).superRefine((mealParticipant, ctx) => {
+  if (mealParticipant.type === "school" && mealParticipant.class.trim().length === 0) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ["class"],
+      message: "La classe est requise",
+    });
+  }
+});
+
 const formSchema = z.object({
   organizationId: z.number().min(1, "L'établissement est requis"),
-  email: z.string().email("Email invalide"),
+  email: z.email("Email invalide"),
   mealParticipants: z
-    .array(
-      z.object({
-        lastName: z.string().min(1, "Le nom de famille est requis"),
-        firstName: z.string().min(1, "Le prénom est requis"),
-        class: z.string().min(1, "La classe est requise"),
-        feedingRegime: z.string().optional(),
-        type: z.enum(ORGANIZATION_TYPES),
-      })
-    )
+    .array(mealParticipantSchema)
     .min(1, "Au moins un élève est requis"),
   menuSelections: z
     .record(z.string(), z.array(z.number()))
@@ -54,6 +63,7 @@ export function BookingWizard() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
 
   const methods = useForm<BookingFormData>({
     resolver: zodResolver(formSchema),
@@ -115,6 +125,39 @@ export function BookingWizard() {
   };
 
   const organizationId = methods.watch('organizationId');
+  const selectedOrganizationType = selectedOrganization?.type ?? 'school';
+
+  useEffect(() => {
+    if (!organizationId || organizationId <= 0) {
+      setSelectedOrganization(null);
+      return;
+    }
+  }, [organizationId]);
+
+  useEffect(() => {
+    if (!organizationId || organizationId <= 0) return;
+
+    const currentMealParticipants = methods.getValues('mealParticipants');
+    if (currentMealParticipants.length === 0) return;
+
+    const shouldUpdateMealParticipants = currentMealParticipants.some(
+      (mealParticipant) =>
+        mealParticipant.type !== selectedOrganizationType ||
+        (selectedOrganizationType === 'company' && mealParticipant.class !== '')
+    );
+
+    if (!shouldUpdateMealParticipants) return;
+
+    methods.setValue(
+      'mealParticipants',
+      currentMealParticipants.map((mealParticipant) => ({
+        ...mealParticipant,
+        type: selectedOrganizationType,
+        class: selectedOrganizationType === 'company' ? '' : mealParticipant.class,
+      })),
+      {shouldDirty: true, shouldValidate: currentStep === 2}
+    );
+  }, [currentStep, methods, organizationId, selectedOrganizationType]);
 
   useEffect(() => {
     async function fetchMenu() {
@@ -150,7 +193,7 @@ export function BookingWizard() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <StepOrganizationInfo />;
+        return <StepOrganizationInfo onOrganizationSelect={setSelectedOrganization} />;
       case 99:
         return (
           <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
@@ -160,7 +203,7 @@ export function BookingWizard() {
           </div>
         );
       case 2:
-        return <StepChildren />;
+        return <StepChildren organizationType={selectedOrganizationType} />;
       case 3:
         return (
           <StepMenuSelection
@@ -182,7 +225,9 @@ export function BookingWizard() {
       case 99:
         return "Aucun menu disponible";
       case 2:
-        return "Informations des élèves";
+        return selectedOrganizationType === "company"
+          ? "Informations sur les bénéficiaires de repas"
+          : "Informations des élèves";
       case 3:
         return "Sélection des repas";
       case 100:

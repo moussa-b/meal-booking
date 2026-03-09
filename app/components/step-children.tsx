@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2 } from 'lucide-react';
 import type { BookingFormData } from './booking-wizard';
+import type { OrganizationType } from '@/lib/models/organization';
 
 const CLASSES = [
   "Petite Section",
@@ -29,15 +30,24 @@ const CLASSES = [
 ];
 
 // True if no meal participants or all fields empty (don’t overwrite user input).
-function isMealParticipantsEmpty(mealParticipants: BookingFormData['mealParticipants']): boolean {
+function isMealParticipantsEmpty(
+  mealParticipants: BookingFormData['mealParticipants'],
+  organizationType: OrganizationType
+): boolean {
   if (!mealParticipants?.length) return true;
   return mealParticipants.every(
     (s) =>
-      !s.lastName?.trim() && !s.firstName?.trim() && !s.class?.trim()
+      !s.lastName?.trim() &&
+      !s.firstName?.trim() &&
+      (organizationType === 'company' || !s.class?.trim())
   );
 }
 
-export function StepChildren() {
+interface StepChildrenProps {
+  organizationType: OrganizationType;
+}
+
+export function StepChildren({ organizationType }: StepChildrenProps) {
   const { control, watch, setValue } = useFormContext<BookingFormData>();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -54,7 +64,7 @@ export function StepChildren() {
 
     const trimmedEmail = email.trim();
     if (prefilledForEmail.current === trimmedEmail) return; // Already did this email.
-    if (!isMealParticipantsEmpty(mealParticipants)) return; // User already filled; don’t overwrite.
+    if (!isMealParticipantsEmpty(mealParticipants, organizationType)) return; // User already filled; don’t overwrite.
 
     let cancelled = false;
 
@@ -72,9 +82,9 @@ export function StepChildren() {
             (s: { lastName: string; firstName: string; class: string; type: 'school' | 'company'; feedingRegime?: string | null }) => ({
               lastName: s.lastName ?? '',
               firstName: s.firstName ?? '',
-              class: s.class ?? '',
+              class: organizationType === 'company' ? '' : s.class ?? '',
               feedingRegime: s.feedingRegime ?? '',
-              type: s.type ?? 'school',
+              type: organizationType,
             })
           );
           setValue('mealParticipants', formMealParticipants, {shouldDirty: true});
@@ -88,17 +98,17 @@ export function StepChildren() {
     return () => {
       cancelled = true; // Ignore result if effect re-runs or unmounts.
     };
-  }, [email, setValue, mealParticipants]);
+  }, [email, organizationType, setValue, mealParticipants]);
 
-  // Last row must have lastName, firstName, class before "Add another" works.
-  const isLastStudentValid = () => {
+  // Last row must have the required fields before "Add another" works.
+  const isLastMealParticipantValid = () => {
     if (fields.length === 0) return false;
     const lastIndex = fields.length - 1;
     const lastMealParticipant = mealParticipants[lastIndex];
     return (
       lastMealParticipant?.lastName?.trim() !== "" &&
       lastMealParticipant?.firstName?.trim() !== "" &&
-      lastMealParticipant?.class?.trim() !== ""
+      (organizationType === 'company' || lastMealParticipant?.class?.trim() !== "")
     );
   };
 
@@ -108,7 +118,7 @@ export function StepChildren() {
       firstName: "",
       class: "",
       feedingRegime: "",
-      type: mealParticipants[0]?.type ?? "school",
+      type: organizationType,
     });
   };
 
@@ -162,33 +172,35 @@ export function StepChildren() {
               )}
             />
 
-            <FormField
-              control={control}
-              name={`mealParticipants.${index}.class`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Classe</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionnez une classe" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CLASSES.map((classe) => (
-                        <SelectItem key={classe} value={classe}>
-                          {classe}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
+            {organizationType === 'school' && (
+              <FormField
+                control={control}
+                name={`mealParticipants.${index}.class`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Classe</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Sélectionnez une classe" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CLASSES.map((classe) => (
+                          <SelectItem key={classe} value={classe}>
+                            {classe}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={control}
@@ -219,11 +231,13 @@ export function StepChildren() {
         type="button"
         variant="outline"
         onClick={addMealParticipant}
-        disabled={!isLastStudentValid()}
+        disabled={!isLastMealParticipantValid()}
         className="w-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-colors"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Ajouter un autre élève
+        {organizationType === 'company'
+          ? 'Ajouter un autre bénéficiaire de repas'
+          : 'Ajouter un autre élève'}
       </Button>
 
       <div className="mt-6 pt-4">

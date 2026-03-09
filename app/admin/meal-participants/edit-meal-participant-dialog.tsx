@@ -169,13 +169,13 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
               name="parentEmail"
               render={({field}) => (
                 <FormItem>
-                  <FormLabel>Email du parent</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       type="email"
                       value={field.value || ''}
-                      placeholder="Email du parent (optionnel)"
+                      placeholder="Email (optionnel)"
                     />
                   </FormControl>
                   <FormMessage/>

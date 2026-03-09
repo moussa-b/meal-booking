@@ -6,19 +6,27 @@ import { ORGANIZATION_TYPES } from '@/lib/models/organization';
 /**
  * Validation schema for booking submission
  */
+const mealParticipantSchema = z.object({
+  lastName: z.string().min(1),
+  firstName: z.string().min(1),
+  class: z.string(),
+  feedingRegime: z.string().optional().nullable(),
+  type: z.enum(ORGANIZATION_TYPES),
+}).superRefine((mealParticipant, ctx) => {
+  if (mealParticipant.type === 'school' && mealParticipant.class.trim().length === 0) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['class'],
+      message: 'La classe est requise',
+    });
+  }
+});
+
 const bookingSubmissionSchema = z.object({
   organizationId: z.number().min(1),
   menuId: z.number().min(1),
   email: z.email(),
-  mealParticipants: z.array(
-    z.object({
-      lastName: z.string().min(1),
-      firstName: z.string().min(1),
-      class: z.string().min(1),
-      feedingRegime: z.string().optional().nullable(),
-      type: z.enum(ORGANIZATION_TYPES),
-    })
-  ).min(1),
+  mealParticipants: z.array(mealParticipantSchema).min(1),
   menuSelections: z.record(z.string(), z.array(z.number())),
   saveChildrenInfo: z.boolean(),
   sendPayLaterEmail: z.boolean().optional().default(true),

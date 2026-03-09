@@ -13,7 +13,7 @@ import type { BookingWithDetails } from '@/lib/models/booking';
 // Define the form schema compatible with StepOrganizationInfo
 const formSchema = z.object({
   organizationId: z.number().min(1, 'L\'établissement est requis'),
-  email: z.string().email('Email invalide'),
+  email: z.email('Email invalide'),
 });
 
 export type HistoryFormData = z.infer<typeof formSchema>;
