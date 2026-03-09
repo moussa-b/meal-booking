@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -96,7 +96,6 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
                   <FormControl>
                     <Input {...field} placeholder="Nom du participant"/>
                   </FormControl>
-                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -109,7 +108,6 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
                   <FormControl>
                     <Input {...field} placeholder="Prénom du participant"/>
                   </FormControl>
-                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -122,7 +120,6 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
                   <FormControl>
                     <Input {...field} placeholder="Classe"/>
                   </FormControl>
-                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -143,7 +140,6 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
                       <SelectItem value="company">Entreprise</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -160,7 +156,6 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
                       placeholder="Régime alimentaire (optionnel)"
                     />
                   </FormControl>
-                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -178,7 +173,6 @@ export function EditMealParticipantDialog({mealParticipant, updateMealParticipan
                       placeholder="Email (optionnel)"
                     />
                   </FormControl>
-                  <FormMessage/>
                 </FormItem>
               )}
             />

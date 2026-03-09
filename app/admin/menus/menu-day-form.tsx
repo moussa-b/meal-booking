@@ -2,7 +2,7 @@
 
 import { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupText } from '@/components/ui/input-group';
 import type { Meal } from '@/lib/models/meal';
@@ -72,7 +72,6 @@ export function MenuDayForm<T extends FieldValues>({
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -102,7 +101,6 @@ export function MenuDayForm<T extends FieldValues>({
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -132,7 +130,6 @@ export function MenuDayForm<T extends FieldValues>({
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -168,7 +165,6 @@ export function MenuDayForm<T extends FieldValues>({
                     </InputGroupAddon>
                   </InputGroup>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             );
           }}

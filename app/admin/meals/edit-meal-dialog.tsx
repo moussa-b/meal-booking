@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -101,7 +101,6 @@ export function EditMealDialog({
                   <FormControl>
                     <Input {...field} placeholder="Nom du repas" />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -132,7 +131,6 @@ export function EditMealDialog({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -149,7 +147,6 @@ export function EditMealDialog({
                       placeholder="Description du repas"
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

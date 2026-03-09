@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -112,7 +112,6 @@ export function EditOrganizationDialog({
                   <FormControl>
                     <Input {...field} placeholder="Nom de l'établissement" />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -133,7 +132,6 @@ export function EditOrganizationDialog({
                       <SelectItem value="company">Entreprise</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -150,7 +148,6 @@ export function EditOrganizationDialog({
                       placeholder="Description (optionnel)"
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />

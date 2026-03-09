@@ -4,20 +4,8 @@ import { isMonday } from '@/lib/utils/date.utils';
 /**
  * Helper function to validate if a date is Monday with detailed logging
  */
-function validateMonday(date: Date, context: string): boolean {
-  const result = isMonday(date);
-  const dayOfWeek = date.getDay();
-  const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-
-  console.log(`[${context}] Validation lundi:`);
-  console.log(`  - Date reçue: ${date.toISOString()}`);
-  console.log(`  - Date locale: ${date.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`);
-  console.log(`  - Jour de la semaine (getDay()): ${dayOfWeek} (${dayNames[dayOfWeek]})`);
-  console.log(`  - Résultat isMonday(): ${result}`);
-  console.log(`  - Timestamp: ${date.getTime()}`);
-  console.log(`  - Timezone offset: ${date.getTimezoneOffset()} minutes`);
-
-  return result;
+function validateMonday(date: Date): boolean {
+  return isMonday(date);
 }
 
 /**
@@ -73,7 +61,7 @@ export const createWeeklyMenuSchema = z.object({
     z.number().int().min(1, 'L\'établissement est requis')
   ),
   weekStartDate: z.coerce.date().refine(
-    (date) => validateMonday(date, 'createWeeklyMenuSchema'),
+    (date) => validateMonday(date),
     {
       message: 'La date doit être un lundi',
     }
@@ -92,7 +80,7 @@ export const updateWeeklyMenuSchema = z.object({
   ),
   weekStartDate: z.coerce.date()
     .refine(
-      (date) => validateMonday(date, 'updateWeeklyMenuSchema'),
+      (date) => validateMonday(date),
       {
         message: 'La date doit être un lundi',
       }
