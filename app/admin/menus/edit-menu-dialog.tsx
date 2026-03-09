@@ -110,7 +110,7 @@ export function EditMenuDialog({
           mainDishId: 0,
           appetizerId: null,
           dessertId: null,
-          price: 0.0,
+          price: '',
         })),
       });
     }
@@ -253,7 +253,7 @@ export function EditMenuDialog({
                       mainDishId: 0,
                       appetizerId: null,
                       dessertId: null,
-                      price: 0.0,
+                      price: '',
                     };
                     const newDays = [...currentDays, dayData];
                     form.setValue('days', newDays);

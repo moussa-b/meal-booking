@@ -108,7 +108,7 @@ export function MenusTable({
             mainDishId: 0,
             appetizerId: null,
             dessertId: null,
-            price: 0.0,
+            price: '',
           }));
 
     setCreateInitialValues({

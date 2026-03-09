@@ -142,7 +142,7 @@ export function MenuDayForm<T extends FieldValues>({
           render={({ field }) => {
             // Format value to show 2 decimal places when it's a number
             const formatDisplayValue = (val: string | number | undefined | null): string => {
-              if (val === 0 || val === undefined || val === null || val === '') return '';
+              if (val === undefined || val === null || val === '') return '';
               if (typeof val === 'number') {
                 return val.toFixed(2);
               }
