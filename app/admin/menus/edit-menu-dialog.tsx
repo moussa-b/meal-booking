@@ -226,8 +226,13 @@ export function EditMenuDialog({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
+                          required
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            if (date) {
+                              field.onChange(date);
+                            }
+                          }}
                           disabled={isDateDisabled}
                           minDate={minDate}
                           autoFocus

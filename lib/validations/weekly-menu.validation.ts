@@ -68,7 +68,10 @@ const baseWeeklyMenuSchema = {
  * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const createWeeklyMenuSchema = z.object({
-  organizationId: z.number().int().positive('L\'établissement est requis'),
+  organizationId: z.preprocess(
+    (value) => (value === undefined ? 0 : value),
+    z.number().int().min(1, 'L\'établissement est requis')
+  ),
   weekStartDate: z.coerce.date().refine(
     (date) => validateMonday(date, 'createWeeklyMenuSchema'),
     {
@@ -83,7 +86,10 @@ export const createWeeklyMenuSchema = z.object({
  * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const updateWeeklyMenuSchema = z.object({
-  organizationId: z.number().int().positive('L\'établissement est requis').optional(),
+  organizationId: z.preprocess(
+    (value) => (value === undefined ? undefined : value),
+    z.number().int().min(1, 'Veuillez sélectionner un établissement').optional()
+  ),
   weekStartDate: z.coerce.date()
     .refine(
       (date) => validateMonday(date, 'updateWeeklyMenuSchema'),
