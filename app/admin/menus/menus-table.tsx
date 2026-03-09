@@ -237,7 +237,7 @@ export function MenusTable({
               <TableHeader>
                 <TableRow>
                   <TableHead>Période</TableHead>
-                  <TableHead>École</TableHead>
+                  <TableHead>Établissement</TableHead>
                   <TableHead>Semaine</TableHead>
                   <TableHead>Année</TableHead>
                   <TableHead>Nombre de jours</TableHead>

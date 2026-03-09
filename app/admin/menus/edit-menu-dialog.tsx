@@ -174,7 +174,7 @@ export function EditMenuDialog({
                 name="schoolId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>École</FormLabel>
+                    <FormLabel>Établissement</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       value={field.value?.toString() || ""}
@@ -182,7 +182,7 @@ export function EditMenuDialog({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une école" />
+                          <SelectValue placeholder="Sélectionner une établissement" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

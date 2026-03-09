@@ -35,7 +35,7 @@ const menuItems = [
       icon: LayoutDashboard,
     },
     {
-      title: 'Établissement scolaire',
+      title: 'Établissements',
       href: '/admin/schools',
       icon: School,
     },

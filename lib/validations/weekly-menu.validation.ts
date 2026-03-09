@@ -8,7 +8,7 @@ function validateMonday(date: Date, context: string): boolean {
   const result = isMonday(date);
   const dayOfWeek = date.getDay();
   const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-  
+
   console.log(`[${context}] Validation lundi:`);
   console.log(`  - Date reçue: ${date.toISOString()}`);
   console.log(`  - Date locale: ${date.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`);
@@ -16,7 +16,7 @@ function validateMonday(date: Date, context: string): boolean {
   console.log(`  - Résultat isMonday(): ${result}`);
   console.log(`  - Timestamp: ${date.getTime()}`);
   console.log(`  - Timezone offset: ${date.getTimezoneOffset()} minutes`);
-  
+
   return result;
 }
 
@@ -68,7 +68,7 @@ const baseWeeklyMenuSchema = {
  * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const createWeeklyMenuSchema = z.object({
-  schoolId: z.number().int().positive('L\'école est requise'),
+  schoolId: z.number().int().positive('L\'établissement est requis'),
   weekStartDate: z.coerce.date().refine(
     (date) => validateMonday(date, 'createWeeklyMenuSchema'),
     {
@@ -83,7 +83,7 @@ export const createWeeklyMenuSchema = z.object({
  * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const updateWeeklyMenuSchema = z.object({
-  schoolId: z.number().int().positive('L\'école est requise').optional(),
+  schoolId: z.number().int().positive('L\'établissement est requis').optional(),
   weekStartDate: z.coerce.date()
     .refine(
       (date) => validateMonday(date, 'updateWeeklyMenuSchema'),

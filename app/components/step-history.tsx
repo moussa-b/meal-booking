@@ -71,7 +71,7 @@ export function StepHistory({ bookings }: StepHistoryProps) {
   if (bookings.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-slate-600">Aucune réservation trouvée pour cet email et cette école.</p>
+        <p className="text-slate-600">Aucune réservation trouvée pour cet email et cet établissement.</p>
       </div>
     );
   }

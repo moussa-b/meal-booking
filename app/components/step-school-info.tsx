@@ -44,7 +44,7 @@ export function StepSchoolInfo() {
         name="schoolId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>École</FormLabel>
+            <FormLabel>Établissement</FormLabel>
             <FormControl>
               <Select
                 onValueChange={(value) => field.onChange(Number(value))}
@@ -52,7 +52,7 @@ export function StepSchoolInfo() {
                 disabled={loading}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionnez une école" />
+                  <SelectValue placeholder="Sélectionnez un établissement" />
                 </SelectTrigger>
                 <SelectContent>
                   {schools.map((school) => (

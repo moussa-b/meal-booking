@@ -125,7 +125,7 @@ export async function PUT(
       );
     }
 
-    if (error instanceof Error && error.message.includes('Un menu existe déjà pour cette école et cette date')) {
+    if (error instanceof Error && error.message.includes('Un menu existe déjà pour cet établissement et cette date')) {
       return NextResponse.json(
         {
           error: 'Conflict',

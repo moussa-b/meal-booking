@@ -246,7 +246,7 @@ export function OrdersTable() {
           <Card key={group.menu.id}>
             <CardHeader>
               <CardTitle>
-                École {schoolName} - Menu de la semaine du {weekStart}
+                Établissement {schoolName} - Menu de la semaine du {weekStart}
                 {group.menu.weekNumber && group.menu.year && (
                   <span className="text-muted-foreground font-normal ml-2">
                     ({weekInfo})

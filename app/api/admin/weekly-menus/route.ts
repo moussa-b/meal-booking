@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating weekly menu:', error);
 
-    if (error instanceof Error && error.message.includes('Un menu existe déjà pour cette école et cette date')) {
+    if (error instanceof Error && error.message.includes('Un menu existe déjà pour cet établissement et cette date')) {
       return NextResponse.json(
         {
           error: 'Conflict',

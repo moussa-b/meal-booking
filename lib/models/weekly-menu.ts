@@ -7,7 +7,7 @@ import { Meal } from './meal';
 export interface WeeklyMenu {
   id: number;
   created: Date;
-  schoolId: number; // Référence à l'école
+  schoolId: number; // Référence à l'établissement
   weekStartDate: Date; // Date du lundi de début de semaine
   weekNumber?: number; // Numéro de semaine dans l'année
   year?: number; // Année

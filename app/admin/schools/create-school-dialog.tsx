@@ -47,7 +47,7 @@ export function CreateSchoolDialog({
   const handleSubmit = async (data: CreateSchoolInput) => {
     const result = await createSchoolAction(data);
     if (result.success && result.data) {
-      toast.success("École créée avec succès");
+      toast.success("Établissement créé avec succès");
       form.reset();
       onOpenChange(false);
       router.refresh();
@@ -61,15 +61,14 @@ export function CreateSchoolDialog({
       <DialogTrigger asChild>
         <Button>
           <PlusIcon className="mr-2 h-4 w-4" />
-          Ajouter une école
+          Ajouter un établissement
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Créer un établissement</DialogTitle>
           <DialogDescription>
-            Remplissez les informations pour créer un nouvel établissement
-            scolaire. Le code sera généré automatiquement.
+            Remplissez les informations pour créer un nouvel établissement. Le code sera généré automatiquement.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

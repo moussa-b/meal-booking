@@ -212,7 +212,7 @@ export function CreateMenuDialog({
                 name="schoolId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>École</FormLabel>
+                    <FormLabel>Établissement</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       value={field.value?.toString() || ""}
@@ -220,7 +220,7 @@ export function CreateMenuDialog({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une école" />
+                          <SelectValue placeholder="Sélectionner un établissement" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

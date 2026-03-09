@@ -171,7 +171,7 @@ export async function createWeeklyMenu(data: {
       [data.schoolId, weekStartDateStr]
     );
     if (existing.length > 0) {
-      throw new Error('Un menu existe déjà pour cette école et cette date');
+      throw new Error('Un menu existe déjà pour cet établissement et cette date');
     }
 
     // Insert the weekly menu
@@ -238,9 +238,9 @@ export async function updateWeeklyMenu(
     const newWeekStartDate = data.weekStartDate ?? currentMenu.weekStartDate;
 
     // Check if schoolId or weekStartDate is being changed
-    const isSchoolOrDateChanging = 
+    const isSchoolOrDateChanging =
       (data.schoolId !== undefined && data.schoolId !== currentMenu.schoolId) ||
-      (data.weekStartDate !== undefined && 
+      (data.weekStartDate !== undefined &&
        formatDateLocal(data.weekStartDate) !== formatDateLocal(currentMenu.weekStartDate));
 
     // If schoolId or weekStartDate is being changed, verify uniqueness
@@ -251,7 +251,7 @@ export async function updateWeeklyMenu(
         [newSchoolId, weekStartDateStr, id]
       );
       if (existing.length > 0) {
-        throw new Error('Un menu existe déjà pour cette école et cette date');
+        throw new Error('Un menu existe déjà pour cet établissement et cette date');
       }
     }
 
@@ -326,7 +326,7 @@ export async function deleteWeeklyMenu(id: number): Promise<void> {
  */
 export async function getWeeklyMenuWithMeals(id: number): Promise<WeeklyMenu | null> {
   const menu = await getWeeklyMenuById(id);
-  
+
   if (!menu || !menu.days) {
     return menu;
   }

@@ -58,7 +58,7 @@ export async function createWeeklyMenuAction(
   } catch (error) {
     console.error("Error creating weekly menu:", error);
 
-    if (error instanceof Error && error.message.includes("Un menu existe déjà pour cette école et cette date")) {
+    if (error instanceof Error && error.message.includes("Un menu existe déjà pour cet établissement et cette date")) {
       return {
         success: false,
         error: error.message,
@@ -120,7 +120,7 @@ export async function updateWeeklyMenuAction(
       };
     }
 
-    if (error instanceof Error && error.message.includes("Un menu existe déjà pour cette école et cette date")) {
+    if (error instanceof Error && error.message.includes("Un menu existe déjà pour cet établissement et cette date")) {
       return {
         success: false,
         error: error.message,

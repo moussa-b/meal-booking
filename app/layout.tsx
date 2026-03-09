@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Réservation des repas",
-  description: "Application de réservation des repas scolaires",
+  description: "Application de réservation des repas",
 };
 
 export default function RootLayout({

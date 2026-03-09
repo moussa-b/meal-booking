@@ -103,7 +103,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
         <p className="text-muted-foreground">
-          Pour commencer, créez un établissement scolaire.
+          Pour commencer, créez un établissement.
         </p>
         <Button asChild>
           <Link href="/admin/schools">Créer un établissement</Link>

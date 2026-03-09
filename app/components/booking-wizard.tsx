@@ -15,7 +15,7 @@ import { DAY_KEYS } from "@/lib/utils/date.utils";
 
 // Define the complete form schema
 const formSchema = z.object({
-  schoolId: z.number().min(1, "L'école est requise"),
+  schoolId: z.number().min(1, "L'établissement est requis"),
   email: z.string().email("Email invalide"),
   students: z
     .array(
@@ -175,7 +175,7 @@ export function BookingWizard() {
   const getStepTitle = () => {
     switch (currentStep) {
       case 1:
-        return "Informations de l'école";
+        return "Informations de l'établissement";
       case 99:
         return "Aucun menu disponible";
       case 2:

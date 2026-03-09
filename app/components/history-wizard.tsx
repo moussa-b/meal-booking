@@ -12,7 +12,7 @@ import type { BookingWithDetails } from '@/lib/models/booking';
 
 // Define the form schema compatible with StepSchoolInfo
 const formSchema = z.object({
-  schoolId: z.number().min(1, 'L\'école est requise'),
+  schoolId: z.number().min(1, 'L\'établissement est requis'),
   email: z.string().email('Email invalide'),
 });
 
@@ -97,7 +97,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
   const getStepTitle = () => {
     switch (currentStep) {
       case 1:
-        return 'Informations de l\'école';
+        return 'Informations de l\'établissement';
       case 2:
         return 'Historique des réservations';
       default:

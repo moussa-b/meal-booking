@@ -64,7 +64,7 @@ export function EditSchoolDialog({
 
     const result = await updateSchoolAction(school.id, data);
     if (result.success && result.data) {
-      toast.success("École modifiée avec succès");
+      toast.success("Établissement modifiée avec succès");
       onOpenChange(false);
       router.refresh();
     } else {
@@ -80,7 +80,7 @@ export function EditSchoolDialog({
         <DialogHeader>
           <DialogTitle>Modifier l&apos;établissement</DialogTitle>
           <DialogDescription>
-            Modifiez les informations de l&apos;établissement scolaire. Le code ne peut pas être modifié.
+            Modifiez les informations de l&apos;établissement. Le code ne peut pas être modifié.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

@@ -81,7 +81,7 @@ export function SchoolsTable({
 
     const result = await deleteSchoolAction(deleteId);
     if (result.success) {
-      toast.success("École supprimée avec succès");
+      toast.success("Établissement supprimée avec succès");
       setIsDeleteDialogOpen(false);
       setDeleteId(null);
       router.refresh();
@@ -107,7 +107,7 @@ export function SchoolsTable({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Gestion des établissements scolaires</CardTitle>
+            <CardTitle>Gestion des établissements</CardTitle>
             <CreateSchoolDialog
               createSchoolAction={createSchoolAction}
               open={isCreateDialogOpen}
@@ -128,7 +128,7 @@ export function SchoolsTable({
           )}
           {schools.length === 0 ? (
             <p className="text-center text-muted-foreground">
-              Aucun établissement scolaire enregistré.
+              Aucun établissement enregistré.
             </p>
           ) : (
             <Table>

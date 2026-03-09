@@ -275,7 +275,7 @@ describe('Weekly Menu Service', () => {
         days: [{ dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, price: 6.00 }],
       });
 
-      await expect(createWeeklyMenu(testData2)).rejects.toThrow('Un menu existe déjà pour cette école et cette date');
+      await expect(createWeeklyMenu(testData2)).rejects.toThrow('Un menu existe déjà pour cet établissement et cette date');
     });
 
     it('should allow creating menu for same date but different school', async () => {
@@ -406,7 +406,7 @@ describe('Weekly Menu Service', () => {
       // Try to update menu1 with menu2's date - should fail
       await expect(
         updateWeeklyMenu(menu1.id, { weekStartDate: monday2 })
-      ).rejects.toThrow('Un menu existe déjà pour cette école et cette date');
+      ).rejects.toThrow('Un menu existe déjà pour cet établissement et cette date');
     });
 
     it('should allow update when school+date combination is unchanged', async () => {

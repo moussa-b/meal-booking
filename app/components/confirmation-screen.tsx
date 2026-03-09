@@ -78,7 +78,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
 
   // Find school name by id
   const school = schools.find((s) => s.id === formData.schoolId);
-  const schoolName = school?.name || "École non trouvée";
+  const schoolName = school?.name || "Établissement non trouvée";
 
   // Calculate total price
   const calculateTotalPrice = (): number => {
@@ -365,14 +365,14 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         <CardHeader className="bg-slate-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <School className="h-5 w-5 text-blue-600" />
-            Informations de l&apos;école
+            Informations de l&apos;établissement
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-3">
           <div className="flex items-start gap-3">
             <School className="h-5 w-5 text-slate-400 mt-0.5" />
             <div>
-              <div className="text-sm text-slate-500">École</div>
+              <div className="text-sm text-slate-500">Établissement</div>
               <div className="font-semibold text-slate-900">
                 {schoolName}
               </div>
