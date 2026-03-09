@@ -309,43 +309,43 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     setPaying(false);
   };
 
-  const handleSaveAndPayLater = async () => {
-    if (savedBookingId !== null) {
-      setSavingForLater(true);
-      try {
-        const sendRes = await fetch(`/api/public/bookings/${savedBookingId}/send-pay-later-email`, {
-          method: "POST",
-        });
-        if (!sendRes.ok) {
-          console.error("Failed to send pay-later email:", await sendRes.text());
-        }
-      } catch (err) {
-        console.error("Failed to send pay-later email:", err);
-      }
-      setSavingForLater(false);
-      setSavedForLater(true);
-      toast.success("Réservation enregistrée", {
-        description: "Vous pourrez effectuer le paiement plus tard.",
-        duration: 5000,
-      });
-      onSubmitted?.();
-      return;
-    }
-
-    setSavingForLater(true);
-    const result = await saveBooking({ sendPayLaterEmail: true });
-    setSavingForLater(false);
-
-    if (!result) return;
-
-    setSavedBookingId(result.id);
-    setSavedForLater(true);
-    toast.success("Réservation enregistrée", {
-      description: "Vous pourrez effectuer le paiement plus tard.",
-      duration: 5000,
-    });
-    onSubmitted?.();
-  };
+  // const handleSaveAndPayLater = async () => {
+  //   if (savedBookingId !== null) {
+  //     setSavingForLater(true);
+  //     try {
+  //       const sendRes = await fetch(`/api/public/bookings/${savedBookingId}/send-pay-later-email`, {
+  //         method: "POST",
+  //       });
+  //       if (!sendRes.ok) {
+  //         console.error("Failed to send pay-later email:", await sendRes.text());
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to send pay-later email:", err);
+  //     }
+  //     setSavingForLater(false);
+  //     setSavedForLater(true);
+  //     toast.success("Réservation enregistrée", {
+  //       description: "Vous pourrez effectuer le paiement plus tard.",
+  //       duration: 5000,
+  //     });
+  //     onSubmitted?.();
+  //     return;
+  //   }
+  //
+  //   setSavingForLater(true);
+  //   const result = await saveBooking({ sendPayLaterEmail: true });
+  //   setSavingForLater(false);
+  //
+  //   if (!result) return;
+  //
+  //   setSavedBookingId(result.id);
+  //   setSavedForLater(true);
+  //   toast.success("Réservation enregistrée", {
+  //     description: "Vous pourrez effectuer le paiement plus tard.",
+  //     duration: 5000,
+  //   });
+  //   onSubmitted?.();
+  // };
 
   return (
     <div className="space-y-6">
@@ -532,15 +532,15 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                 </span>
               )}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSaveAndPayLater}
-              disabled={paying || savingForLater || totalPrice <= 0}
-              className="w-full h-11 text-base font-medium"
-            >
-              {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}
-            </Button>
+            {/*<Button*/}
+            {/*  type="button"*/}
+            {/*  variant="outline"*/}
+            {/*  onClick={handleSaveAndPayLater}*/}
+            {/*  disabled={paying || savingForLater || totalPrice <= 0}*/}
+            {/*  className="w-full h-11 text-base font-medium"*/}
+            {/*>*/}
+            {/*  {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}*/}
+            {/*</Button>*/}
           </div>
         )}
       </div>

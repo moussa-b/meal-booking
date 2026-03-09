@@ -102,9 +102,9 @@ export function MealsTable({
   };
 
   // Filter meals by type
-  const mainCourseMeals = meals.filter((m) => m.type === MealType.MAIN_COURSE);
-  const dessertMeals = meals.filter((m) => m.type === MealType.DESSERT);
-  const appetizerMeals = meals.filter((m) => m.type === MealType.APPETIZER);
+  const mainCourseMeals = meals.filter((m) => m.type === MealType.MAIN_COURSE).sort((m1, m2) => m1.name.localeCompare(m2.name));
+  const dessertMeals = meals.filter((m) => m.type === MealType.DESSERT).sort((m1, m2) => m1.name.localeCompare(m2.name));
+  const appetizerMeals = meals.filter((m) => m.type === MealType.APPETIZER).sort((m1, m2) => m1.name.localeCompare(m2.name));
 
   // Handle create dialog opening with specific type
   const handleCreateClick = (type: MealType) => {
