@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createBooking, getBookingsWithDetailsByEmailAndSchool } from '@/lib/services/booking.service';
+import { createBooking, getBookingsWithDetailsByEmailAndOrganization } from '@/lib/services/booking.service';
 import { z } from 'zod';
 
 /**
  * Validation schema for booking submission
  */
 const bookingSubmissionSchema = z.object({
-  schoolId: z.number().min(1),
+  organizationId: z.number().min(1),
   menuId: z.number().min(1),
   email: z.email(),
   students: z.array(
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
           id: booking.id,
           created: booking.created,
           email: booking.email,
-          schoolId: booking.schoolId,
+          organizationId: booking.organizationId,
           menuId: booking.menuId,
           status: booking.status,
         },
@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/public/bookings
- * Returns BookingWithDetails[] for the given email and school (public history flow).
+ * Returns BookingWithDetails[] for the given email and organization (public history flow).
  * Query params (both required):
  *   - email: valid email
- *   - schoolId: positive integer
+ *   - organizationId: positive integer
  */
 export async function GET(request: NextRequest) {
   try {
@@ -121,22 +121,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const schoolIdParam = searchParams.get('schoolId');
-    const schoolIdSchema = z.coerce.number().min(1);
-    const schoolIdValidation = schoolIdSchema.safeParse(schoolIdParam);
-    if (!schoolIdValidation.success) {
+    const organizationIdParam = searchParams.get('organizationId');
+    const organizationIdSchema = z.coerce.number().min(1);
+    const organizationIdValidation = organizationIdSchema.safeParse(organizationIdParam);
+    if (!organizationIdValidation.success) {
       return NextResponse.json(
         {
           error: 'Bad Request',
-          message: 'Invalid or missing schoolId',
+          message: 'Invalid or missing organizationId',
         },
         { status: 400 }
       );
     }
 
-    const bookings = await getBookingsWithDetailsByEmailAndSchool(
+    const bookings = await getBookingsWithDetailsByEmailAndOrganization(
       emailValidation.data,
-      schoolIdValidation.data
+      organizationIdValidation.data
     );
 
     return NextResponse.json({

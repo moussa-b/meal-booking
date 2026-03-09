@@ -3,7 +3,7 @@ import {
   createBooking,
   getBookingById,
   getBookingsByEmail,
-  getBookingsWithDetailsByEmailAndSchool,
+  getBookingsWithDetailsByEmailAndOrganization,
   getAllBookings,
   updateBookingStatus,
   updateBookingOrderId,
@@ -15,8 +15,8 @@ import {
   getTotalPaidAmountForMenu,
 } from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
-import { createTestMealData, createTestSchoolData, createTestWeeklyMenuData } from '../helpers/test-data';
-import { createSchool } from '@/lib/services/school.service';
+import { createTestMealData, createTestOrganizationData, createTestWeeklyMenuData } from '../helpers/test-data';
+import { createOrganization } from '@/lib/services/organization.service';
 import { createMeal } from '@/lib/services/meal.service';
 import { createWeeklyMenu } from '@/lib/services/weekly-menu.service';
 import { MealType } from '@/lib/models/meal';
@@ -31,7 +31,7 @@ describe('Booking Service', () => {
   // Helper function to create test booking data
   async function createTestBookingData(overrides?: {
     email?: string;
-    schoolId?: number;
+    organizationId?: number;
     menuId?: number;
     students?: Array<{
       lastName: string;
@@ -42,11 +42,11 @@ describe('Booking Service', () => {
     menuSelections?: Record<string, number[]>;
     saveChildrenInfo?: boolean;
   }): Promise<BookingSubmission> {
-    // Create school if not provided
-    let schoolId = overrides?.schoolId;
-    if (!schoolId) {
-      const school = await createSchool(createTestSchoolData());
-      schoolId = school.id;
+    // Create organization if not provided
+    let organizationId = overrides?.organizationId;
+    if (!organizationId) {
+      const organization = await createOrganization(createTestOrganizationData());
+      organizationId = organization.id;
     }
 
     // Create meals
@@ -59,7 +59,7 @@ describe('Booking Service', () => {
     if (!menuId) {
       const menu = await createWeeklyMenu(
         createTestWeeklyMenuData({
-          schoolId,
+          organizationId,
           days: [
             {
               dayOfWeek: DayOfWeek.MONDAY,
@@ -110,7 +110,7 @@ describe('Booking Service', () => {
         : {});
 
     return {
-      schoolId: schoolId!,
+      organizationId: organizationId!,
       menuId: menuId!,
       email: overrides?.email || `test${Date.now()}@example.com`,
       students: students.map((student) => ({
@@ -131,7 +131,7 @@ describe('Booking Service', () => {
 
       expect(booking.id).toBeGreaterThan(0);
       expect(booking.email).toBe(bookingData.email);
-      expect(booking.schoolId).toBe(bookingData.schoolId);
+      expect(booking.organizationId).toBe(bookingData.organizationId);
       expect(booking.menuId).toBe(bookingData.menuId);
       expect(booking.status).toBe(PaymentStatus.PENDING);
       expect(booking.students).toBeDefined();
@@ -190,15 +190,15 @@ describe('Booking Service', () => {
       expect(booking.students?.[0].menuSelections?.length).toBeGreaterThan(0);
     });
 
-    it('should throw error when school does not exist', async () => {
-      // Create a valid school and menu first
-      const school = await createSchool(createTestSchoolData());
+    it('should throw error when organization does not exist', async () => {
+      // Create a valid organization and menu first
+      const organization = await createOrganization(createTestOrganizationData());
       const mainDish = await createMeal(createTestMealData({ type: MealType.MAIN_COURSE }));
       const appetizer = await createMeal(createTestMealData({ type: MealType.APPETIZER }));
       const dessert = await createMeal(createTestMealData({ type: MealType.DESSERT }));
       const menu = await createWeeklyMenu(
         createTestWeeklyMenuData({
-          schoolId: school.id,
+          organizationId: organization.id,
           days: [
             {
               dayOfWeek: DayOfWeek.MONDAY,
@@ -211,13 +211,13 @@ describe('Booking Service', () => {
         })
       );
 
-      // Test with invalid schoolId but valid menuId
+      // Test with invalid organizationId but valid menuId
       const bookingData = await createTestBookingData({
-        schoolId: 99999,
+        organizationId: 99999,
         menuId: menu.id,
       });
 
-      await expect(createBooking(bookingData, false)).rejects.toThrow('School not found');
+      await expect(createBooking(bookingData, false)).rejects.toThrow('Organization not found');
     });
 
     it('should throw error when menu does not exist', async () => {
@@ -226,14 +226,14 @@ describe('Booking Service', () => {
       await expect(createBooking(bookingData, false)).rejects.toThrow('Weekly menu not found');
     });
 
-    it('should throw error when menu does not belong to school', async () => {
-      const school1 = await createSchool(createTestSchoolData());
-      const school2 = await createSchool(createTestSchoolData());
+    it('should throw error when menu does not belong to organization', async () => {
+      const organization1 = await createOrganization(createTestOrganizationData());
+      const organization2 = await createOrganization(createTestOrganizationData());
 
       const mainDish = await createMeal(createTestMealData({ type: MealType.MAIN_COURSE }));
       const menu = await createWeeklyMenu(
         createTestWeeklyMenuData({
-          schoolId: school1.id,
+          organizationId: organization1.id,
           days: [
             {
               dayOfWeek: DayOfWeek.MONDAY,
@@ -247,12 +247,12 @@ describe('Booking Service', () => {
       );
 
       const bookingData = await createTestBookingData({
-        schoolId: school2.id,
+        organizationId: organization2.id,
         menuId: menu.id,
       });
 
       await expect(createBooking(bookingData, false)).rejects.toThrow(
-        'Menu does not belong to the specified school'
+        'Menu does not belong to the specified organization'
       );
     });
 
@@ -284,7 +284,7 @@ describe('Booking Service', () => {
       expect(booking).not.toBeNull();
       expect(booking?.id).toBe(created.id);
       expect(booking?.email).toBe(bookingData.email);
-      expect(booking?.schoolId).toBe(bookingData.schoolId);
+      expect(booking?.organizationId).toBe(bookingData.organizationId);
       expect(booking?.menuId).toBe(bookingData.menuId);
       expect(booking?.status).toBe(PaymentStatus.PENDING);
       expect(booking?.students).toBeDefined();
@@ -413,7 +413,7 @@ describe('Booking Service', () => {
       expect(booking).toBeDefined();
       expect(booking?.id).toBe(created.id);
       expect(booking?.email).toBe(bookingData.email);
-      expect(booking?.schoolId).toBe(bookingData.schoolId);
+      expect(booking?.organizationId).toBe(bookingData.organizationId);
       expect(booking?.menuId).toBe(bookingData.menuId);
       expect(booking?.status).toBe(PaymentStatus.PENDING);
       expect(booking?.students).toBeDefined();
@@ -600,10 +600,10 @@ describe('Booking Service', () => {
       const mainDish = await createMeal(createTestMealData({ type: MealType.MAIN_COURSE }));
       const appetizer = await createMeal(createTestMealData({ type: MealType.APPETIZER }));
       const dessert = await createMeal(createTestMealData({ type: MealType.DESSERT }));
-      const school = await createSchool(createTestSchoolData());
+      const organization = await createOrganization(createTestOrganizationData());
       const menu = await createWeeklyMenu(
         createTestWeeklyMenuData({
-          schoolId: school.id,
+          organizationId: organization.id,
           days: [
             {
               dayOfWeek: DayOfWeek.MONDAY,
@@ -628,7 +628,7 @@ describe('Booking Service', () => {
       const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
       const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
       const bookingData = await createTestBookingData({
-        schoolId: school.id,
+        organizationId: organization.id,
         menuId: menu.id,
         menuSelections:
           mondayDay && tuesdayDay
@@ -645,41 +645,41 @@ describe('Booking Service', () => {
     });
   });
 
-  describe('getBookingsWithDetailsByEmailAndSchool', () => {
+  describe('getBookingsWithDetailsByEmailAndOrganization', () => {
     it('should return empty array when no bookings exist for email', async () => {
-      const school = await createSchool(createTestSchoolData());
-      const result = await getBookingsWithDetailsByEmailAndSchool(
+      const organization = await createOrganization(createTestOrganizationData());
+      const result = await getBookingsWithDetailsByEmailAndOrganization(
         'nonexistent@example.com',
-        school.id
+        organization.id
       );
       expect(result).toEqual([]);
     });
 
-    it('should return only bookings for the given schoolId', async () => {
+    it('should return only bookings for the given organizationId', async () => {
       const email = `test${Date.now()}@example.com`;
-      const bookingDataSchool1 = await createTestBookingData({ email });
-      const bookingDataSchool2 = await createTestBookingData({ email });
-      const created1 = await createBooking(bookingDataSchool1, false);
-      const created2 = await createBooking(bookingDataSchool2, false);
-      expect(bookingDataSchool1.schoolId).not.toBe(bookingDataSchool2.schoolId);
+      const bookingDataOrganization1 = await createTestBookingData({ email });
+      const bookingDataOrganization2 = await createTestBookingData({ email });
+      const created1 = await createBooking(bookingDataOrganization1, false);
+      const created2 = await createBooking(bookingDataOrganization2, false);
+      expect(bookingDataOrganization1.organizationId).not.toBe(bookingDataOrganization2.organizationId);
 
-      const result = await getBookingsWithDetailsByEmailAndSchool(
+      const result = await getBookingsWithDetailsByEmailAndOrganization(
         email,
-        bookingDataSchool1.schoolId
+        bookingDataOrganization1.organizationId
       );
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe(created1.id);
-      expect(result[0].schoolId).toBe(bookingDataSchool1.schoolId);
+      expect(result[0].organizationId).toBe(bookingDataOrganization1.organizationId);
     });
 
     it('should return bookings with totalMeals, totalAmount, and weekStartDate', async () => {
       const bookingData = await createTestBookingData();
       const created = await createBooking(bookingData, false);
 
-      const result = await getBookingsWithDetailsByEmailAndSchool(
+      const result = await getBookingsWithDetailsByEmailAndOrganization(
         bookingData.email,
-        bookingData.schoolId
+        bookingData.organizationId
       );
 
       expect(result.length).toBe(1);
@@ -696,9 +696,9 @@ describe('Booking Service', () => {
       const bookingData = await createTestBookingData();
       const created = await createBooking(bookingData, false);
       // Default: one student, Monday only, price 5.5
-      const result = await getBookingsWithDetailsByEmailAndSchool(
+      const result = await getBookingsWithDetailsByEmailAndOrganization(
         bookingData.email,
-        bookingData.schoolId
+        bookingData.organizationId
       );
 
       expect(result.length).toBe(1);
@@ -719,9 +719,9 @@ describe('Booking Service', () => {
       };
       await createBooking(bookingData, false);
       // Monday 5.5 + Tuesday 4.5 = 10
-      const result = await getBookingsWithDetailsByEmailAndSchool(
+      const result = await getBookingsWithDetailsByEmailAndOrganization(
         bookingData.email,
-        bookingData.schoolId
+        bookingData.organizationId
       );
 
       expect(result.length).toBe(1);
@@ -734,9 +734,9 @@ describe('Booking Service', () => {
       const created = await createBooking(bookingData, false);
       const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
       const menu = await getWeeklyMenuById(bookingData.menuId);
-      const result = await getBookingsWithDetailsByEmailAndSchool(
+      const result = await getBookingsWithDetailsByEmailAndOrganization(
         bookingData.email,
-        bookingData.schoolId
+        bookingData.organizationId
       );
 
       expect(result.length).toBe(1);
@@ -802,7 +802,7 @@ describe('Booking Service', () => {
       const bookingData2 = await createTestBookingData({
         email: `other${Date.now()}@example.com`,
         menuId: bookingData.menuId,
-        schoolId: bookingData.schoolId,
+        organizationId: bookingData.organizationId,
         menuSelections: { [studentKey]: mondayDay ? [mondayDay.id] : [] },
       });
       const b2 = await createBooking(bookingData2, false);
@@ -819,11 +819,11 @@ describe('Booking Service', () => {
   describe('getBookingCountsByStatusForMenu', () => {
     it('should return empty object when menu has no bookings', async () => {
       const bookingData = await createTestBookingData();
-      const school = await createSchool(createTestSchoolData());
+      const organization = await createOrganization(createTestOrganizationData());
       const mainDish = await createMeal(createTestMealData({ type: MealType.MAIN_COURSE }));
       const menu = await createWeeklyMenu(
         createTestWeeklyMenuData({
-          schoolId: school.id,
+          organizationId: organization.id,
           days: [
             { dayOfWeek: DayOfWeek.MONDAY, mainDishId: mainDish.id, appetizerId: null, dessertId: null, price: 5 },
           ],
@@ -839,7 +839,7 @@ describe('Booking Service', () => {
       const bookingData2 = await createTestBookingData({
         email: `other${Date.now()}@example.com`,
         menuId: bookingData.menuId,
-        schoolId: bookingData.schoolId,
+        organizationId: bookingData.organizationId,
       });
       const b2 = await createBooking(bookingData2, false);
       await updateBookingStatus(b1.id, PaymentStatus.PAID, false);
@@ -855,7 +855,7 @@ describe('Booking Service', () => {
       const bookingData2 = await createTestBookingData({
         email: `other${Date.now()}@example.com`,
         menuId: bookingData.menuId,
-        schoolId: bookingData.schoolId,
+        organizationId: bookingData.organizationId,
       });
       await createBooking(bookingData2, false);
 

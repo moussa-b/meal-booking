@@ -21,12 +21,12 @@ function getResendClient(): Resend | null {
 }
 
 /**
- * Build the history page URL with email and school code query params
+ * Build the history page URL with email and organization code query params
  */
-export function buildHistoryUrl(email: string, schoolCode: string): string {
+export function buildHistoryUrl(email: string, organizationCode: string): string {
   const params = new URLSearchParams({
     email: email,
-    code: schoolCode,
+    code: organizationCode,
   });
   return `${baseUrl}/history?${params.toString()}`;
 }
@@ -36,13 +36,13 @@ export function buildHistoryUrl(email: string, schoolCode: string): string {
  */
 export async function sendBookingPayLater(
   booking: Booking,
-  schoolCode: string,
-  schoolName: string
+  organizationCode: string,
+  organizationName: string
 ): Promise<void> {
   const resend = getResendClient();
   if (!resend) return;
 
-  const historyUrl = buildHistoryUrl(booking.email, schoolCode);
+  const historyUrl = buildHistoryUrl(booking.email, organizationCode);
 
   try {
     await resend.emails.send({
@@ -51,7 +51,7 @@ export async function sendBookingPayLater(
       subject: 'Réservation enregistrée – Paiement depuis l\'historique',
       react: React.createElement(PayLaterEmail, {
         historyUrl,
-        schoolName,
+        organizationName,
       }),
     });
   } catch (error) {
@@ -101,14 +101,14 @@ function buildBookingSummary(
  */
 export async function sendBookingConfirmationPaid(
   booking: Booking,
-  schoolCode: string,
-  schoolName: string,
+  organizationCode: string,
+  organizationName: string,
   menu: WeeklyMenu
 ): Promise<void> {
   const resend = getResendClient();
   if (!resend) return;
 
-  const historyUrl = buildHistoryUrl(booking.email, schoolCode);
+  const historyUrl = buildHistoryUrl(booking.email, organizationCode);
   const {studentSummaries, totalAmount} = buildBookingSummary(booking, menu);
   const weekLabel = menu.weekStartDate
     ? (() => {
@@ -124,7 +124,7 @@ export async function sendBookingConfirmationPaid(
       subject: 'Paiement confirmé – Réservation repas',
       react: React.createElement(BookingConfirmationPaidEmail, {
         historyUrl,
-        schoolName,
+        organizationName,
         totalAmount,
         studentSummaries,
         weekLabel,

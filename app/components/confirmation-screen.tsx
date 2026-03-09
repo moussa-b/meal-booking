@@ -8,7 +8,7 @@ import { CheckCircle2, Mail, School, User, UtensilsCrossed } from "lucide-react"
 import type { BookingFormData } from "./booking-wizard";
 import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { School as SchoolType } from "@/lib/models/school";
+import type { Organization as OrganizationType } from "@/lib/models/organization";
 import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
 import { DayOfWeek } from "@/lib/utils/date.utils";
 
@@ -37,34 +37,34 @@ interface ConfirmationScreenProps {
 export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
   const { watch } = useFormContext<BookingFormData>();
   const formData = watch();
-  const [schools, setSchools] = useState<SchoolType[]>([]);
+  const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
 
-  // Fetch schools to get school name
+  // Fetch organizations to get organization name
   useEffect(() => {
-    async function fetchSchools() {
+    async function fetchOrganizations() {
       try {
-        const response = await fetch("/api/public/schools");
+        const response = await fetch("/api/public/organizations");
         if (response.ok) {
           const result = await response.json();
-          setSchools(result.data || []);
+          setOrganizations(result.data || []);
         }
       } catch (error) {
-        console.error("Error fetching schools:", error);
+        console.error("Error fetching organizations:", error);
       }
     }
-    fetchSchools();
+    fetchOrganizations();
   }, []);
 
   // Fetch weekly menu to calculate total price
   useEffect(() => {
     async function fetchMenu() {
-      if (!formData.schoolId || formData.schoolId <= 0) {
+      if (!formData.organizationId || formData.organizationId <= 0) {
         return;
       }
 
       try {
-        const response = await fetch(`/api/public/weekly-menus?current=true&schoolId=${formData.schoolId}`);
+        const response = await fetch(`/api/public/weekly-menus?current=true&organizationId=${formData.organizationId}`);
         if (response.ok) {
           const result = await response.json();
           setWeeklyMenu(result.data);
@@ -74,11 +74,11 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
       }
     }
     fetchMenu();
-  }, [formData.schoolId]);
+  }, [formData.organizationId]);
 
-  // Find school name by id
-  const school = schools.find((s) => s.id === formData.schoolId);
-  const schoolName = school?.name || "Établissement non trouvée";
+  // Find organization name by id
+  const organization = organizations.find((s) => s.id === formData.organizationId);
+  const organizationName = organization?.name || "Établissement non trouvé";
 
   // Calculate total price
   const calculateTotalPrice = (): number => {
@@ -360,7 +360,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         Veuillez vérifier vos informations avant de soumettre votre réservation.
       </p>
 
-      {/* School Information */}
+      {/* Organization Information */}
       <Card className="border-2 border-slate-200 pt-0">
         <CardHeader className="bg-slate-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
@@ -374,7 +374,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
             <div>
               <div className="text-sm text-slate-500">Établissement</div>
               <div className="font-semibold text-slate-900">
-                {schoolName}
+                {organizationName}
               </div>
             </div>
           </div>

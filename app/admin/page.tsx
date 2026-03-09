@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, PlusIcon } from 'lucide-react';
 import { getMonday, getNextMonday, isMonday, formatDateLocal, formatWeekTitle } from '@/lib/utils/date.utils';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,55 +27,55 @@ interface DashboardData {
 }
 
 export default function AdminDashboardPage() {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [schoolsLoading, setSchoolsLoading] = useState(true);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizationsLoading, setOrganizationsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(() => getMonday(new Date()));
-  const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<number | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
-  // Load schools on mount
+  // Load organizations on mount
   useEffect(() => {
-    async function fetchSchools() {
+    async function fetchOrganizations() {
       try {
-        setSchoolsLoading(true);
-        const res = await fetch('/api/admin/schools');
-        if (!res.ok) throw new Error('Failed to fetch schools');
+        setOrganizationsLoading(true);
+        const res = await fetch('/api/admin/organizations');
+        if (!res.ok) throw new Error('Failed to fetch organizations');
         const json = await res.json();
         const data = json.data ?? [];
-        setSchools(data);
-        // Default: first school by smallest id
+        setOrganizations(data);
+        // Default: first organization by smallest id
         if (data.length > 0) {
-          const sorted = [...data].sort((a: School, b: School) => a.id - b.id);
-          setSelectedSchoolId(sorted[0].id);
+          const sorted = [...data].sort((a: Organization, b: Organization) => a.id - b.id);
+          setSelectedOrganizationId(sorted[0].id);
         }
       } catch (err) {
         console.error(err);
-        setSchools([]);
+        setOrganizations([]);
       } finally {
-        setSchoolsLoading(false);
+        setOrganizationsLoading(false);
       }
     }
 
-    fetchSchools();
+    fetchOrganizations();
   }, []);
 
-  const sortedSchools = useMemo(() => {
-    return [...schools].sort((a, b) => a.id - b.id);
-  }, [schools]);
+  const sortedOrganizations = useMemo(() => {
+    return [...organizations].sort((a, b) => a.id - b.id);
+  }, [organizations]);
 
-  // Fetch dashboard when date or school changes (only when we have a valid school)
+  // Fetch dashboard when date or organization changes (only when we have a valid organization)
   useEffect(() => {
-    if (selectedSchoolId == null) return;
+    if (selectedOrganizationId == null) return;
 
     let cancelled = false;
     setDashboardError(null);
     setDashboardLoading(true);
 
     const dateStr = formatDateLocal(selectedDate);
-    fetch(`/api/admin/dashboard?date=${dateStr}&schoolId=${selectedSchoolId}`)
+    fetch(`/api/admin/dashboard?date=${dateStr}&organizationId=${selectedOrganizationId}`)
       .then((res) => {
         if (!res.ok) throw new Error(res.status === 400 ? 'Invalid request' : 'Failed to load dashboard');
         return res.json();
@@ -96,17 +96,17 @@ export default function AdminDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDate, selectedSchoolId]);
+  }, [selectedDate, selectedOrganizationId]);
 
-  // No schools: onboarding
-  if (!schoolsLoading && schools.length === 0) {
+  // No organizations: onboarding
+  if (!organizationsLoading && organizations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center">
         <p className="text-muted-foreground">
           Pour commencer, créez un établissement.
         </p>
         <Button asChild>
-          <Link href="/admin/schools">Créer un établissement</Link>
+          <Link href="/admin/organizations">Créer un établissement</Link>
         </Button>
       </div>
     );
@@ -154,18 +154,18 @@ export default function AdminDashboardPage() {
         </Popover>
 
         <Select
-          value={selectedSchoolId != null ? String(selectedSchoolId) : ''}
-          onValueChange={(v) => setSelectedSchoolId(parseInt(v, 10))}
-          disabled={sortedSchools.length === 0}
+          value={selectedOrganizationId != null ? String(selectedOrganizationId) : ''}
+          onValueChange={(v) => setSelectedOrganizationId(parseInt(v, 10))}
+          disabled={sortedOrganizations.length === 0}
         >
           <SelectTrigger className="w-[280px]">
             <SelectValue placeholder="Établissement"/>
           </SelectTrigger>
           <SelectContent>
-            {sortedSchools.map((school) => (
-              <SelectItem key={school.id}
-                          value={String(school.id)}>
-                {school.name}
+            {sortedOrganizations.map((organization) => (
+              <SelectItem key={organization.id}
+                          value={String(organization.id)}>
+                {organization.name}
               </SelectItem>
             ))}
           </SelectContent>

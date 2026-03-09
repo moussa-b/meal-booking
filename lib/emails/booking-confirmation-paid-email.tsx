@@ -22,7 +22,7 @@ export interface StudentSummary {
 
 export interface BookingConfirmationPaidEmailProps {
   historyUrl: string;
-  schoolName: string;
+  organizationName: string;
   totalAmount: number;
   studentSummaries: StudentSummary[];
   weekLabel?: string;
@@ -30,12 +30,12 @@ export interface BookingConfirmationPaidEmailProps {
 
 export function BookingConfirmationPaidEmail({
                                                historyUrl,
-                                               schoolName,
+                                               organizationName,
                                                totalAmount,
                                                studentSummaries,
                                                weekLabel,
                                              }: BookingConfirmationPaidEmailProps) {
-  const previewText = `Paiement confirmé – Réservation ${schoolName}`;
+  const previewText = `Paiement confirmé – Réservation ${organizationName}`;
   const totalFormatted = totalAmount.toFixed(2).replace('.', ',');
   return (
     <Html lang="fr">
@@ -45,7 +45,7 @@ export function BookingConfirmationPaidEmail({
         <Container style={container}>
           <Heading style={h1}>Paiement confirmé</Heading>
           <Text style={text}>
-            Votre paiement pour la réservation à <strong>{schoolName}</strong> a bien été enregistré.
+            Votre paiement pour la réservation à <strong>{organizationName}</strong> a bien été enregistré.
           </Text>
           {weekLabel && (
             <Text style={text}>

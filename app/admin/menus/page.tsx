@@ -1,9 +1,9 @@
 import { getAllWeeklyMenus } from "@/lib/services/weekly-menu.service";
 import { getAllMeals } from "@/lib/services/meal.service";
-import { getAllSchools } from "@/lib/services/school.service";
+import { getAllOrganizations } from "@/lib/services/organization.service";
 import type { WeeklyMenu } from "@/lib/models/weekly-menu";
 import type { Meal } from "@/lib/models/meal";
-import type { School } from "@/lib/models/school";
+import type { Organization } from "@/lib/models/organization";
 import { MenusTable } from "./menus-table";
 import { AdminMenusUrlCleaner } from "./url-cleaner";
 import {
@@ -23,7 +23,7 @@ interface MenusPageProps {
 export default async function MenusPage({ searchParams }: MenusPageProps) {
   let menus: WeeklyMenu[] = [];
   let meals: Meal[] = [];
-  let schools: School[] = [];
+  let organizations: Organization[] = [];
   let error: string | null = null;
   let errorDetail: string | null = null;
 
@@ -36,10 +36,10 @@ export default async function MenusPage({ searchParams }: MenusPageProps) {
       : false;
 
   try {
-    [menus, meals, schools] = await Promise.all([
+    [menus, meals, organizations] = await Promise.all([
       getAllWeeklyMenus(),
       getAllMeals(),
-      getAllSchools(),
+      getAllOrganizations(),
     ]);
   } catch (err) {
     console.error("Error fetching data:", err);
@@ -54,7 +54,7 @@ export default async function MenusPage({ searchParams }: MenusPageProps) {
         <MenusTable
           menus={menus}
           meals={meals}
-          schools={schools}
+          organizations={organizations}
           createWeeklyMenuAction={createWeeklyMenuAction}
           updateWeeklyMenuAction={updateWeeklyMenuAction}
           deleteWeeklyMenuAction={deleteWeeklyMenuAction}

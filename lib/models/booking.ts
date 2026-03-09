@@ -10,7 +10,7 @@ export interface Booking {
   id: number;
   created: Date;
   email: string;
-  schoolId: number;
+  organizationId: number;
   menuId: number;
   students?: BookingStudent[];
   status: PaymentStatus;
@@ -54,7 +54,7 @@ export interface BookingMenuSelection {
 export interface BookingWithDetails extends Booking {
   totalMeals: number;
   totalAmount: number;
-  schoolName?: string;
+  organizationName?: string;
   weekStartDate?: Date;
 }
 

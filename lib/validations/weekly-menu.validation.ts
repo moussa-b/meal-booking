@@ -68,7 +68,7 @@ const baseWeeklyMenuSchema = {
  * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const createWeeklyMenuSchema = z.object({
-  schoolId: z.number().int().positive('L\'établissement est requis'),
+  organizationId: z.number().int().positive('L\'établissement est requis'),
   weekStartDate: z.coerce.date().refine(
     (date) => validateMonday(date, 'createWeeklyMenuSchema'),
     {
@@ -83,7 +83,7 @@ export const createWeeklyMenuSchema = z.object({
  * Can be used both in forms and server actions thanks to z.coerce.date()
  */
 export const updateWeeklyMenuSchema = z.object({
-  schoolId: z.number().int().positive('L\'établissement est requis').optional(),
+  organizationId: z.number().int().positive('L\'établissement est requis').optional(),
   weekStartDate: z.coerce.date()
     .refine(
       (date) => validateMonday(date, 'updateWeeklyMenuSchema'),

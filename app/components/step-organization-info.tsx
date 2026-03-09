@@ -12,36 +12,36 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { BookingFormData } from './booking-wizard';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 
-export function StepSchoolInfo() {
+export function StepOrganizationInfo() {
   const { control } = useFormContext<BookingFormData>();
-  const [schools, setSchools] = useState<School[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchSchools() {
+    async function fetchOrganizations() {
       try {
-        const response = await fetch('/api/public/schools');
+        const response = await fetch('/api/public/organizations');
         if (response.ok) {
           const result = await response.json();
-          setSchools(result.data || []);
+          setOrganizations(result.data || []);
         }
       } catch (error) {
-        console.error('Error fetching schools:', error);
+        console.error('Error fetching organizations:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchSchools();
+    fetchOrganizations();
   }, []);
 
   return (
     <div className="space-y-6">
       <FormField
         control={control}
-        name="schoolId"
+        name="organizationId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Établissement</FormLabel>
@@ -55,9 +55,9 @@ export function StepSchoolInfo() {
                   <SelectValue placeholder="Sélectionnez un établissement" />
                 </SelectTrigger>
                 <SelectContent>
-                  {schools.map((school) => (
-                    <SelectItem key={school.id} value={String(school.id)}>
-                      {school.name}
+                  {organizations.map((organization) => (
+                    <SelectItem key={organization.id} value={String(organization.id)}>
+                      {organization.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

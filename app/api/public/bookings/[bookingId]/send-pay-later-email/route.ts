@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBookingById, updatePaymentEmailSentAt, } from '@/lib/services/booking.service';
-import { getSchoolById } from '@/lib/services/school.service';
+import { getOrganizationById } from '@/lib/services/organization.service';
 import { sendBookingPayLater } from '@/lib/services/email.service';
 
 /**
@@ -34,15 +34,15 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       });
     }
 
-    const school = await getSchoolById(booking.schoolId);
-    if (!school) {
+    const organization = await getOrganizationById(booking.organizationId);
+    if (!organization) {
       return NextResponse.json(
-        { error: 'Not Found', message: 'School not found' },
+        { error: 'Not Found', message: 'Organization not found' },
         { status: 404 }
       );
     }
 
-    await sendBookingPayLater(booking, school.code, school.name);
+    await sendBookingPayLater(booking, organization.code, organization.name);
     await updatePaymentEmailSentAt(bookingId);
 
     return NextResponse.json({

@@ -12,7 +12,7 @@ import type { WeeklyMenu, WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
 import { DayOfWeek } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { type ActionResult } from './actions';
 import { type UpdateWeeklyMenuInput, updateWeeklyMenuSchema } from '@/lib/validations/weekly-menu.validation';
 import {
@@ -53,32 +53,32 @@ export function EditMenuDialog({
   onOpenChange,
 }: EditMenuDialogProps) {
   const router = useRouter();
-  const [schools, setSchools] = useState<School[]>([]);
-  const [loadingSchools, setLoadingSchools] = useState(true);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(true);
 
   // Filter meals by type
   const mainDishes = meals.filter(m => m.type === MealType.MAIN_COURSE);
   const appetizers = meals.filter(m => m.type === MealType.APPETIZER);
   const desserts = meals.filter(m => m.type === MealType.DESSERT);
 
-  // Fetch schools
+  // Fetch organizations
   useEffect(() => {
-    async function fetchSchools() {
+    async function fetchOrganizations() {
       try {
-        const response = await fetch('/api/admin/schools');
+        const response = await fetch('/api/admin/organizations');
         if (response.ok) {
           const result = await response.json();
-          setSchools(result.data || []);
+          setOrganizations(result.data || []);
         }
       } catch (error) {
-        console.error('Error fetching schools:', error);
+        console.error('Error fetching organizations:', error);
       } finally {
-        setLoadingSchools(false);
+        setLoadingOrganizations(false);
       }
     }
 
     if (open) {
-      fetchSchools();
+      fetchOrganizations();
     }
   }, [open]);
 
@@ -97,7 +97,7 @@ export function EditMenuDialog({
     if (menu && open) {
       const days = menu.days || [];
       form.reset({
-        schoolId: menu.schoolId,
+        organizationId: menu.organizationId,
         weekStartDate: menu.weekStartDate,
         days: days.length > 0 ? days.map(day => ({
           dayOfWeek: day.dayOfWeek,
@@ -171,14 +171,14 @@ export function EditMenuDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="schoolId"
+                name="organizationId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Établissement</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       value={field.value?.toString() || ""}
-                      disabled={loadingSchools}
+                      disabled={loadingOrganizations}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -186,9 +186,9 @@ export function EditMenuDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {schools.map((school) => (
-                          <SelectItem key={school.id} value={school.id.toString()}>
-                            {school.name}
+                        {organizations.map((organization) => (
+                          <SelectItem key={organization.id} value={organization.id.toString()}>
+                            {organization.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

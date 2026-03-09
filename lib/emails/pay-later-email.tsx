@@ -15,10 +15,10 @@ import {
 
 export interface PayLaterEmailProps {
   historyUrl: string;
-  schoolName: string;
+  organizationName: string;
 }
 
-export function PayLaterEmail({historyUrl, schoolName}: PayLaterEmailProps) {
+export function PayLaterEmail({historyUrl, organizationName}: PayLaterEmailProps) {
   const previewText = `Réservation enregistrée – Paiement depuis la page historique`;
   return (
     <Html lang="fr">
@@ -28,7 +28,7 @@ export function PayLaterEmail({historyUrl, schoolName}: PayLaterEmailProps) {
         <Container style={container}>
           <Heading style={h1}>Réservation enregistrée</Heading>
           <Text style={text}>
-            Votre réservation pour <strong>{schoolName}</strong> a bien été enregistrée.
+            Votre réservation pour <strong>{organizationName}</strong> a bien été enregistrée.
           </Text>
           <Text style={text}>
             Vous pouvez effectuer le paiement plus tard depuis la page historique en cliquant sur le lien ci-dessous.

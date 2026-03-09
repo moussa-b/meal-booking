@@ -9,7 +9,7 @@ import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
 import { DayOfWeek } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { type ActionResult } from './actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, D
 interface MenusTableProps {
   menus: WeeklyMenu[];
   meals: Meal[];
-  schools: School[];
+  organizations: Organization[];
   createWeeklyMenuAction: (data: CreateWeeklyMenuInput) => Promise<ActionResult>;
   updateWeeklyMenuAction: (
     id: number,
@@ -48,7 +48,7 @@ interface MenusTableProps {
 export function MenusTable({
   menus: initialMenus,
   meals,
-  schools,
+  organizations,
   createWeeklyMenuAction,
   updateWeeklyMenuAction,
   deleteWeeklyMenuAction,
@@ -112,7 +112,7 @@ export function MenusTable({
           }));
 
     setCreateInitialValues({
-      schoolId: menu.schoolId,
+      organizationId: menu.organizationId,
       days,
     });
     setIsCreateDialogOpen(true);
@@ -163,11 +163,11 @@ export function MenusTable({
     return meal?.name || '—';
   };
 
-  // Helper function to get school name by ID
-  const getSchoolName = (schoolId: number | null | undefined): string => {
-    if (!schoolId) return '—';
-    const school = schools.find((s) => s.id === schoolId);
-    return school?.name || '—';
+  // Helper function to get organization name by ID
+  const getOrganizationName = (organizationId: number | null | undefined): string => {
+    if (!organizationId) return '—';
+    const organization = organizations.find((s) => s.id === organizationId);
+    return organization?.name || '—';
   };
 
   // Helper function to get day name by dayOfWeek
@@ -250,7 +250,7 @@ export function MenusTable({
                     <TableCell className="font-medium">
                       {formatWeekRange(menu)}
                     </TableCell>
-                    <TableCell>{getSchoolName(menu.schoolId)}</TableCell>
+                    <TableCell>{getOrganizationName(menu.organizationId)}</TableCell>
                     <TableCell>{menu.weekNumber || '—'}</TableCell>
                     <TableCell>{menu.year || '—'}</TableCell>
                     <TableCell>{menu.days?.length || 0}</TableCell>

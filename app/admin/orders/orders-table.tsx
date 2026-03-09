@@ -5,7 +5,7 @@ import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import type { Booking } from '@/lib/models/booking';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
 import { PaymentStatus } from '@/lib/models/payment-status';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ interface MenuGroup {
 export function OrdersTable() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [menus, setMenus] = useState<WeeklyMenu[]>([]);
-  const [schools, setSchools] = useState<School[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
@@ -47,11 +47,11 @@ export function OrdersTable() {
       try {
         setLoading(true);
 
-        // Fetch bookings, menus, and schools in parallel
-        const [bookingsResponse, menusResponse, schoolsResponse] = await Promise.all([
+        // Fetch bookings, menus, and organizations in parallel
+        const [bookingsResponse, menusResponse, organizationsResponse] = await Promise.all([
           fetch('/api/admin/bookings'),
           fetch('/api/admin/weekly-menus'),
-          fetch('/api/admin/schools'),
+          fetch('/api/admin/organizations'),
         ]);
 
         if (!bookingsResponse.ok) {
@@ -60,17 +60,17 @@ export function OrdersTable() {
         if (!menusResponse.ok) {
           throw new Error('Failed to fetch menus');
         }
-        if (!schoolsResponse.ok) {
-          throw new Error('Failed to fetch schools');
+        if (!organizationsResponse.ok) {
+          throw new Error('Failed to fetch organizations');
         }
 
         const bookingsData = await bookingsResponse.json();
         const menusData = await menusResponse.json();
-        const schoolsData = await schoolsResponse.json();
+        const organizationsData = await organizationsResponse.json();
 
         setBookings(bookingsData.data || []);
         setMenus(menusData.data || []);
-        setSchools(schoolsData.data || []);
+        setOrganizations(organizationsData.data || []);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(err instanceof Error ? err.message : 'Erreur lors du chargement des données');
@@ -226,10 +226,10 @@ export function OrdersTable() {
     );
   }
 
-  // Create a map of schoolId -> school name for quick lookup
-  const schoolsMap = new Map<number, string>();
-  schools.forEach((school) => {
-    schoolsMap.set(school.id, school.name);
+  // Create a map of organizationId -> organization name for quick lookup
+  const organizationsMap = new Map<number, string>();
+  organizations.forEach((organization) => {
+    organizationsMap.set(organization.id, organization.name);
   });
 
   return (
@@ -240,13 +240,13 @@ export function OrdersTable() {
           group.menu.weekNumber && group.menu.year
             ? `Semaine ${group.menu.weekNumber} - ${group.menu.year}`
             : weekStart;
-        const schoolName = schoolsMap.get(group.menu.schoolId) || 'inconnue';
+        const organizationName = organizationsMap.get(group.menu.organizationId) || 'inconnue';
 
         return (
           <Card key={group.menu.id}>
             <CardHeader>
               <CardTitle>
-                Établissement {schoolName} - Menu de la semaine du {weekStart}
+                Établissement {organizationName} - Menu de la semaine du {weekStart}
                 {group.menu.weekNumber && group.menu.year && (
                   <span className="text-muted-foreground font-normal ml-2">
                     ({weekInfo})

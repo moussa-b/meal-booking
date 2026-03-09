@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllSchools, createSchool } from '@/lib/services/school.service';
-import { createSchoolSchema } from '@/lib/validations/school.validation';
+import { getAllOrganizations, createOrganization } from '@/lib/services/organization.service';
+import { createOrganizationSchema } from '@/lib/validations/organization.validation';
 
 /**
- * GET /api/admin/schools
- * Get all schools (admin use: orders table, menu dialogs).
+ * GET /api/admin/organizations
+ * Get all organizations (admin use: orders table, menu dialogs).
  */
 export async function GET() {
   try {
-    const schools = await getAllSchools();
+    const organizations = await getAllOrganizations();
     return NextResponse.json({
-      data: schools,
-      count: schools.length,
+      data: organizations,
+      count: organizations.length,
     });
   } catch (error) {
-    console.error('Error fetching schools:', error);
+    console.error('Error fetching organizations:', error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to fetch schools',
+        message: 'Failed to fetch organizations',
       },
       {status: 500}
     );
@@ -26,15 +26,15 @@ export async function GET() {
 }
 
 /**
- * POST /api/admin/schools
- * Create a new school (admin).
+ * POST /api/admin/organizations
+ * Create a new organization (admin).
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // Validate input
-    const validationResult = createSchoolSchema.safeParse(body);
+    const validationResult = createOrganizationSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         {
@@ -45,24 +45,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const school = await createSchool(validationResult.data);
+    const organization = await createOrganization(validationResult.data);
 
     return NextResponse.json(
       {
-        data: school,
-        message: 'School created successfully',
+        data: organization,
+        message: 'Organization created successfully',
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error creating school:', error);
+    console.error('Error creating organization:', error);
 
     // Handle duplicate code error
     if (error instanceof Error && error.message.includes('Duplicate entry')) {
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Un school avec ce code existe déjà',
+          message: 'Une organisation avec ce code existe déjà',
         },
         { status: 400 }
       );
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to create school',
+        message: 'Failed to create organization',
       },
       { status: 500 }
     );

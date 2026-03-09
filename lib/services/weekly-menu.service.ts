@@ -4,7 +4,7 @@ import { getWeekNumber, getYear, formatDateLocal, isMonday } from '@/lib/utils/d
 import type { FieldPacket } from 'mysql2/promise';
 import { getMealById } from '@/lib/services/meal.service';
 import type { Meal } from '@/lib/models/meal';
-import { getSchoolById } from '@/lib/services/school.service';
+import { getOrganizationById } from '@/lib/services/organization.service';
 
 /**
  * Database row type for WeeklyMenu (as returned from MySQL)
@@ -12,7 +12,7 @@ import { getSchoolById } from '@/lib/services/school.service';
 interface WeeklyMenuRow {
   id: number;
   created: string | Date;
-  schoolId: number;
+  organizationId: number;
   weekStartDate: string | Date;
   weekNumber: number | null;
   year: number | null;
@@ -36,7 +36,7 @@ interface WeeklyMenuDayRow {
  */
 export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, schoolId, weekStartDate, weekNumber, year FROM weekly_menus ORDER BY weekStartDate DESC'
+    'SELECT id, created, organizationId, weekStartDate, weekNumber, year FROM weekly_menus ORDER BY weekStartDate DESC'
   );
 
   if (menus.length === 0) {
@@ -73,7 +73,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
   return menus.map((row: WeeklyMenuRow) => ({
     id: row.id,
     created: new Date(row.created),
-    schoolId: row.schoolId,
+    organizationId: row.organizationId,
     weekStartDate: new Date(row.weekStartDate),
     weekNumber: row.weekNumber ?? undefined,
     year: row.year ?? undefined,
@@ -86,7 +86,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
  */
 export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> {
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, schoolId, weekStartDate, weekNumber, year FROM weekly_menus WHERE id = ?',
+    'SELECT id, created, organizationId, weekStartDate, weekNumber, year FROM weekly_menus WHERE id = ?',
     [id]
   );
 
@@ -103,7 +103,7 @@ export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> 
   return {
     id: menu.id,
     created: new Date(menu.created),
-    schoolId: menu.schoolId,
+    organizationId: menu.organizationId,
     weekStartDate: new Date(menu.weekStartDate),
     weekNumber: menu.weekNumber ?? undefined,
     year: menu.year ?? undefined,
@@ -120,13 +120,13 @@ export async function getWeeklyMenuById(id: number): Promise<WeeklyMenu | null> 
 }
 
 /**
- * Get a weekly menu by school and week start date
+ * Get a weekly menu by organization and week start date
  */
-export async function getWeeklyMenuByWeekStart(weekStartDate: Date, schoolId: number): Promise<WeeklyMenu | null> {
+export async function getWeeklyMenuByWeekStart(weekStartDate: Date, organizationId: number): Promise<WeeklyMenu | null> {
   const dateStr = formatDateLocal(weekStartDate);
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, schoolId, weekStartDate, weekNumber, year FROM weekly_menus WHERE schoolId = ? AND weekStartDate = ?',
-    [schoolId, dateStr]
+    'SELECT id, created, organizationId, weekStartDate, weekNumber, year FROM weekly_menus WHERE organizationId = ? AND weekStartDate = ?',
+    [organizationId, dateStr]
   );
 
   if (menus.length === 0) {
@@ -140,7 +140,7 @@ export async function getWeeklyMenuByWeekStart(weekStartDate: Date, schoolId: nu
  * Create a new weekly menu with its days
  */
 export async function createWeeklyMenu(data: {
-  schoolId: number;
+  organizationId: number;
   weekStartDate: Date;
   days: Array<{
     dayOfWeek: number;
@@ -155,20 +155,20 @@ export async function createWeeklyMenu(data: {
   try {
     await connection.beginTransaction();
 
-    // Validate school exists
-    const school = await getSchoolById(data.schoolId);
-    if (!school) {
-      throw new Error('School not found');
+    // Validate organization exists
+    const organization = await getOrganizationById(data.organizationId);
+    if (!organization) {
+      throw new Error('Organization not found');
     }
 
     const weekStartDateStr = formatDateLocal(data.weekStartDate);
     const weekNum = getWeekNumber(data.weekStartDate);
     const year = getYear(data.weekStartDate);
 
-    // Check if a menu already exists for this school and date
+    // Check if a menu already exists for this organization and date
     const existing = await query<WeeklyMenuRow[]>(
-      'SELECT id FROM weekly_menus WHERE schoolId = ? AND weekStartDate = ?',
-      [data.schoolId, weekStartDateStr]
+      'SELECT id FROM weekly_menus WHERE organizationId = ? AND weekStartDate = ?',
+      [data.organizationId, weekStartDateStr]
     );
     if (existing.length > 0) {
       throw new Error('Un menu existe déjà pour cet établissement et cette date');
@@ -176,8 +176,8 @@ export async function createWeeklyMenu(data: {
 
     // Insert the weekly menu
     const [menuResult] = await connection.execute(
-      'INSERT INTO weekly_menus (schoolId, weekStartDate, weekNumber, year) VALUES (?, ?, ?, ?)',
-      [data.schoolId, weekStartDateStr, weekNum, year]
+      'INSERT INTO weekly_menus (organizationId, weekStartDate, weekNumber, year) VALUES (?, ?, ?, ?)',
+      [data.organizationId, weekStartDateStr, weekNum, year]
     ) as [MysqlInsertResult, FieldPacket[]];
 
     const weeklyMenuId = menuResult.insertId;
@@ -212,7 +212,7 @@ export async function createWeeklyMenu(data: {
 export async function updateWeeklyMenu(
   id: number,
   data: {
-    schoolId?: number;
+    organizationId?: number;
     weekStartDate?: Date;
     days?: Array<{
       dayOfWeek: number;
@@ -228,43 +228,43 @@ export async function updateWeeklyMenu(
   try {
     await connection.beginTransaction();
 
-    // Get current menu to check if schoolId or weekStartDate is being changed
+    // Get current menu to check if organizationId or weekStartDate is being changed
     const currentMenu = await getWeeklyMenuById(id);
     if (!currentMenu) {
       throw new Error('Weekly menu not found');
     }
 
-    const newSchoolId = data.schoolId ?? currentMenu.schoolId;
+    const newOrganizationId = data.organizationId ?? currentMenu.organizationId;
     const newWeekStartDate = data.weekStartDate ?? currentMenu.weekStartDate;
 
-    // Check if schoolId or weekStartDate is being changed
-    const isSchoolOrDateChanging =
-      (data.schoolId !== undefined && data.schoolId !== currentMenu.schoolId) ||
+    // Check if organizationId or weekStartDate is being changed
+    const isOrganizationOrDateChanging =
+      (data.organizationId !== undefined && data.organizationId !== currentMenu.organizationId) ||
       (data.weekStartDate !== undefined &&
        formatDateLocal(data.weekStartDate) !== formatDateLocal(currentMenu.weekStartDate));
 
-    // If schoolId or weekStartDate is being changed, verify uniqueness
-    if (isSchoolOrDateChanging) {
+    // If organizationId or weekStartDate is being changed, verify uniqueness
+    if (isOrganizationOrDateChanging) {
       const weekStartDateStr = formatDateLocal(newWeekStartDate);
       const existing = await query<WeeklyMenuRow[]>(
-        'SELECT id FROM weekly_menus WHERE schoolId = ? AND weekStartDate = ? AND id != ?',
-        [newSchoolId, weekStartDateStr, id]
+        'SELECT id FROM weekly_menus WHERE organizationId = ? AND weekStartDate = ? AND id != ?',
+        [newOrganizationId, weekStartDateStr, id]
       );
       if (existing.length > 0) {
         throw new Error('Un menu existe déjà pour cet établissement et cette date');
       }
     }
 
-    // Update weekly menu if weekStartDate or schoolId is provided
-    if (data.weekStartDate || data.schoolId !== undefined) {
+    // Update weekly menu if weekStartDate or organizationId is provided
+    if (data.weekStartDate || data.organizationId !== undefined) {
       const weekStartDateStr = formatDateLocal(newWeekStartDate);
       const weekNum = getWeekNumber(newWeekStartDate);
       const year = getYear(newWeekStartDate);
 
-      if (data.schoolId !== undefined) {
+      if (data.organizationId !== undefined) {
         await connection.execute(
-          'UPDATE weekly_menus SET schoolId = ?, weekStartDate = ?, weekNumber = ?, year = ? WHERE id = ?',
-          [newSchoolId, weekStartDateStr, weekNum, year, id]
+          'UPDATE weekly_menus SET organizationId = ?, weekStartDate = ?, weekNumber = ?, year = ? WHERE id = ?',
+          [newOrganizationId, weekStartDateStr, weekNum, year, id]
         );
       } else {
         await connection.execute(
@@ -363,23 +363,23 @@ export async function getWeeklyMenuWithMeals(id: number): Promise<WeeklyMenu | n
 }
 
 /**
- * Get the weekly menu with full meal details for a given week and school.
+ * Get the weekly menu with full meal details for a given week and organization.
  * @param weekStartDate - The Monday that starts the week (required, must be a Monday)
- * @param schoolId - The school ID (required)
+ * @param organizationId - The organization ID (required)
  * @returns The week's menu with meal details, or null if not found
- * @throws Error if weekStartDate is not a Monday or schoolId is invalid
+ * @throws Error if weekStartDate is not a Monday or organizationId is invalid
  */
-export async function getWeeklyMenuWithMealsForDate(weekStartDate: Date, schoolId: number): Promise<WeeklyMenu | null> {
+export async function getWeeklyMenuWithMealsForDate(weekStartDate: Date, organizationId: number): Promise<WeeklyMenu | null> {
   const date = new Date(weekStartDate);
   date.setHours(0, 0, 0, 0);
   if (!isMonday(date)) {
     throw new Error('weekStartDate must be a Monday');
   }
-  if (!schoolId || schoolId <= 0) {
-    throw new Error('schoolId is required and must be a positive number');
+  if (!organizationId || organizationId <= 0) {
+    throw new Error('organizationId is required and must be a positive number');
   }
 
-  const menu = await getWeeklyMenuByWeekStart(date, schoolId);
+  const menu = await getWeeklyMenuByWeekStart(date, organizationId);
 
   if (!menu) {
     return null;

@@ -5,7 +5,7 @@ import { Student } from './student';
  * Represents a complete meal booking submission from the form
  */
 export interface BookingSubmission {
-  schoolId: number;
+  organizationId: number;
   menuId: number;
   email: string;
   students: Omit<Student, 'id' | 'created' | 'parentEmail'>[];

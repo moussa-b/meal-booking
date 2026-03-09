@@ -3,7 +3,7 @@ import type { Booking, BookingStudent, BookingMenuSelection, BookingWithDetails 
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { createStudent } from './student.service';
-import { getSchoolById } from './school.service';
+import { getOrganizationById } from './organization.service';
 import { getWeeklyMenuById } from './weekly-menu.service';
 import { sendBookingPayLater, sendBookingConfirmationPaid } from './email.service';
 import type { FieldPacket } from 'mysql2/promise';
@@ -15,7 +15,7 @@ interface BookingRow {
   id: number;
   created: string | Date;
   email: string;
-  schoolId: number;
+  organizationId: number;
   menuId: number;
   status: string;
   paypalOrderId?: string | null;
@@ -61,10 +61,10 @@ export async function createBooking(
   try {
     await connection.beginTransaction();
 
-    // Validate school exists
-    const school = await getSchoolById(data.schoolId);
-    if (!school) {
-      throw new Error('School not found');
+    // Validate organization exists
+    const organization = await getOrganizationById(data.organizationId);
+    if (!organization) {
+      throw new Error('Organization not found');
     }
 
     // Validate menu exists
@@ -73,9 +73,9 @@ export async function createBooking(
       throw new Error('Weekly menu not found');
     }
 
-    // Validate menu belongs to school
-    if (menu.schoolId !== data.schoolId) {
-      throw new Error('Menu does not belong to the specified school');
+    // Validate menu belongs to organization
+    if (menu.organizationId !== data.organizationId) {
+      throw new Error('Menu does not belong to the specified organization');
     }
 
     // Get all weeklyMenuDayIds from the menu to validate selections
@@ -92,8 +92,8 @@ export async function createBooking(
 
     // Insert booking with default PENDING status
     const [bookingResult] = await connection.execute(
-      'INSERT INTO bookings (email, schoolId, menuId, status) VALUES (?, ?, ?, ?)',
-      [data.email, data.schoolId, data.menuId, PaymentStatus.PENDING]
+      'INSERT INTO bookings (email, organizationId, menuId, status) VALUES (?, ?, ?, ?)',
+      [data.email, data.organizationId, data.menuId, PaymentStatus.PENDING]
     ) as [MysqlInsertResult, FieldPacket[]];
 
     const bookingId = bookingResult.insertId;
@@ -153,9 +153,9 @@ export async function createBooking(
       throw new Error('Failed to retrieve created booking');
     }
 
-    if (sendEmail && school) {
+    if (sendEmail && organization) {
       try {
-        await sendBookingPayLater(booking, school.code, school.name);
+        await sendBookingPayLater(booking, organization.code, organization.name);
         await updatePaymentEmailSentAt(booking.id);
       } catch (emailError) {
         console.error('Failed to send pay-later email after booking creation:', emailError);
@@ -176,7 +176,7 @@ export async function createBooking(
  */
 export async function getBookingById(id: number): Promise<Booking | null> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE id = ?',
+    'SELECT id, created, email, organizationId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE id = ?',
     [id]
   );
 
@@ -233,7 +233,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     id: bookingRow.id,
     created: new Date(bookingRow.created),
     email: bookingRow.email,
-    schoolId: bookingRow.schoolId,
+    organizationId: bookingRow.organizationId,
     menuId: bookingRow.menuId,
     status,
     students,
@@ -248,7 +248,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
  */
 export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE email = ? ORDER BY created DESC',
+    'SELECT id, created, email, organizationId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE email = ? ORDER BY created DESC',
     [email]
   );
 
@@ -275,11 +275,11 @@ export async function updateBookingStatus(bookingId: number, status: PaymentStat
     try {
       const booking = await getBookingById(bookingId);
       if (!booking) return;
-      const school = await getSchoolById(booking.schoolId);
-      if (!school) return;
+      const organization = await getOrganizationById(booking.organizationId);
+      if (!organization) return;
       const menu = await getWeeklyMenuById(booking.menuId);
       if (!menu) return;
-      await sendBookingConfirmationPaid(booking, school.code, school.name, menu);
+      await sendBookingConfirmationPaid(booking, organization.code, organization.name, menu);
       await updateConfirmationEmailSentAt(bookingId);
     } catch (emailError) {
       console.error('Failed to send confirmation email after payment:', emailError);
@@ -406,7 +406,7 @@ export async function getTotalPaidAmountForMenu(menuId: number): Promise<number>
  */
 export async function getAllBookings(): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, schoolId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings ORDER BY created DESC'
+    'SELECT id, created, email, organizationId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings ORDER BY created DESC'
   );
 
   if (bookings.length === 0) {
@@ -422,12 +422,12 @@ export async function getAllBookings(): Promise<Booking[]> {
 }
 
 /**
- * Get all bookings by email for a given school, with computed totals and weekStartDate.
+ * Get all bookings by email for a given organization, with computed totals and weekStartDate.
  * Used by history views both on the server (history page) and on the client (history wizard).
  */
-export async function getBookingsWithDetailsByEmailAndSchool(
+export async function getBookingsWithDetailsByEmailAndOrganization(
   email: string,
-  schoolId: number
+  organizationId: number
 ): Promise<BookingWithDetails[]> {
   const bookings = await getBookingsByEmail(email);
 
@@ -435,9 +435,9 @@ export async function getBookingsWithDetailsByEmailAndSchool(
     return [];
   }
 
-  const bookingsForSchool = await Promise.all(
+  const bookingsForOrganization = await Promise.all(
     bookings
-      .filter((booking) => booking.schoolId === schoolId)
+      .filter((booking) => booking.organizationId === organizationId)
       .map(async (booking): Promise<BookingWithDetails> => {
         const menu = await getWeeklyMenuById(booking.menuId);
 
@@ -471,6 +471,6 @@ export async function getBookingsWithDetailsByEmailAndSchool(
       })
   );
 
-  return bookingsForSchool;
+  return bookingsForOrganization;
 }
 

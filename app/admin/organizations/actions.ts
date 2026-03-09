@@ -2,33 +2,33 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  createSchool,
-  updateSchool,
-  deleteSchool,
-} from "@/lib/services/school.service";
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+} from "@/lib/services/organization.service";
 import {
-  createSchoolSchema,
-  updateSchoolSchema,
-  type CreateSchoolInput,
-  type UpdateSchoolInput,
-} from "@/lib/validations/school.validation";
-import type { School } from "@/lib/models/school";
+  createOrganizationSchema,
+  updateOrganizationSchema,
+  type CreateOrganizationInput,
+  type UpdateOrganizationInput,
+} from "@/lib/validations/organization.validation";
+import type { Organization } from "@/lib/models/organization";
 
-export type ActionResult<T = School> = {
+export type ActionResult<T = Organization> = {
   success: boolean;
   data?: T;
   error?: string;
 };
 
 /**
- * Server Action to create a new school
+ * Server Action to create a new organization
  */
-export async function createSchoolAction(
-  data: CreateSchoolInput
+export async function createOrganizationAction(
+  data: CreateOrganizationInput
 ): Promise<ActionResult> {
   try {
     // Validate input
-    const validationResult = createSchoolSchema.safeParse(data);
+    const validationResult = createOrganizationSchema.safeParse(data);
     if (!validationResult.success) {
       return {
         success: false,
@@ -38,22 +38,22 @@ export async function createSchoolAction(
       };
     }
 
-    const school = await createSchool(validationResult.data);
+    const organization = await createOrganization(validationResult.data);
 
-    // Revalidate the schools page
-    revalidatePath("/admin/schools");
+    // Revalidate the organizations page
+    revalidatePath("/admin/organizations");
 
     return {
       success: true,
-      data: school,
+      data: organization,
     };
   } catch (error) {
-    console.error("Error creating school:", error);
+    console.error("Error creating organization:", error);
 
     // Handle code generation failure
     if (
       error instanceof Error &&
-      error.message.includes("Failed to generate unique school code")
+      error.message.includes("Failed to generate unique organization code")
     ) {
       return {
         success: false,
@@ -69,15 +69,15 @@ export async function createSchoolAction(
 }
 
 /**
- * Server Action to update a school
+ * Server Action to update an organization
  */
-export async function updateSchoolAction(
+export async function updateOrganizationAction(
   id: number,
-  data: UpdateSchoolInput
+  data: UpdateOrganizationInput
 ): Promise<ActionResult> {
   try {
     // Validate input
-    const validationResult = updateSchoolSchema.safeParse(data);
+    const validationResult = updateOrganizationSchema.safeParse(data);
     if (!validationResult.success) {
       return {
         success: false,
@@ -87,19 +87,19 @@ export async function updateSchoolAction(
       };
     }
 
-    const school = await updateSchool(id, validationResult.data);
+    const organization = await updateOrganization(id, validationResult.data);
 
-    // Revalidate the schools page
-    revalidatePath("/admin/schools");
+    // Revalidate the organizations page
+    revalidatePath("/admin/organizations");
 
     return {
       success: true,
-      data: school,
+      data: organization,
     };
   } catch (error) {
-    console.error("Error updating school:", error);
+    console.error("Error updating organization:", error);
 
-    if (error instanceof Error && error.message === "School not found") {
+    if (error instanceof Error && error.message === "Organization not found") {
       return {
         success: false,
         error: "Établissement non trouvé",
@@ -125,24 +125,24 @@ export async function updateSchoolAction(
 }
 
 /**
- * Server Action to delete a school
+ * Server Action to delete an organization
  */
-export async function deleteSchoolAction(
+export async function deleteOrganizationAction(
   id: number
 ): Promise<ActionResult<void>> {
   try {
-    await deleteSchool(id);
+    await deleteOrganization(id);
 
-    // Revalidate the schools page
-    revalidatePath("/admin/schools");
+    // Revalidate the organizations page
+    revalidatePath("/admin/organizations");
 
     return {
       success: true,
     };
   } catch (error) {
-    console.error("Error deleting school:", error);
+    console.error("Error deleting organization:", error);
 
-    if (error instanceof Error && error.message === "School not found") {
+    if (error instanceof Error && error.message === "Organization not found") {
       return {
         success: false,
         error: "Établissement non trouvé",

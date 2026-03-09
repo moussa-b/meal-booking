@@ -36,7 +36,7 @@ const menuItems = [
     },
     {
       title: 'Établissements',
-      href: '/admin/schools',
+      href: '/admin/organizations',
       icon: School,
     },
     {

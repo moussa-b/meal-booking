@@ -14,7 +14,7 @@ const TABLES_TO_CLEAN = [
   'weekly_menus',
   'students',
   'meals',
-  'schools',
+  'organizations',
   'users',
 ];
 

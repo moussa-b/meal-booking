@@ -4,7 +4,7 @@ This document explains how to run the integration tests for the Meal Booking app
 
 ## Overview
 
-The test suite uses **Vitest** as the testing framework and includes integration tests for the service layer (School and Meal CRUD operations). Tests use a **real database connection** instead of mocks, ensuring that database operations are tested against actual MySQL queries.
+The test suite uses **Vitest** as the testing framework and includes integration tests for the service layer (Organization and Meal CRUD operations). Tests use a **real database connection** instead of mocks, ensuring that database operations are tested against actual MySQL queries.
 
 ## Prerequisites
 
@@ -149,20 +149,20 @@ __tests__/
 │   ├── db.setup.ts       # Database utilities (cleanup, isolation)
 │   └── test-data.ts      # Test data factories
 └── services/
-    ├── school.service.test.ts  # School CRUD tests
+    ├── organization.service.test.ts  # Organization CRUD tests
     └── meal.service.test.ts     # Meal CRUD tests
 ```
 
 ## Test Coverage
 
-The test suite covers all CRUD operations for both School and Meal services:
+The test suite covers all CRUD operations for both Organization and Meal services:
 
-### School Service Tests
-- ✅ `getAllSchools()` - List all schools, ordering, empty results
-- ✅ `getSchoolById()` - Get single school, not found scenarios
-- ✅ `createSchool()` - Create school, duplicate code handling
-- ✅ `updateSchool()` - Update fields, partial updates, not found
-- ✅ `deleteSchool()` - Delete school, not found scenarios
+### Organization Service Tests
+- ✅ `getAllOrganizations()` - List all organizations, ordering, empty results
+- ✅ `getOrganizationById()` - Get single organization, not found scenarios
+- ✅ `createOrganization()` - Create organization, duplicate code handling
+- ✅ `updateOrganization()` - Update fields, partial updates, not found
+- ✅ `deleteOrganization()` - Delete organization, not found scenarios
 
 ### Meal Service Tests
 - ✅ `getAllMeals()` - List all meals, ordering, empty results
@@ -235,7 +235,7 @@ If you see foreign key errors during cleanup:
 If tests fail due to duplicate data:
 
 - Tests should be isolated, but if you see duplicate key errors:
-  1. Manually clean the test database: `TRUNCATE TABLE schools, meals;`
+  1. Manually clean the test database: `TRUNCATE TABLE organizations, meals;`
   2. Ensure test isolation is working (check `beforeEach` hooks)
 
 ## Best Practices

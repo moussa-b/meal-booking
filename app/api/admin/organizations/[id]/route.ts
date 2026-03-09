@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getSchoolById,
-  updateSchool,
-  deleteSchool,
-} from '@/lib/services/school.service';
-import { updateSchoolSchema } from '@/lib/validations/school.validation';
+  getOrganizationById,
+  updateOrganization,
+  deleteOrganization,
+} from '@/lib/services/organization.service';
+import { updateOrganizationSchema } from '@/lib/validations/organization.validation';
 
 /**
- * GET /api/admin/schools/[id]
- * Get a school by ID (admin).
+ * GET /api/admin/organizations/[id]
+ * Get an organization by ID (admin).
  */
 export async function GET(
   request: NextRequest,
@@ -22,33 +22,33 @@ export async function GET(
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Invalid school ID',
+          message: 'Invalid organization ID',
         },
         { status: 400 }
       );
     }
 
-    const school = await getSchoolById(id);
+    const organization = await getOrganizationById(id);
 
-    if (!school) {
+    if (!organization) {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'School not found',
+          message: 'Organization not found',
         },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
-      data: school,
+      data: organization,
     });
   } catch (error) {
-    console.error('Error fetching school:', error);
+    console.error('Error fetching organization:', error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to fetch school',
+        message: 'Failed to fetch organization',
       },
       { status: 500 }
     );
@@ -56,8 +56,8 @@ export async function GET(
 }
 
 /**
- * PUT /api/admin/schools/[id]
- * Update a school (admin).
+ * PUT /api/admin/organizations/[id]
+ * Update an organization (admin).
  */
 export async function PUT(
   request: NextRequest,
@@ -71,7 +71,7 @@ export async function PUT(
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Invalid school ID',
+          message: 'Invalid organization ID',
         },
         { status: 400 }
       );
@@ -80,7 +80,7 @@ export async function PUT(
     const body = await request.json();
 
     // Validate input
-    const validationResult = updateSchoolSchema.safeParse(body);
+    const validationResult = updateOrganizationSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         {
@@ -91,20 +91,20 @@ export async function PUT(
       );
     }
 
-    const school = await updateSchool(id, validationResult.data);
+    const organization = await updateOrganization(id, validationResult.data);
 
     return NextResponse.json({
-      data: school,
-      message: 'School updated successfully',
+      data: organization,
+      message: 'Organization updated successfully',
     });
   } catch (error) {
-    console.error('Error updating school:', error);
+    console.error('Error updating organization:', error);
 
-    if (error instanceof Error && error.message === 'School not found') {
+    if (error instanceof Error && error.message === 'Organization not found') {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'School not found',
+          message: 'Organization not found',
         },
         { status: 404 }
       );
@@ -115,7 +115,7 @@ export async function PUT(
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Un school avec ce code existe déjà',
+          message: 'Une organisation avec ce code existe déjà',
         },
         { status: 400 }
       );
@@ -124,7 +124,7 @@ export async function PUT(
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to update school',
+        message: 'Failed to update organization',
       },
       { status: 500 }
     );
@@ -132,8 +132,8 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/admin/schools/[id]
- * Delete a school (admin).
+ * DELETE /api/admin/organizations/[id]
+ * Delete an organization (admin).
  */
 export async function DELETE(
   request: NextRequest,
@@ -147,28 +147,28 @@ export async function DELETE(
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'Invalid school ID',
+          message: 'Invalid organization ID',
         },
         { status: 400 }
       );
     }
 
-    await deleteSchool(id);
+    await deleteOrganization(id);
 
     return NextResponse.json(
       {
-        message: 'School deleted successfully',
+        message: 'Organization deleted successfully',
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting school:', error);
+    console.error('Error deleting organization:', error);
 
-    if (error instanceof Error && error.message === 'School not found') {
+    if (error instanceof Error && error.message === 'Organization not found') {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'School not found',
+          message: 'Organization not found',
         },
         { status: 404 }
       );
@@ -177,7 +177,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to delete school',
+        message: 'Failed to delete organization',
       },
       { status: 500 }
     );

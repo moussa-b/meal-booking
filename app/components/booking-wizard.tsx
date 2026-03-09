@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StepSchoolInfo } from "./step-school-info";
+import { StepOrganizationInfo } from "./step-organization-info";
 import { StepChildren } from "./step-children";
 import { StepMenuSelection } from "./step-menu-selection";
 import { ConfirmationScreen } from "./confirmation-screen";
@@ -15,7 +15,7 @@ import { DAY_KEYS } from "@/lib/utils/date.utils";
 
 // Define the complete form schema
 const formSchema = z.object({
-  schoolId: z.number().min(1, "L'établissement est requis"),
+  organizationId: z.number().min(1, "L'établissement est requis"),
   email: z.string().email("Email invalide"),
   students: z
     .array(
@@ -57,7 +57,7 @@ export function BookingWizard() {
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
-      schoolId: 0,
+      organizationId: 0,
       email: "",
       students: [
         {
@@ -76,7 +76,7 @@ export function BookingWizard() {
     let fieldsToValidate: (keyof BookingFormData)[] = [];
 
     if (currentStep === 1) {
-      fieldsToValidate = ["schoolId", "email"];
+      fieldsToValidate = ["organizationId", "email"];
     } else if (currentStep === 2) {
       fieldsToValidate = ["students"];
     } else if (currentStep === 3) {
@@ -111,11 +111,11 @@ export function BookingWizard() {
     }
   };
 
-  const schoolId = methods.watch('schoolId');
+  const organizationId = methods.watch('organizationId');
 
   useEffect(() => {
     async function fetchMenu() {
-      if (!schoolId || schoolId <= 0) {
+      if (!organizationId || organizationId <= 0) {
         setWeeklyMenu(null);
         setIsLoadingMenu(false);
         return;
@@ -123,7 +123,7 @@ export function BookingWizard() {
 
       try {
         setIsLoadingMenu(true);
-        const response = await fetch(`/api/public/weekly-menus?current=true&schoolId=${schoolId}`);
+        const response = await fetch(`/api/public/weekly-menus?current=true&organizationId=${organizationId}`);
         if (!response.ok) {
           setWeeklyMenu(null);
           return;
@@ -137,7 +137,7 @@ export function BookingWizard() {
       }
     }
     fetchMenu();
-  }, [schoolId]);
+  }, [organizationId]);
 
   const menuDays = weeklyMenu?.days?.filter(
     (day) => DAY_KEYS[day.dayOfWeek] !== null
@@ -147,7 +147,7 @@ export function BookingWizard() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <StepSchoolInfo />;
+        return <StepOrganizationInfo />;
       case 99:
         return (
           <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">

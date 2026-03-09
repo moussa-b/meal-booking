@@ -5,12 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { type ActionResult } from './actions';
 import {
-  type UpdateSchoolInput,
-  updateSchoolSchema,
-} from '@/lib/validations/school.validation';
+  type UpdateOrganizationInput,
+  updateOrganizationSchema,
+} from '@/lib/validations/organization.validation';
 import {
   Dialog,
   DialogContent,
@@ -22,47 +22,50 @@ import {
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface EditSchoolDialogProps {
-  school: School | null;
-  updateSchoolAction: (
+interface EditOrganizationDialogProps {
+  organization: Organization | null;
+  updateOrganizationAction: (
     id: number,
-    data: UpdateSchoolInput
+    data: UpdateOrganizationInput
   ) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function EditSchoolDialog({
-  school,
-  updateSchoolAction,
+export function EditOrganizationDialog({
+  organization,
+  updateOrganizationAction,
   open,
   onOpenChange,
-}: EditSchoolDialogProps) {
+}: EditOrganizationDialogProps) {
   const router = useRouter();
 
-  const form = useForm<UpdateSchoolInput>({
-    resolver: zodResolver(updateSchoolSchema),
+  const form = useForm<UpdateOrganizationInput>({
+    resolver: zodResolver(updateOrganizationSchema),
     defaultValues: {
       name: "",
+      type: "school",
       description: "",
     },
   });
 
-  // Reset form when school changes
+  // Reset form when organization changes
   useEffect(() => {
-    if (school && open) {
+    if (organization && open) {
       form.reset({
-        name: school.name,
-        description: school.description,
+        name: organization.name,
+        type: organization.type,
+        description: organization.description,
       });
     }
-  }, [school, open, form]);
+  }, [organization, open, form]);
 
-  const handleSubmit = async (data: UpdateSchoolInput) => {
-    if (!school) return;
+  const handleSubmit = async (data: UpdateOrganizationInput) => {
+    if (!organization) return;
 
-    const result = await updateSchoolAction(school.id, data);
+    const result = await updateOrganizationAction(organization.id, data);
     if (result.success && result.data) {
       toast.success("Établissement modifiée avec succès");
       onOpenChange(false);
@@ -72,7 +75,7 @@ export function EditSchoolDialog({
     }
   };
 
-  if (!school) return null;
+  if (!organization) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,7 +94,7 @@ export function EditSchoolDialog({
             <div className="space-y-2">
               <label className="text-sm font-medium">Code</label>
               <Input
-                value={school.code}
+                value={organization.code}
                 disabled
                 readOnly
                 className="bg-muted"
@@ -109,6 +112,27 @@ export function EditSchoolDialog({
                   <FormControl>
                     <Input {...field} placeholder="Nom de l'établissement" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="school">École</SelectItem>
+                      <SelectItem value="company">Entreprise</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

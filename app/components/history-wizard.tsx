@@ -6,13 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StepSchoolInfo } from './step-school-info';
+import { StepOrganizationInfo } from './step-organization-info';
 import { StepHistory } from './step-history';
 import type { BookingWithDetails } from '@/lib/models/booking';
 
-// Define the form schema compatible with StepSchoolInfo
+// Define the form schema compatible with StepOrganizationInfo
 const formSchema = z.object({
-  schoolId: z.number().min(1, 'L\'établissement est requis'),
+  organizationId: z.number().min(1, 'L\'établissement est requis'),
   email: z.string().email('Email invalide'),
 });
 
@@ -23,10 +23,10 @@ type Step = 1 | 2;
 type HistoryWizardProps = {
   email?: string;
   initialBookings: BookingWithDetails[] | null;
-  initialSchoolId?: number;
+  initialOrganizationId?: number;
 };
 
-export function HistoryWizard({email, initialBookings, initialSchoolId,}: HistoryWizardProps) {
+export function HistoryWizard({email, initialBookings, initialOrganizationId,}: HistoryWizardProps) {
   const [currentStep, setCurrentStep] = useState<Step>(initialBookings ? 2 : 1);
   const [bookings, setBookings] = useState<BookingWithDetails[] | null>(initialBookings);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
-      schoolId: initialSchoolId ?? 0,
+      organizationId: initialOrganizationId ?? 0,
       email: email ?? '',
     },
   });
@@ -53,9 +53,9 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
   }, [email, methods]);
 
   const fetchBookingsForForm = async () => {
-    const { email: formEmail, schoolId } = methods.getValues();
+    const { email: formEmail, organizationId } = methods.getValues();
 
-    if (!formEmail || !schoolId) {
+    if (!formEmail || !organizationId) {
       return;
     }
 
@@ -64,7 +64,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
       setError(null);
       setBookings(null);
 
-      const response = await fetch(`/api/public/bookings?email=${encodeURIComponent(formEmail)}&schoolId=${schoolId}`);
+      const response = await fetch(`/api/public/bookings?email=${encodeURIComponent(formEmail)}&organizationId=${organizationId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');
       }
@@ -80,7 +80,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
   };
 
   const handleNext = async () => {
-    const isValid = await methods.trigger(['schoolId', 'email']);
+    const isValid = await methods.trigger(['organizationId', 'email']);
 
     if (isValid) {
       setCurrentStep(2);
@@ -108,7 +108,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <StepSchoolInfo />;
+        return <StepOrganizationInfo />;
       case 2:
         if (loading) {
           return (
@@ -137,7 +137,7 @@ export function HistoryWizard({email, initialBookings, initialSchoolId,}: Histor
   };
 
   return (
-    // FormProvider in parent: shares form state across StepSchoolInfo and StepHistory
+    // FormProvider in parent: shares form state across StepOrganizationInfo and StepHistory
     <FormProvider {...methods}>
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4">
         <div className="max-w-2xl mx-auto">

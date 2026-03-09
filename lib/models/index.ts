@@ -3,7 +3,7 @@
  * Central export point for all models
  */
 export * from './user';
-export * from './school';
+export * from './organization';
 export * from './student';
 export * from './booking-submission';
 export * from './booking';

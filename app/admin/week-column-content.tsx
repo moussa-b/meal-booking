@@ -20,8 +20,8 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
 
 export interface DashboardWeekMenu {
   menu: WeeklyMenu;
-  schoolId: number;
-  schoolName: string;
+  organizationId: number;
+  organizationName: string;
   paidMealsByDay: Record<number, number>;
   bookingCountByStatus: Record<string, number>;
   totalPaidAmount: number;

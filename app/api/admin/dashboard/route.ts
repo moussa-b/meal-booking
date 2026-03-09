@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getMonday, getNextMonday } from '@/lib/utils/date.utils';
-import { getSchoolById } from '@/lib/services/school.service';
+import { getOrganizationById } from '@/lib/services/organization.service';
 import { getWeeklyMenuByWeekStart, getWeeklyMenuWithMeals } from '@/lib/services/weekly-menu.service';
 import {
   getPaidMealsByWeekdayForMenu,
@@ -11,8 +11,8 @@ import type { WeeklyMenu } from '@/lib/models/weekly-menu';
 
 interface DashboardWeekMenu {
   menu: WeeklyMenu;
-  schoolId: number;
-  schoolName: string;
+  organizationId: number;
+  organizationName: string;
   paidMealsByDay: Record<number, number>;
   bookingCountByStatus: Record<string, number>;
   totalPaidAmount: number;
@@ -25,35 +25,35 @@ interface DashboardWeek {
 }
 
 /**
- * GET /api/admin/dashboard?date=YYYY-MM-DD&schoolId=1
- * Returns dashboard data for two weeks (selected week and next week) for the given school.
- * schoolId is required. date defaults to today.
+ * GET /api/admin/dashboard?date=YYYY-MM-DD&organizationId=1
+ * Returns dashboard data for two weeks (selected week and next week) for the given organization.
+ * organizationId is required. date defaults to today.
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
-    const schoolIdParam = searchParams.get('schoolId');
+    const organizationIdParam = searchParams.get('organizationId');
 
-    if (!schoolIdParam || schoolIdParam.trim() === '') {
+    if (!organizationIdParam || organizationIdParam.trim() === '') {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'schoolId is required' },
+        { error: 'Bad Request', message: 'organizationId is required' },
         { status: 400 }
       );
     }
 
-    const schoolId = parseInt(schoolIdParam, 10);
-    if (Number.isNaN(schoolId) || schoolId < 1) {
+    const organizationId = parseInt(organizationIdParam, 10);
+    if (Number.isNaN(organizationId) || organizationId < 1) {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'schoolId must be a positive integer' },
+        { error: 'Bad Request', message: 'organizationId must be a positive integer' },
         { status: 400 }
       );
     }
 
-    const school = await getSchoolById(schoolId);
-    if (!school) {
+    const organization = await getOrganizationById(organizationId);
+    if (!organization) {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'School not found' },
+        { error: 'Bad Request', message: 'Organization not found' },
         { status: 400 }
       );
     }
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     const buildWeek = async (
       weekStart: Date
     ): Promise<DashboardWeek> => {
-      const menu = await getWeeklyMenuByWeekStart(weekStart, schoolId);
+      const menu = await getWeeklyMenuByWeekStart(weekStart, organizationId);
       if (!menu) {
         return {
           weekStartDate: weekStart.toISOString(),
@@ -93,8 +93,8 @@ export async function GET(request: Request) {
         menus: [
           {
             menu: menuWithMeals,
-            schoolId,
-            schoolName: school.name,
+            organizationId,
+            organizationName: organization.name,
             paidMealsByDay,
             bookingCountByStatus,
             totalPaidAmount,

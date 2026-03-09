@@ -7,9 +7,9 @@ import { toast } from 'sonner';
 import { PlusIcon } from 'lucide-react';
 import { type ActionResult } from './actions';
 import {
-  type CreateSchoolInput,
-  createSchoolSchema,
-} from '@/lib/validations/school.validation';
+  type CreateOrganizationInput,
+  createOrganizationSchema,
+} from '@/lib/validations/organization.validation';
 import {
   Dialog,
   DialogContent,
@@ -22,30 +22,32 @@ import {
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface CreateSchoolDialogProps {
-  createSchoolAction: (data: CreateSchoolInput) => Promise<ActionResult>;
+interface CreateOrganizationDialogProps {
+  createOrganizationAction: (data: CreateOrganizationInput) => Promise<ActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateSchoolDialog({
-  createSchoolAction,
+export function CreateOrganizationDialog({
+  createOrganizationAction,
   open,
   onOpenChange,
-}: CreateSchoolDialogProps) {
+}: CreateOrganizationDialogProps) {
   const router = useRouter();
 
-  const form = useForm<CreateSchoolInput>({
-    resolver: zodResolver(createSchoolSchema),
+  const form = useForm<CreateOrganizationInput>({
+    resolver: zodResolver(createOrganizationSchema),
     defaultValues: {
       name: "",
+      type: "school",
       description: "",
     },
   });
 
-  const handleSubmit = async (data: CreateSchoolInput) => {
-    const result = await createSchoolAction(data);
+  const handleSubmit = async (data: CreateOrganizationInput) => {
+    const result = await createOrganizationAction(data);
     if (result.success && result.data) {
       toast.success("Établissement créé avec succès");
       form.reset();
@@ -85,6 +87,27 @@ export function CreateSchoolDialog({
                   <FormControl>
                     <Input {...field} placeholder="Nom de l'établissement" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="school">École</SelectItem>
+                      <SelectItem value="company">Entreprise</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PencilIcon, TrashIcon } from 'lucide-react';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { type ActionResult } from './actions';
 import {
-  type CreateSchoolInput,
-  type UpdateSchoolInput,
-} from '@/lib/validations/school.validation';
+  type CreateOrganizationInput,
+  type UpdateOrganizationInput,
+} from '@/lib/validations/organization.validation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,51 +23,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CreateSchoolDialog } from './create-school-dialog';
-import { EditSchoolDialog } from './edit-school-dialog';
+import { CreateOrganizationDialog } from './create-organization-dialog';
+import { EditOrganizationDialog } from './edit-organization-dialog';
 
-interface SchoolsTableProps {
-  schools: School[];
-  createSchoolAction: (data: CreateSchoolInput) => Promise<ActionResult>;
-  updateSchoolAction: (
+interface OrganizationsTableProps {
+  organizations: Organization[];
+  createOrganizationAction: (data: CreateOrganizationInput) => Promise<ActionResult>;
+  updateOrganizationAction: (
     id: number,
-    data: UpdateSchoolInput
+    data: UpdateOrganizationInput
   ) => Promise<ActionResult>;
-  deleteSchoolAction: (id: number) => Promise<ActionResult<void>>;
+  deleteOrganizationAction: (id: number) => Promise<ActionResult<void>>;
   error?: string | null;
   errorDetail?: string | null;
 }
 
-export function SchoolsTable({
-  schools: initialSchools,
-  createSchoolAction,
-  updateSchoolAction,
-  deleteSchoolAction,
+export function OrganizationsTable({
+  organizations: initialOrganizations,
+  createOrganizationAction,
+  updateOrganizationAction,
+  deleteOrganizationAction,
   error,
   errorDetail,
-}: SchoolsTableProps) {
+}: OrganizationsTableProps) {
   const router = useRouter();
-  const [schools, setSchools] = useState(initialSchools);
+  const [organizations, setOrganizations] = useState(initialOrganizations);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Update schools when initialSchools changes (after revalidation)
+  // Update organizations when initialOrganizations changes (after revalidation)
   useEffect(() => {
-    setSchools(initialSchools);
-  }, [initialSchools]);
+    setOrganizations(initialOrganizations);
+  }, [initialOrganizations]);
 
   // Handle edit
-  const handleEditClick = (school: School) => {
-    setSelectedSchool(school);
+  const handleEditClick = (organization: Organization) => {
+    setSelectedOrganization(organization);
     setIsEditDialogOpen(true);
   };
 
   const handleEditClose = () => {
     setIsEditDialogOpen(false);
-    setSelectedSchool(null);
+    setSelectedOrganization(null);
   };
 
   // Handle delete
@@ -79,7 +79,7 @@ export function SchoolsTable({
   const handleDeleteConfirm = async () => {
     if (deleteId === null) return;
 
-    const result = await deleteSchoolAction(deleteId);
+    const result = await deleteOrganizationAction(deleteId);
     if (result.success) {
       toast.success("Établissement supprimée avec succès");
       setIsDeleteDialogOpen(false);
@@ -98,8 +98,8 @@ export function SchoolsTable({
     });
   };
 
-  const schoolToDelete = deleteId
-    ? schools.find((s) => s.id === deleteId)
+  const organizationToDelete = deleteId
+    ? organizations.find((s) => s.id === deleteId)
     : null;
 
   return (
@@ -108,8 +108,8 @@ export function SchoolsTable({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Gestion des établissements</CardTitle>
-            <CreateSchoolDialog
-              createSchoolAction={createSchoolAction}
+            <CreateOrganizationDialog
+              createOrganizationAction={createOrganizationAction}
               open={isCreateDialogOpen}
               onOpenChange={setIsCreateDialogOpen}
             />
@@ -126,7 +126,7 @@ export function SchoolsTable({
               )}
             </div>
           )}
-          {schools.length === 0 ? (
+          {organizations.length === 0 ? (
             <p className="text-center text-muted-foreground">
               Aucun établissement enregistré.
             </p>
@@ -136,35 +136,37 @@ export function SchoolsTable({
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead>Code</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Date de création</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {schools.map((school) => (
-                  <TableRow key={school.id}>
-                    <TableCell className="font-medium">{school.name}</TableCell>
-                    <TableCell>{school.code}</TableCell>
+                {organizations.map((organization) => (
+                  <TableRow key={organization.id}>
+                    <TableCell className="font-medium">{organization.name}</TableCell>
+                    <TableCell>{organization.code}</TableCell>
+                    <TableCell>{organization.type === 'company' ? 'Entreprise' : 'École'}</TableCell>
                     <TableCell>
-                      {school.description || (
+                      {organization.description || (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>{formatDate(school.created)}</TableCell>
+                    <TableCell>{formatDate(organization.created)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEditClick(school)}
+                          onClick={() => handleEditClick(organization)}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteClick(school.id)}
+                          onClick={() => handleDeleteClick(organization.id)}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
@@ -179,9 +181,9 @@ export function SchoolsTable({
       </Card>
 
       {/* Edit Dialog */}
-      <EditSchoolDialog
-        school={selectedSchool}
-        updateSchoolAction={updateSchoolAction}
+      <EditOrganizationDialog
+        organization={selectedOrganization}
+        updateOrganizationAction={updateOrganizationAction}
         open={isEditDialogOpen}
         onOpenChange={handleEditClose}
       />
@@ -193,7 +195,7 @@ export function SchoolsTable({
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
               Êtes-vous sûr de vouloir supprimer l&apos;établissement{" "}
-              <strong>{schoolToDelete?.name}</strong> ? Cette action est
+              <strong>{organizationToDelete?.name}</strong> ? Cette action est
               irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>

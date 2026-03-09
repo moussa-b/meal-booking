@@ -11,7 +11,7 @@ import { CalendarIcon, PlusIcon } from 'lucide-react';
 import { DayOfWeek, getMonday, isMonday } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
-import type { School } from '@/lib/models/school';
+import type { Organization } from '@/lib/models/organization';
 import { type ActionResult } from './actions';
 import { type CreateWeeklyMenuInput, createWeeklyMenuSchema, } from '@/lib/validations/weekly-menu.validation';
 import {
@@ -49,32 +49,32 @@ export function CreateMenuDialog({
   initialValues,
 }: CreateMenuDialogProps) {
   const router = useRouter();
-  const [schools, setSchools] = useState<School[]>([]);
-  const [loadingSchools, setLoadingSchools] = useState(true);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(true);
 
   // Filter meals by type
   const mainDishes = meals.filter(m => m.type === MealType.MAIN_COURSE);
   const appetizers = meals.filter(m => m.type === MealType.APPETIZER);
   const desserts = meals.filter(m => m.type === MealType.DESSERT);
 
-  // Fetch schools
+  // Fetch organizations
   useEffect(() => {
-    async function fetchSchools() {
+    async function fetchOrganizations() {
       try {
-        const response = await fetch('/api/admin/schools');
+        const response = await fetch('/api/admin/organizations');
         if (response.ok) {
           const result = await response.json();
-          setSchools(result.data || []);
+          setOrganizations(result.data || []);
         }
       } catch (error) {
-        console.error('Error fetching schools:', error);
+        console.error('Error fetching organizations:', error);
       } finally {
-        setLoadingSchools(false);
+        setLoadingOrganizations(false);
       }
     }
 
     if (open) {
-      fetchSchools();
+      fetchOrganizations();
     }
   }, [open]);
 
@@ -92,7 +92,7 @@ export function CreateMenuDialog({
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     defaultValues: {
-      schoolId: undefined,
+      organizationId: undefined,
       weekStartDate: getDefaultMonday(),
       days: DEFAULT_DAYS.map(dayOfWeek => ({
         dayOfWeek,
@@ -113,7 +113,7 @@ export function CreateMenuDialog({
 
     if (initialValues) {
       form.reset({
-        schoolId: initialValues.schoolId ?? undefined,
+        organizationId: initialValues.organizationId ?? undefined,
         weekStartDate: initialValues.weekStartDate ?? getDefaultMonday(),
         days:
           initialValues.days && initialValues.days.length > 0
@@ -128,7 +128,7 @@ export function CreateMenuDialog({
       });
     } else {
       form.reset({
-        schoolId: undefined,
+        organizationId: undefined,
         weekStartDate: getDefaultMonday(),
         days: DEFAULT_DAYS.map(dayOfWeek => ({
           dayOfWeek,
@@ -161,7 +161,7 @@ export function CreateMenuDialog({
     if (result.success && result.data) {
       toast.success("Menu créé avec succès");
       form.reset({
-        schoolId: undefined,
+        organizationId: undefined,
         weekStartDate: getDefaultMonday(),
         days: DEFAULT_DAYS.map(dayOfWeek => ({
           dayOfWeek,
@@ -209,14 +209,14 @@ export function CreateMenuDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="schoolId"
+                name="organizationId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Établissement</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       value={field.value?.toString() || ""}
-                      disabled={loadingSchools}
+                      disabled={loadingOrganizations}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -224,9 +224,9 @@ export function CreateMenuDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {schools.map((school) => (
-                          <SelectItem key={school.id} value={school.id.toString()}>
-                            {school.name}
+                        {organizations.map((organization) => (
+                          <SelectItem key={organization.id} value={organization.id.toString()}>
+                            {organization.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

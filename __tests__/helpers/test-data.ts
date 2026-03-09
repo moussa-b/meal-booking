@@ -1,19 +1,22 @@
+import type { OrganizationType } from '@/lib/models/organization';
 import { MealType } from '@/lib/models/meal';
 import { DayOfWeek } from '@/lib/utils/date.utils';
 import { getMonday } from '@/lib/utils/date.utils';
 
 /**
- * Test data factory for creating school test data
+ * Test data factory for creating organization test data
  */
-export function createTestSchoolData(overrides?: {
+export function createTestOrganizationData(overrides?: {
   name?: string;
   code?: string;
+  type?: OrganizationType;
   description?: string;
 }) {
   return {
-    name: overrides?.name || `Test School ${Date.now()}`,
+    name: overrides?.name || `Test Organization ${Date.now()}`,
     code: overrides?.code || `TEST${Date.now()}`,
-    description: overrides?.description || 'Test school description',
+    type: overrides?.type || 'school',
+    description: overrides?.description || 'Test organization description',
   };
 }
 
@@ -36,7 +39,7 @@ export function createTestMealData(overrides?: {
  * Test data factory for creating weekly menu test data
  */
 export function createTestWeeklyMenuData(overrides?: {
-  schoolId?: number;
+  organizationId?: number;
   weekStartDate?: Date;
   days?: Array<{
     dayOfWeek: number;
@@ -54,7 +57,7 @@ export function createTestWeeklyMenuData(overrides?: {
   }
 
   return {
-    schoolId: overrides?.schoolId ?? 1, // Default to schoolId 1, should be provided in tests
+    organizationId: overrides?.organizationId ?? 1, // Default to organizationId 1, should be provided in tests
     weekStartDate: overrides?.weekStartDate || defaultDate,
     days: overrides?.days || [
       {

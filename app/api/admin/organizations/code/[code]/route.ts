@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSchoolByCode } from '@/lib/services/school.service';
+import { getOrganizationByCode } from '@/lib/services/organization.service';
 
 /**
- * GET /api/admin/schools/code/[code]
- * Get a school by code (admin).
+ * GET /api/admin/organizations/code/[code]
+ * Get an organization by code (admin).
  */
 export async function GET(
   request: NextRequest,
@@ -16,33 +16,33 @@ export async function GET(
       return NextResponse.json(
         {
           error: 'Bad Request',
-          message: 'School code is required',
+          message: 'Organization code is required',
         },
         { status: 400 }
       );
     }
 
-    const school = await getSchoolByCode(code);
+    const organization = await getOrganizationByCode(code);
 
-    if (!school) {
+    if (!organization) {
       return NextResponse.json(
         {
           error: 'Not Found',
-          message: 'School not found',
+          message: 'Organization not found',
         },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
-      data: school,
+      data: organization,
     });
   } catch (error) {
-    console.error('Error fetching school by code:', error);
+    console.error('Error fetching organization by code:', error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
-        message: 'Failed to fetch school',
+        message: 'Failed to fetch organization',
       },
       { status: 500 }
     );

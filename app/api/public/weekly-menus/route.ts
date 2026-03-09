@@ -4,10 +4,10 @@ import { getNextMonday } from '@/lib/utils/date.utils';
 
 /**
  * GET /api/public/weekly-menus
- * Returns the current week's menu for a school (public booking flow).
+ * Returns the current week's menu for an organization (public booking flow).
  * Query params:
  *   - current: must be "true"
- *   - schoolId: required, the school ID to get the menu for
+ *   - organizationId: required, the organization ID to get the menu for
  * For listing all menus (admin), use GET /api/admin/weekly-menus.
  */
 export async function GET(request: NextRequest) {
@@ -19,29 +19,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Bad Request',
-          message: 'current=true and schoolId are required',
+          message: 'current=true and organizationId are required',
         },
         { status: 400 }
       );
     }
 
-    const schoolIdParam = searchParams.get('schoolId');
-    if (!schoolIdParam) {
+    const organizationIdParam = searchParams.get('organizationId');
+    if (!organizationIdParam) {
       return NextResponse.json(
         {
           error: 'Bad Request',
-          message: 'schoolId is required when current=true',
+          message: 'organizationId is required when current=true',
         },
         { status: 400 }
       );
     }
 
-    const schoolId = parseInt(schoolIdParam, 10);
-    if (isNaN(schoolId) || schoolId <= 0) {
+    const organizationId = parseInt(organizationIdParam, 10);
+    if (isNaN(organizationId) || organizationId <= 0) {
       return NextResponse.json(
         {
           error: 'Bad Request',
-          message: 'schoolId must be a positive number',
+          message: 'organizationId must be a positive number',
         },
         { status: 400 }
       );
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     const weekStartDate = getNextMonday(new Date());
     weekStartDate.setHours(0, 0, 0, 0);
-    const menu = await getWeeklyMenuWithMealsForDate(weekStartDate, schoolId);
+    const menu = await getWeeklyMenuWithMealsForDate(weekStartDate, organizationId);
     if (!menu) {
       return NextResponse.json(
         {
