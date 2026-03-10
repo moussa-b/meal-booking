@@ -301,7 +301,7 @@ export function MenusTable({
                                 <AlertTriangleIcon className="h-4 w-4 text-orange-500" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="max-w-xs text-sm">
+                            <PopoverContent align="end" className="max-w-xs text-sm">
                               Ce menu ne peut pas être supprimé car il contient déjà des réservations
                               enregistrées.
                             </PopoverContent>
