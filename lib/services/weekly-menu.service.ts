@@ -16,6 +16,7 @@ interface WeeklyMenuRow {
   weekStartDate: string | Date;
   weekNumber: number | null;
   year: number | null;
+  orderCount: number;
 }
 
 /**
@@ -36,7 +37,16 @@ interface WeeklyMenuDayRow {
  */
 export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
   const menus = await query<WeeklyMenuRow[]>(
-    'SELECT id, created, organizationId, weekStartDate, weekNumber, year FROM weekly_menus ORDER BY weekStartDate DESC'
+    `SELECT 
+       wm.id, 
+       wm.created, 
+       wm.organizationId, 
+       wm.weekStartDate, 
+       wm.weekNumber, 
+       wm.year,
+       (SELECT COUNT(*) FROM bookings b WHERE b.menuId = wm.id) AS orderCount
+     FROM weekly_menus wm
+     ORDER BY wm.weekStartDate DESC`
   );
 
   if (menus.length === 0) {
@@ -77,6 +87,7 @@ export async function getAllWeeklyMenus(): Promise<WeeklyMenu[]> {
     weekStartDate: new Date(row.weekStartDate),
     weekNumber: row.weekNumber ?? undefined,
     year: row.year ?? undefined,
+    orderCount: row.orderCount,
     days: daysByMenuId.get(row.id) ?? [],
   }));
 }

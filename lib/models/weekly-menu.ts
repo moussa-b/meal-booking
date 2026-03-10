@@ -12,6 +12,7 @@ export interface WeeklyMenu {
   weekNumber?: number; // Numéro de semaine dans l'année
   year?: number; // Année
   days?: WeeklyMenuDay[]; // Relation optionnelle pour les requêtes avec JOIN
+  orderCount?: number; // OPTIONAL - Nombre de commandes pour cette semaine
 }
 
 /**
