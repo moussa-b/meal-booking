@@ -13,7 +13,6 @@ import { StepMenuSelection } from "./step-menu-selection";
 import { ConfirmationScreen } from "./confirmation-screen";
 import type { WeeklyMenu } from "@/lib/models/weekly-menu";
 import type { Organization } from "@/lib/models/organization";
-import { DAY_KEYS } from "@/lib/utils/date.utils";
 
 // Define the complete form schema
 const mealParticipantSchema = z.object({
@@ -185,10 +184,7 @@ export function BookingWizard() {
     fetchMenu();
   }, [organizationId]);
 
-  const menuDays = weeklyMenu?.days?.filter(
-    (day) => DAY_KEYS[day.dayOfWeek] !== null
-  ) ?? [];
-  const hasMenu = menuDays.length > 0;
+  const hasMenu = (weeklyMenu?.days?.length ?? 0) > 0;
 
   const renderStep = () => {
     switch (currentStep) {
@@ -276,37 +272,33 @@ export function BookingWizard() {
                 )}
 
               <div className="flex gap-3 mt-8">
-                {currentStep === 100 && isSubmitted ? (
-                  <div className="flex-1 text-center py-3 px-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                    <p className="text-green-800 font-medium">
-                      ✓ Réservation confirmée ! Vous pouvez fermer cette fenêtre.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    {(currentStep > 1 || currentStep === 99 || currentStep === 100) && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBack}
-                        className="flex-1"
-                      >
-                        Précédent
-                      </Button>
-                    )}
+                {currentStep === 100 && isSubmitted
+                  ? null
+                  : (
+                    <>
+                      {(currentStep > 1 || currentStep === 99 || currentStep === 100) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleBack}
+                          className="flex-1"
+                        >
+                          Précédent
+                        </Button>
+                      )}
 
-                    {currentStep !== 100 && currentStep !== 99 && (currentStep !== 3 || hasMenu) && (
-                      <Button
-                        type="button"
-                        onClick={handleNext}
-                        className="flex-1"
-                        disabled={currentStep === 1 && isLoadingMenu}
-                      >
-                        {currentStep === 3 ? "Voir le récapitulatif" : "Suivant"}
-                      </Button>
-                    )}
-                  </>
-                )}
+                      {currentStep !== 100 && currentStep !== 99 && (currentStep !== 3 || hasMenu) && (
+                        <Button
+                          type="button"
+                          onClick={handleNext}
+                          className="flex-1"
+                          disabled={currentStep === 1 && isLoadingMenu}
+                        >
+                          {currentStep === 3 ? "Voir le récapitulatif" : "Suivant"}
+                        </Button>
+                      )}
+                    </>
+                  )}
               </div>
             </CardContent>
           </Card>

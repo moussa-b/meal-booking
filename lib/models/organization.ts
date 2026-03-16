@@ -12,4 +12,6 @@ export interface Organization {
   code: string;
   type: OrganizationType;
   description: string;
+  payLaterEnabled: boolean;
+  menuDayOfWeek: number[]; //Weekdays that have a menu (0 = Lundi … 6 = Dimanche). Must be sorted and unique.
 }

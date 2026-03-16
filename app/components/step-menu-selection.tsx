@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import type { BookingFormData } from './booking-wizard';
 import { useEffect } from 'react';
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
-import { DAY_KEYS, DAY_NAMES } from '@/lib/utils/date.utils';
+import { DAY_LABELS } from '@/lib/utils/date.utils';
 
 // Format date to French format
 function formatDateFrench(date: Date): string {
@@ -62,12 +62,8 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
   const handleSelectAll = (mealParticipantKey: string, checked: boolean) => {
     if (!weeklyMenu || !weeklyMenu.days) return;
 
-    const menuDays = weeklyMenu.days.filter(
-      (day) => DAY_KEYS[day.dayOfWeek] !== null
-    );
-
     if (checked) {
-      const allIds = menuDays.map((day) => day.id);
+      const allIds = weeklyMenu.days.map((day) => day.id);
       setValue(`menuSelections.${mealParticipantKey}`, allIds);
     } else {
       setValue(`menuSelections.${mealParticipantKey}`, []);
@@ -79,16 +75,11 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
     const selection = menuSelections[mealParticipantKey] || [];
     if (!Array.isArray(selection)) return false;
 
-    const menuDays = weeklyMenu.days.filter(
-      (day) => DAY_KEYS[day.dayOfWeek] !== null
-    );
-    return menuDays.every((day) => selection.includes(day.id));
+    return weeklyMenu.days.every((day) => selection.includes(day.id));
   };
 
-  // Get menu days filtered to only show Monday, Tuesday, Thursday, Friday
-  const menuDays = weeklyMenu?.days?.filter(
-    (day) => DAY_KEYS[day.dayOfWeek] !== null
-  ) || [];
+  // All menu days for the organization (already constrained by organization.menuDayOfWeek)
+  const menuDays = weeklyMenu?.days || [];
 
   // Calculate date for each day based on weekStartDate
   const getDayDate = (dayOfWeek: number): Date => {
@@ -165,10 +156,7 @@ export function StepMenuSelection({ weeklyMenu, isLoading }: StepMenuSelectionPr
               {/* Individual Days */}
               <div className="grid gap-3">
                 {menuDays.map((dayMenu: WeeklyMenuDay) => {
-                  const dayKey = DAY_KEYS[dayMenu.dayOfWeek];
-                  if (!dayKey) return null;
-
-                  const dayName = DAY_NAMES[dayMenu.dayOfWeek];
+                  const dayName = DAY_LABELS[dayMenu.dayOfWeek];
                   const dayDate = getDayDate(dayMenu.dayOfWeek);
 
                   return (

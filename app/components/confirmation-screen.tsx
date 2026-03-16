@@ -1,34 +1,16 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Mail, School, User, UtensilsCrossed } from "lucide-react";
-import type { BookingFormData } from "./booking-wizard";
-import { toast } from "sonner";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { Organization as OrganizationType } from "@/lib/models/organization";
-import type { WeeklyMenu, WeeklyMenuDay } from "@/lib/models/weekly-menu";
-import { DayOfWeek } from "@/lib/utils/date.utils";
-
-const DAYS_FRENCH: Record<string, string> = {
-  lundi: "Lundi",
-  mardi: "Mardi",
-  jeudi: "Jeudi",
-  vendredi: "Vendredi",
-};
-
-// Map day of week (0-6) to lowercase key for form
-const DAY_KEYS: Record<number, string | null> = {
-  [DayOfWeek.MONDAY]: "lundi",
-  [DayOfWeek.TUESDAY]: "mardi",
-  [DayOfWeek.THURSDAY]: "jeudi",
-  [DayOfWeek.FRIDAY]: "vendredi",
-  [DayOfWeek.WEDNESDAY]: null,
-  [DayOfWeek.SATURDAY]: null,
-  [DayOfWeek.SUNDAY]: null,
-};
+import { useFormContext } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircle2, Mail, School, User, UtensilsCrossed } from 'lucide-react';
+import type { BookingFormData } from './booking-wizard';
+import { toast } from 'sonner';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Organization as OrganizationType } from '@/lib/models/organization';
+import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
+import { DAY_LABELS } from '@/lib/utils/date.utils';
 
 interface ConfirmationScreenProps {
   onSubmitted?: () => void;
@@ -309,43 +291,43 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
     setPaying(false);
   };
 
-  // const handleSaveAndPayLater = async () => {
-  //   if (savedBookingId !== null) {
-  //     setSavingForLater(true);
-  //     try {
-  //       const sendRes = await fetch(`/api/public/bookings/${savedBookingId}/send-pay-later-email`, {
-  //         method: "POST",
-  //       });
-  //       if (!sendRes.ok) {
-  //         console.error("Failed to send pay-later email:", await sendRes.text());
-  //       }
-  //     } catch (err) {
-  //       console.error("Failed to send pay-later email:", err);
-  //     }
-  //     setSavingForLater(false);
-  //     setSavedForLater(true);
-  //     toast.success("Réservation enregistrée", {
-  //       description: "Vous pourrez effectuer le paiement plus tard.",
-  //       duration: 5000,
-  //     });
-  //     onSubmitted?.();
-  //     return;
-  //   }
-  //
-  //   setSavingForLater(true);
-  //   const result = await saveBooking({ sendPayLaterEmail: true });
-  //   setSavingForLater(false);
-  //
-  //   if (!result) return;
-  //
-  //   setSavedBookingId(result.id);
-  //   setSavedForLater(true);
-  //   toast.success("Réservation enregistrée", {
-  //     description: "Vous pourrez effectuer le paiement plus tard.",
-  //     duration: 5000,
-  //   });
-  //   onSubmitted?.();
-  // };
+  const handleSaveAndPayLater = async () => {
+    if (savedBookingId !== null) {
+      setSavingForLater(true);
+      try {
+        const sendRes = await fetch(`/api/public/bookings/${savedBookingId}/send-pay-later-email`, {
+          method: "POST",
+        });
+        if (!sendRes.ok) {
+          console.error("Failed to send pay-later email:", await sendRes.text());
+        }
+      } catch (err) {
+        console.error("Failed to send pay-later email:", err);
+      }
+      setSavingForLater(false);
+      setSavedForLater(true);
+      toast.success("Réservation enregistrée", {
+        description: "Vous pourrez effectuer le paiement plus tard.",
+        duration: 5000,
+      });
+      onSubmitted?.();
+      return;
+    }
+
+    setSavingForLater(true);
+    const result = await saveBooking({ sendPayLaterEmail: true });
+    setSavingForLater(false);
+
+    if (!result) return;
+
+    setSavedBookingId(result.id);
+    setSavedForLater(true);
+    toast.success("Réservation enregistrée", {
+      description: "Vous pourrez effectuer le paiement plus tard.",
+      duration: 5000,
+    });
+    onSubmitted?.();
+  };
 
   return (
     <div className="space-y-6">
@@ -396,7 +378,7 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         <CardHeader className="bg-blue-50 rounded-t-xl">
           <CardTitle className="text-lg font-semibold text-blue-900 text-center pt-2 flex items-center justify-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
-            Participants inscrits
+            Bénéficiaire(s) de repas
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-6">
@@ -413,17 +395,15 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                 );
                 if (!dayMenu) return null;
 
-                const dayKey = DAY_KEYS[dayMenu.dayOfWeek];
-                const dayName = dayKey ? DAYS_FRENCH[dayKey] : '';
+                const dayName = DAY_LABELS[dayMenu.dayOfWeek] ?? '';
                 return {
                   id: weeklyMenuDayId,
-                  dayKey: dayKey || '',
                   dayName,
                   dayOfWeek: dayMenu.dayOfWeek,
                   price: dayMenu.price
                 };
               })
-              .filter((item): item is { id: number; dayKey: string; dayName: string; dayOfWeek: number; price: number } => item !== null)
+              .filter((item): item is { id: number; dayName: string; dayOfWeek: number; price: number } => item !== null)
               .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
             return (
@@ -534,15 +514,17 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
                 </span>
               )}
             </Button>
-            {/*<Button*/}
-            {/*  type="button"*/}
-            {/*  variant="outline"*/}
-            {/*  onClick={handleSaveAndPayLater}*/}
-            {/*  disabled={paying || savingForLater || totalPrice <= 0}*/}
-            {/*  className="w-full h-11 text-base font-medium"*/}
-            {/*>*/}
-            {/*  {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}*/}
-            {/*</Button>*/}
+            {organization?.payLaterEnabled !== false && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveAndPayLater}
+                disabled={paying || savingForLater || totalPrice <= 0}
+                className="w-full h-11 text-base font-medium"
+              >
+                {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}
+              </Button>
+            )}
           </div>
         )}
       </div>

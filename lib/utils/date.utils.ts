@@ -20,7 +20,7 @@ export enum DayOfWeek {
 }
 
 // Day name mapping (capitalized for display)
-export const DAY_NAMES: Record<number, string> = {
+export const DAY_LABELS: Record<number, string> = {
   [DayOfWeek.MONDAY]: 'Lundi',
   [DayOfWeek.TUESDAY]: 'Mardi',
   [DayOfWeek.WEDNESDAY]: 'Mercredi',
@@ -30,19 +30,17 @@ export const DAY_NAMES: Record<number, string> = {
   [DayOfWeek.SUNDAY]: 'Dimanche',
 };
 
-// Available days for meal selection (lowercase)
-export const DAYS = ['lundi', 'mardi', 'jeudi', 'vendredi'] as const;
-
-// Map day of week to lowercase key for form
-export const DAY_KEYS: Record<number, (typeof DAYS)[number] | null> = {
-  [DayOfWeek.MONDAY]: 'lundi',
-  [DayOfWeek.TUESDAY]: 'mardi',
-  [DayOfWeek.THURSDAY]: 'jeudi',
-  [DayOfWeek.FRIDAY]: 'vendredi',
-  [DayOfWeek.WEDNESDAY]: null,
-  [DayOfWeek.SATURDAY]: null,
-  [DayOfWeek.SUNDAY]: null,
+export const DAY_LABELS_SHORT: Record<number, string> = {
+  [DayOfWeek.MONDAY]: 'Lun',
+  [DayOfWeek.TUESDAY]: 'Mar',
+  [DayOfWeek.WEDNESDAY]: 'Mer',
+  [DayOfWeek.THURSDAY]: 'Jeu',
+  [DayOfWeek.FRIDAY]: 'Ven',
+  [DayOfWeek.SATURDAY]: 'Sam',
+  [DayOfWeek.SUNDAY]: 'Dim',
 };
+
+export const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY];
 
 /**
  * Returns the Monday of the week for a given date
@@ -137,7 +135,7 @@ export function formatDayWithDate(weekStartDate: Date, dayOfWeek: number): strin
   // Add days to get to the specific day (Monday is day 0, so add dayOfWeek days)
   date.setDate(date.getDate() + dayOfWeek);
 
-  const dayName = DAY_NAMES[dayOfWeek] || `Jour ${dayOfWeek}`;
+  const dayName = DAY_LABELS[dayOfWeek] || `Jour ${dayOfWeek}`;
   const dayNumber = date.getDate();
   const monthName = date.toLocaleDateString('fr-FR', { month: 'long' });
 

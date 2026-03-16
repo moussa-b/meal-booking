@@ -4,19 +4,9 @@ import { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupText } from '@/components/ui/input-group';
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
 import type { Meal } from '@/lib/models/meal';
-import { DayOfWeek } from '@/lib/utils/date.utils';
-
-const DAY_LABELS: Record<number, string> = {
-  [DayOfWeek.MONDAY]: 'Lundi',
-  [DayOfWeek.TUESDAY]: 'Mardi',
-  [DayOfWeek.WEDNESDAY]: 'Mercredi',
-  [DayOfWeek.THURSDAY]: 'Jeudi',
-  [DayOfWeek.FRIDAY]: 'Vendredi',
-  [DayOfWeek.SATURDAY]: 'Samedi',
-  [DayOfWeek.SUNDAY]: 'Dimanche',
-};
+import { DAY_LABELS } from '@/lib/utils/date.utils';
 
 interface MenuDayFormProps<T extends FieldValues> {
   control: Control<T>;

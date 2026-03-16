@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import React from 'react';
 import type { Booking } from '@/lib/models/booking';
 import type { WeeklyMenu, WeeklyMenuDay } from '@/lib/models/weekly-menu';
-import { DAY_NAMES } from '@/lib/utils/date.utils';
+import { DAY_LABELS } from '@/lib/utils/date.utils';
 import { PayLaterEmail } from '@/lib/emails/pay-later-email';
 import { BookingConfirmationPaidEmail, type MealParticipantSummary, } from '@/lib/emails/booking-confirmation-paid-email';
 import { format } from 'date-fns';
@@ -79,7 +79,7 @@ function buildBookingSummary(
     for (const sel of mealParticipant.menuSelections ?? []) {
       const day = daysById.get(sel.weeklyMenuDayId);
       if (day) {
-        dayNames.push(DAY_NAMES[day.dayOfWeek] ?? `Jour ${day.dayOfWeek}`);
+        dayNames.push(DAY_LABELS[day.dayOfWeek] ?? `Jour ${day.dayOfWeek}`);
         amount += day.price;
       }
     }

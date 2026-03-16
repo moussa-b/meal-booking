@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { DAY_NAMES } from '@/lib/utils/date.utils';
+import { DAY_LABELS } from '@/lib/utils/date.utils';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
 import { getStatusBadgeClass, getStatusBadgeType } from '@/lib/services/payment-status.service';
 
@@ -53,7 +53,7 @@ export function WeekColumnContent({week}: { week: DashboardWeek }) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           {DASHBOARD_DAY_ORDER.map((dayOfWeek) => {
             const day = sortedDays.find((d) => d.dayOfWeek === dayOfWeek);
-            const dayName = DAY_NAMES[dayOfWeek] ?? `Jour ${dayOfWeek}`;
+            const dayName = DAY_LABELS[dayOfWeek] ?? `Jour ${dayOfWeek}`;
             const mealsCount = paidMealsByDay[dayOfWeek] ?? 0;
             return (
               <div

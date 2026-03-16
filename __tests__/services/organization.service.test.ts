@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { createOrganization, deleteOrganization, getAllOrganizations, getOrganizationById, getOrganizationByCode, updateOrganization, } from '@/lib/services/organization.service';
+import {
+  createOrganization,
+  deleteOrganization,
+  getAllOrganizations,
+  getOrganizationById,
+  getOrganizationByCode,
+  updateOrganization,
+} from '@/lib/services/organization.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestOrganizationData } from '../helpers/test-data';
+import { DEFAULT_DAYS } from '@/lib/utils/date.utils';
 
 // Setup test isolation (clean tables before each test)
 setupTestIsolation();
@@ -14,21 +22,18 @@ describe('Organization Service', () => {
       expect(organizations.length).toBe(0);
     });
 
-    it('should return all organizations ordered by created DESC', async () => {
-      // Create test organizations
-      const organization1 = await createOrganization(createTestOrganizationData({ name: 'Organization A' }));
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const organization2 = await createOrganization(createTestOrganizationData({ name: 'Organization B' }));
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const organization3 = await createOrganization(createTestOrganizationData({ name: 'Organization C' }));
+    it('should return all organizations ordered alphabetically by name', async () => {
+      const organizationA = await createOrganization(createTestOrganizationData({ name: 'Organization A' }));
+      const organizationC = await createOrganization(createTestOrganizationData({ name: 'Organization C' }));
+      const organizationB = await createOrganization(createTestOrganizationData({ name: 'Organization B' }));
 
       const organizations = await getAllOrganizations();
 
       expect(organizations.length).toBe(3);
-      // Should be ordered by created DESC (newest first)
-      expect(organizations[0].id).toBe(organization3.id);
-      expect(organizations[1].id).toBe(organization2.id);
-      expect(organizations[2].id).toBe(organization1.id);
+      // Should be ordered alphabetically by name: A, B, C
+      expect(organizations[0].id).toBe(organizationA.id);
+      expect(organizations[1].id).toBe(organizationB.id);
+      expect(organizations[2].id).toBe(organizationC.id);
     });
 
     it('should return organizations with correct data structure', async () => {
@@ -46,6 +51,8 @@ describe('Organization Service', () => {
       expect(organization?.type).toBe(testData.type);
       expect(organization?.description).toBe(testData.description);
       expect(organization?.created).toBeInstanceOf(Date);
+      expect(organization?.payLaterEnabled).toBe(true);
+      expect(organization?.menuDayOfWeek).toEqual(DEFAULT_DAYS);
     });
 
     it('should preserve organization types for mixed results', async () => {
@@ -169,6 +176,34 @@ describe('Organization Service', () => {
 
       expect(organization.type).toBe('company');
     });
+
+    it('should create organization with default payLaterEnabled and menuDayOfWeek', async () => {
+      const organization = await createOrganization(createTestOrganizationData());
+
+      expect(organization.payLaterEnabled).toBe(true);
+      expect(organization.menuDayOfWeek).toEqual(DEFAULT_DAYS);
+    });
+
+    it('should create organization with payLaterEnabled false', async () => {
+      const organization = await createOrganization({
+        ...createTestOrganizationData(),
+        payLaterEnabled: false,
+      });
+
+      expect(organization.payLaterEnabled).toBe(false);
+      expect(organization.menuDayOfWeek).toEqual(DEFAULT_DAYS);
+    });
+
+    it('should create organization with custom menuDayOfWeek', async () => {
+      const customDays = [0, 1, 3, 4]; // Mon, Tue, Thu, Fri
+      const organization = await createOrganization({
+        ...createTestOrganizationData(),
+        menuDayOfWeek: customDays,
+      });
+
+      expect(organization.payLaterEnabled).toBe(true);
+      expect(organization.menuDayOfWeek).toEqual([0, 1, 3, 4]);
+    });
   });
 
   describe('updateOrganization', () => {
@@ -244,6 +279,27 @@ describe('Organization Service', () => {
 
     it('should throw error when organization does not exist', async () => {
       await expect(updateOrganization(99999, { name: 'Test' })).rejects.toThrow('Organization not found');
+    });
+
+    it('should update payLaterEnabled', async () => {
+      const created = await createOrganization(createTestOrganizationData());
+
+      const updated = await updateOrganization(created.id, { payLaterEnabled: false });
+
+      expect(updated.payLaterEnabled).toBe(false);
+      const refetched = await getOrganizationById(created.id);
+      expect(refetched?.payLaterEnabled).toBe(false);
+    });
+
+    it('should update menuDayOfWeek', async () => {
+      const created = await createOrganization(createTestOrganizationData());
+      const customDays = [0, 1, 2, 3]; // Mon–Thu
+
+      const updated = await updateOrganization(created.id, { menuDayOfWeek: customDays });
+
+      expect(updated.menuDayOfWeek).toEqual([0, 1, 2, 3]);
+      const refetched = await getOrganizationById(created.id);
+      expect(refetched?.menuDayOfWeek).toEqual([0, 1, 2, 3]);
     });
   });
 

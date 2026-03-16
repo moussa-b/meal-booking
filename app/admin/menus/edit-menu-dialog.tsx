@@ -9,7 +9,6 @@ import { format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
 import type { WeeklyMenu, WeeklyMenuDayInput } from '@/lib/models/weekly-menu';
-import { DayOfWeek } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import type { Organization } from '@/lib/models/organization';
@@ -29,10 +28,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { isMonday } from '@/lib/utils/date.utils';
+import { DEFAULT_DAYS, isMonday } from '@/lib/utils/date.utils';
 import { MenuDayForm } from './menu-day-form';
-
-const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface EditMenuDialogProps {
   menu: WeeklyMenu | null;
@@ -92,29 +89,47 @@ export function EditMenuDialog({
     },
   });
 
+  const menuDays = menu
+    ? (organizations.find((o) => o.id === menu.organizationId)?.menuDayOfWeek ?? DEFAULT_DAYS)
+    : DEFAULT_DAYS;
+
   // Reset form when menu changes
   useEffect(() => {
     if (menu && open) {
       const days = menu.days || [];
+      const orgMenuDays = organizations.find((o) => o.id === menu.organizationId)?.menuDayOfWeek ?? DEFAULT_DAYS;
       form.reset({
         organizationId: menu.organizationId,
         weekStartDate: menu.weekStartDate,
-        days: days.length > 0 ? days.map(day => ({
-          dayOfWeek: day.dayOfWeek,
-          mainDishId: day.mainDishId,
-          appetizerId: day.appetizerId ?? null,
-          dessertId: day.dessertId ?? null,
-          price: day.price ?? 0.0,
-        })) : DEFAULT_DAYS.map(dayOfWeek => ({
-          dayOfWeek,
-          mainDishId: 0,
-          appetizerId: null,
-          dessertId: null,
-          price: '',
-        })),
+        days: days.length > 0
+          ? orgMenuDays.map(dayOfWeek => {
+              const existing = days.find(d => d.dayOfWeek === dayOfWeek);
+              return existing
+                ? {
+                    dayOfWeek: existing.dayOfWeek,
+                    mainDishId: existing.mainDishId,
+                    appetizerId: existing.appetizerId ?? null,
+                    dessertId: existing.dessertId ?? null,
+                    price: existing.price ?? 0.0,
+                  }
+                : {
+                    dayOfWeek,
+                    mainDishId: 0,
+                    appetizerId: null,
+                    dessertId: null,
+                    price: '',
+                  };
+            })
+          : orgMenuDays.map(dayOfWeek => ({
+              dayOfWeek,
+              mainDishId: 0,
+              appetizerId: null,
+              dessertId: null,
+              price: '',
+            })),
       });
     }
-  }, [menu, open, form]);
+  }, [menu, open, form, organizations]);
 
   // Convert Date to ISO string in format "YYYY-MM-DDTHH:mm:ss.sssZ"
   // This ensures the date is sent as a string without timezone conversion issues
@@ -246,9 +261,8 @@ export function EditMenuDialog({
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Composition des repas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {DEFAULT_DAYS.map((dayOfWeek, index) => {
+                {menuDays.map((dayOfWeek, index) => {
                   const currentDays = form.watch('days') || [];
-                  // Find or create day data
                   let dayData = currentDays.find((d: WeeklyMenuDayInput) => d.dayOfWeek === dayOfWeek);
                   if (!dayData) {
                     dayData = {

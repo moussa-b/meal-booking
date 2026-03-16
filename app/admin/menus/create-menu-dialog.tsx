@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, PlusIcon } from 'lucide-react';
-import { DayOfWeek, getMonday, isMonday } from '@/lib/utils/date.utils';
+import { DEFAULT_DAYS, getMonday, isMonday } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import { MealType } from '@/lib/models/meal';
 import type { Organization } from '@/lib/models/organization';
@@ -30,8 +30,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { MenuDayForm } from './menu-day-form';
-
-const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface CreateMenuDialogProps {
   meals: Meal[];
@@ -87,6 +85,9 @@ export function CreateMenuDialog({
     return monday;
   };
 
+  const getMenuDaysForOrganization = (orgId: number | undefined) =>
+    organizations.find((o) => o.id === orgId)?.menuDayOfWeek ?? DEFAULT_DAYS;
+
   const form = useForm<any>({
     resolver: zodResolver(createWeeklyMenuSchema),
     mode: 'onSubmit',
@@ -104,6 +105,9 @@ export function CreateMenuDialog({
     },
   });
 
+  const organizationId = form.watch('organizationId');
+  const menuDays = getMenuDaysForOrganization(organizationId);
+
   // When dialog opens, initialize or reset the form with either provided initial values (for duplication)
   // or the default blank state.
   useEffect(() => {
@@ -112,13 +116,14 @@ export function CreateMenuDialog({
     }
 
     if (initialValues) {
+      const daysForOrg = getMenuDaysForOrganization(initialValues.organizationId);
       form.reset({
         organizationId: initialValues.organizationId ?? undefined,
         weekStartDate: initialValues.weekStartDate ?? getDefaultMonday(),
         days:
           initialValues.days && initialValues.days.length > 0
             ? initialValues.days
-            : DEFAULT_DAYS.map(dayOfWeek => ({
+            : daysForOrg.map(dayOfWeek => ({
                 dayOfWeek,
                 mainDishId: 0,
                 appetizerId: null,
@@ -214,7 +219,18 @@ export function CreateMenuDialog({
                   <FormItem>
                     <FormLabel>Établissement</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      onValueChange={(value) => {
+                        const id = parseInt(value);
+                        field.onChange(id);
+                        const days = getMenuDaysForOrganization(id).map(dayOfWeek => ({
+                          dayOfWeek,
+                          mainDishId: 0,
+                          appetizerId: null,
+                          dessertId: null,
+                          price: '',
+                        }));
+                        form.setValue('days', days);
+                      }}
                       value={field.value?.toString() || ""}
                       disabled={loadingOrganizations}
                     >
@@ -284,7 +300,7 @@ export function CreateMenuDialog({
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Composition des repas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {DEFAULT_DAYS.map((dayOfWeek, index) => (
+                {menuDays.map((dayOfWeek, index) => (
                   <MenuDayForm
                     key={dayOfWeek}
                     control={form.control}

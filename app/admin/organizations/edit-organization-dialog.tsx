@@ -23,6 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DAY_LABELS_SHORT, DEFAULT_DAYS } from '@/lib/utils/date.utils';
 
 interface EditOrganizationDialogProps {
   organization: Organization | null;
@@ -48,6 +51,8 @@ export function EditOrganizationDialog({
       name: "",
       type: "school",
       description: "",
+      payLaterEnabled: true,
+      menuDayOfWeek: DEFAULT_DAYS,
     },
   });
 
@@ -58,6 +63,8 @@ export function EditOrganizationDialog({
         name: organization.name,
         type: organization.type,
         description: organization.description,
+        payLaterEnabled: organization.payLaterEnabled,
+        menuDayOfWeek: organization.menuDayOfWeek,
       });
     }
   }, [organization, open, form]);
@@ -148,6 +155,50 @@ export function EditOrganizationDialog({
                       placeholder="Description (optionnel)"
                     />
                   </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="payLaterEnabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <FormLabel>Activer le bouton « Payer plus tard »</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="menuDayOfWeek"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Jours du menu</FormLabel>
+                  <div className="flex flex-wrap gap-4">
+                    {DEFAULT_DAYS.map((day) => {
+                      const checked = field.value?.includes(day) ?? false;
+                      return (
+                        <div key={day} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(isChecked) => {
+                              const current = field.value ?? [];
+                              const next = isChecked
+                                ? Array.from(new Set([...current, day])).sort((a, b) => a - b)
+                                : current.filter((d) => d !== day);
+                              field.onChange(next);
+                            }}
+                          />
+                          <span className="text-sm">{DAY_LABELS_SHORT[day]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </FormItem>
               )}
             />

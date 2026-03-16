@@ -7,7 +7,7 @@ import { AlertTriangleIcon, CopyIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
-import { DayOfWeek } from '@/lib/utils/date.utils';
+import { DAY_LABELS, DEFAULT_DAYS } from '@/lib/utils/date.utils';
 import type { Meal } from '@/lib/models/meal';
 import type { Organization } from '@/lib/models/organization';
 import { type ActionResult } from './actions';
@@ -28,8 +28,6 @@ import {
 import { CreateMenuDialog } from './create-menu-dialog';
 import { EditMenuDialog } from './edit-menu-dialog';
 import type { CreateWeeklyMenuInput, UpdateWeeklyMenuInput } from '@/lib/validations/weekly-menu.validation';
-
-const DEFAULT_DAYS = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY];
 
 interface MenusTableProps {
   menus: WeeklyMenu[];
@@ -90,11 +88,15 @@ export function MenusTable({
     setSelectedMenu(null);
   };
 
+  const getMenuDaysForMenu = (menu: WeeklyMenu) =>
+    organizations.find((o) => o.id === menu.organizationId)?.menuDayOfWeek ?? DEFAULT_DAYS;
+
   // Handle duplicate: open create dialog prefilled with selected menu data
   const handleDuplicateClick = (menu: WeeklyMenu) => {
+    const orgMenuDays = getMenuDaysForMenu(menu);
     const days =
       menu.days && menu.days.length > 0
-        ? DEFAULT_DAYS.map((dayOfWeek) => {
+        ? orgMenuDays.map((dayOfWeek) => {
             const existingDay = menu.days?.find((d) => d.dayOfWeek === dayOfWeek);
             return {
               dayOfWeek,
@@ -104,7 +106,7 @@ export function MenusTable({
               price: existingDay?.price ?? 0.0,
             };
           })
-        : DEFAULT_DAYS.map((dayOfWeek) => ({
+        : orgMenuDays.map((dayOfWeek) => ({
             dayOfWeek,
             mainDishId: 0,
             appetizerId: null,
@@ -169,17 +171,6 @@ export function MenusTable({
     if (!organizationId) return '—';
     const organization = organizations.find((s) => s.id === organizationId);
     return organization?.name || '—';
-  };
-
-  // Helper function to get day name by dayOfWeek
-  const DAY_LABELS: Record<number, string> = {
-    [DayOfWeek.MONDAY]: 'Lundi',
-    [DayOfWeek.TUESDAY]: 'Mardi',
-    [DayOfWeek.WEDNESDAY]: 'Mercredi',
-    [DayOfWeek.THURSDAY]: 'Jeudi',
-    [DayOfWeek.FRIDAY]: 'Vendredi',
-    [DayOfWeek.SATURDAY]: 'Samedi',
-    [DayOfWeek.SUNDAY]: 'Dimanche',
   };
 
   const getDayName = (dayOfWeek: number): string => {
@@ -327,11 +318,10 @@ export function MenusTable({
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                               {menu.days
                                 .filter((day) => {
-                                  // Only show days that are in DEFAULT_DAYS (exclude Wednesday, Saturday, Sunday)
-                                  if (!DEFAULT_DAYS.includes(day.dayOfWeek)) {
+                                  const allowedDays = getMenuDaysForMenu(menu);
+                                  if (!allowedDays.includes(day.dayOfWeek)) {
                                     return false;
                                   }
-                                  // Filter out days with invalid mainDishId or if meal doesn't exist
                                   const meal = meals.find((m) => m.id === day.mainDishId);
                                   return meal !== undefined;
                                 })
