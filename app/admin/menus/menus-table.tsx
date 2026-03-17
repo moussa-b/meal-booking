@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { AlertTriangleIcon, CopyIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from 'lucide-react';
+import { AlertTriangleIcon, CopyIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, DownloadIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
@@ -194,6 +194,34 @@ export function MenusTable({
 
   const menuToDelete = deleteId ? menus.find((m) => m.id === deleteId) : null;
 
+  const handleExportBookings = async (menuId: number) => {
+    try {
+      const response = await fetch(`/api/admin/weekly-bookings/export?menuId=${menuId}`);
+      if (!response.ok) {
+        toast.error("Erreur lors de l'export des réservations");
+        return;
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      let filename = `reservations-menu-${menuId}.xlsx`;
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting weekly bookings:', error);
+      toast.error("Erreur lors de l'export des réservations");
+    }
+  };
+
   return (
     <>
       <Card>
@@ -265,6 +293,14 @@ export function MenusTable({
                               Voir le menu
                             </>
                           )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleExportBookings(menu.id)}
+                          title="Exporter les réservations de la semaine (Excel)"
+                        >
+                          <DownloadIcon className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"

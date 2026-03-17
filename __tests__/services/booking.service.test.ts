@@ -13,6 +13,7 @@ import {
   getPaidMealsByWeekdayForMenu,
   getBookingCountsByStatusForMenu,
   getTotalPaidAmountForMenu,
+  getWeeklyBookingsExportRows,
 } from '@/lib/services/booking.service';
 import { setupTestIsolation } from '../helpers/db.setup';
 import { createTestMealData, createTestOrganizationData, createTestWeeklyMenuData } from '../helpers/test-data';
@@ -908,6 +909,60 @@ describe('Booking Service', () => {
 
       const result = await getBookingCountsByStatusForMenu(bookingData.menuId);
       expect(result[PaymentStatus.PENDING]).toBe(2);
+    });
+  });
+
+  describe('getWeeklyBookingsExportRows', () => {
+    it('should return empty array when menu has no bookings', async () => {
+      const bookingData = await createTestBookingData();
+      const rows = await getWeeklyBookingsExportRows(bookingData.menuId + 9999);
+      expect(rows).toEqual([]);
+    });
+
+    it('should return one row per participant with correct day flags and labels', async () => {
+      const bookingData = await createTestBookingData();
+      const { getWeeklyMenuById } = await import('@/lib/services/weekly-menu.service');
+      const menu = await getWeeklyMenuById(bookingData.menuId);
+      const menuDays = menu?.days ?? [];
+      const mondayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.MONDAY);
+      const tuesdayDay = menuDays.find((d) => d.dayOfWeek === DayOfWeek.TUESDAY);
+      const mealParticipantKey = `${bookingData.mealParticipants[0].firstName}-${bookingData.mealParticipants[0].lastName}-0`;
+      bookingData.menuSelections = {
+        [mealParticipantKey]:
+          mondayDay && tuesdayDay ? [mondayDay.id, tuesdayDay.id] : [],
+      };
+      const created = await createBooking(bookingData, false);
+      await updateBookingStatus(created.id, PaymentStatus.PAID);
+
+      const rows = await getWeeklyBookingsExportRows(bookingData.menuId);
+
+      expect(rows.length).toBe(1);
+      const row = rows[0];
+      expect(row.email).toBe(bookingData.email);
+      expect(row.participantLastName).toBe(bookingData.mealParticipants[0].lastName);
+      expect(row.participantFirstName).toBe(bookingData.mealParticipants[0].firstName);
+      expect(row.selectedDaysLabel).toContain('Lundi');
+      expect(row.selectedDaysLabel).toContain('Mardi');
+      expect(row.mondayFlag).toBe('OUI');
+      expect(row.tuesdayFlag).toBe('OUI');
+      expect(row.wednesdayFlag).toBe('');
+      expect(row.paidFlag).toBe('OUI');
+      expect(row.bookingCreatedAt).toBeInstanceOf(Date);
+    });
+
+    it('should handle participants without any selections', async () => {
+      const bookingData = await createTestBookingData();
+      bookingData.menuSelections = {};
+      await createBooking(bookingData, false);
+
+      const rows = await getWeeklyBookingsExportRows(bookingData.menuId);
+
+      expect(rows.length).toBe(1);
+      const row = rows[0];
+      expect(row.selectedDaysLabel).toBe('');
+      expect(row.mondayFlag).toBe('');
+      expect(row.tuesdayFlag).toBe('');
+      expect(row.fridayFlag).toBe('');
     });
   });
 });

@@ -150,3 +150,75 @@ export function formatDayWithDate(weekStartDate: Date, dayOfWeek: number): strin
 export function formatWeekTitle(date: Date): string {
   return `Semaine du ${format(date, 'd MMMM yyyy', { locale: fr })}`;
 }
+
+/**
+ * Sanitizes a string for safe use in filenames:
+ * - removes accents/diacritics while keeping base letters (é -> e, ç -> c, etc.)
+ * - replaces characters outside [a-zA-Z0-9_-] with underscores
+ * - collapses repeated underscores and trims leading/trailing underscores
+ */
+export function sanitizeForFilename(value: string): string {
+  if (!value) return '';
+  // Normalize to NFD form and strip diacritic marks
+  const withoutDiacritics = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Remove forward slashes entirely (e.g. 2026/2027 -> 20262027)
+  const noSlashes = withoutDiacritics.replace(/[\/]+/g, '');
+  // Replace any remaining unsupported characters with underscores
+  const withUnderscores = noSlashes.replace(/[^a-zA-Z0-9]+/g, '_');
+  // Collapse multiple underscores and trim
+  const cleaned = withUnderscores.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+  return cleaned.toLowerCase();
+}
+
+/**
+ * Returns a new date that is a given number of days after the provided date.
+ * The original date is not mutated.
+ */
+export function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/**
+ * Given a week start date (Monday), returns the corresponding Friday date.
+ * This assumes a Monday–Friday week (start + 4 days).
+ */
+export function getWeekEndFromStart(weekStartDate: Date): Date {
+  return addDays(weekStartDate, 4);
+}
+
+/**
+ * Formats a date as ddMMyyyy (e.g. 03012026) for filenames.
+ */
+export function formatDateDDMMYYYY(date: Date): string {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear());
+  return `${day}${month}${year}`;
+}
+
+/**
+ * Formats a date as DD/MM/YY (e.g. 03/11/25) for compact labels.
+ */
+export function formatDateDDMMYY(date: Date): string {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear()).slice(-2);
+  return `${day}${month}${year}`;
+}
+
+/**
+ * Formats a date as a long French date without the day name,
+ * e.g. "3 novembre 2025".
+ */
+export function formatFrenchLongDate(date: Date): string {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+

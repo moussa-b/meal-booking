@@ -10,6 +10,8 @@ import { getOrganizationById } from './organization.service';
 import { getWeeklyMenuById } from './weekly-menu.service';
 import { sendBookingPayLater, sendBookingConfirmationPaid } from './email.service';
 import type { FieldPacket } from 'mysql2/promise';
+import type { WeeklyBookingExportRow } from '@/lib/models/weekly-booking-export-row';
+import { DAY_LABELS, DayOfWeek } from '@/lib/utils/date.utils';
 
 /**
  * Database row type for Booking (as returned from MySQL)
@@ -409,6 +411,152 @@ export async function getTotalPaidAmountForMenu(menuId: number): Promise<number>
   const total = rows[0]?.total;
   if (total == null) return 0;
   return Math.round(Number(total) * 100) / 100;
+}
+
+/**
+ * Get weekly bookings export rows for a given menu (week).
+ * Each row represents a single meal participant within a booking, with all selected days aggregated.
+ */
+export async function getWeeklyBookingsExportRows(menuId: number): Promise<WeeklyBookingExportRow[]> {
+  const rows = await query<{
+    bookingId: number;
+    bookingCreated: string | Date;
+    bookingStatus: string;
+    paymentEmailSentAt: string | Date | null;
+    email: string;
+    phone: string | null;
+    organizationName: string;
+    participantId: number;
+    participantLastName: string;
+    participantFirstName: string;
+    participantClass: string;
+    feedingRegime: string | null;
+    dayOfWeek: number | null;
+  }[]>(
+    `SELECT
+       b.id AS bookingId,
+       b.created AS bookingCreated,
+       b.status AS bookingStatus,
+       b.paymentEmailSentAt AS paymentEmailSentAt,
+       b.email AS email,
+       b.phone AS phone,
+       o.name AS organizationName,
+       bmp.id AS participantId,
+       bmp.lastName AS participantLastName,
+       bmp.firstName AS participantFirstName,
+       bmp.class AS participantClass,
+       bmp.feedingRegime AS feedingRegime,
+       wmd.dayOfWeek AS dayOfWeek
+     FROM bookings b
+     JOIN organizations o ON o.id = b.organizationId
+     JOIN booking_meal_participants bmp ON bmp.bookingId = b.id
+     LEFT JOIN booking_menu_selections bms ON bms.bookingMealParticipantId = bmp.id
+     LEFT JOIN weekly_menu_days wmd ON wmd.id = bms.weeklyMenuDayId
+     WHERE b.menuId = ?
+     ORDER BY b.created ASC, bmp.lastName ASC, bmp.firstName ASC`,
+    [menuId]
+  );
+
+  if (!rows.length) {
+    return [];
+  }
+
+  // Group by booking + participant
+  const groups = new Map<string, typeof rows>();
+
+  for (const row of rows) {
+    const key = `${row.bookingId}|${row.participantId}`;
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+
+  const result: WeeklyBookingExportRow[] = [];
+
+  for (const groupRows of groups.values()) {
+    const first = groupRows[0];
+
+    const daySet = new Set<number>();
+    for (const r of groupRows) {
+      if (r.dayOfWeek === null || r.dayOfWeek === undefined) continue;
+      daySet.add(r.dayOfWeek);
+    }
+
+    const orderedDays = Array.from(daySet).sort((a, b) => a - b);
+    const selectedDaysLabel = orderedDays
+      .map((day) => DAY_LABELS[day] || `Jour ${day}`)
+      .join(', ');
+
+    const dayFlags = {
+      mondayFlag: '',
+      tuesdayFlag: '',
+      wednesdayFlag: '',
+      thursdayFlag: '',
+      fridayFlag: '',
+      saturdayFlag: '',
+      sundayFlag: '',
+    };
+
+    for (const day of orderedDays) {
+      switch (day) {
+        case DayOfWeek.MONDAY:
+          dayFlags.mondayFlag = 'OUI';
+          break;
+        case DayOfWeek.TUESDAY:
+          dayFlags.tuesdayFlag = 'OUI';
+          break;
+        case DayOfWeek.WEDNESDAY:
+          dayFlags.wednesdayFlag = 'OUI';
+          break;
+        case DayOfWeek.THURSDAY:
+          dayFlags.thursdayFlag = 'OUI';
+          break;
+        case DayOfWeek.FRIDAY:
+          dayFlags.fridayFlag = 'OUI';
+          break;
+        case DayOfWeek.SATURDAY:
+          dayFlags.saturdayFlag = 'OUI';
+          break;
+        case DayOfWeek.SUNDAY:
+          dayFlags.sundayFlag = 'OUI';
+          break;
+        default:
+          break;
+      }
+    }
+
+    const bookingCreatedAt =
+      first.bookingCreated instanceof Date
+        ? first.bookingCreated
+        : new Date(first.bookingCreated);
+
+    const paymentEmailSentAt =
+      first.paymentEmailSentAt == null
+        ? null
+        : first.paymentEmailSentAt instanceof Date
+        ? first.paymentEmailSentAt
+        : new Date(first.paymentEmailSentAt);
+
+    const paidFlag = first.bookingStatus === PaymentStatus.PAID ? 'OUI' : '';
+
+    result.push({
+      bookingCreatedAt,
+      email: first.email,
+      organizationName: first.organizationName,
+      participantLastName: first.participantLastName,
+      participantFirstName: first.participantFirstName,
+      participantClass: first.participantClass,
+      selectedDaysLabel,
+      ...dayFlags,
+      feedingRegime: first.feedingRegime,
+      phone: first.phone,
+      paidFlag,
+      comment: null,
+      paymentEmailSentAt,
+    });
+  }
+
+  return result;
 }
 
 /**
