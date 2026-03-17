@@ -10,3 +10,6 @@ export * from './booking';
 export * from './payment-status';
 export * from './meal';
 export * from './weekly-menu';
+export * from './booking-meal-participant';
+export * from './booking-menu-selection';
+export * from './booking-with-details';

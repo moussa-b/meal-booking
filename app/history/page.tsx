@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { HistoryWizard } from '../components/history-wizard';
 import { getOrganizationByCode } from '@/lib/services/organization.service';
 import { getBookingsWithDetailsByEmailAndOrganization } from '@/lib/services/booking.service';
-import type { BookingWithDetails } from '@/lib/models/booking';
+import type { BookingWithDetails } from '@/lib/models/booking-with-details';
 
 type SearchParams = {
   searchParams?: Promise<Record<string, string | string[]>>;

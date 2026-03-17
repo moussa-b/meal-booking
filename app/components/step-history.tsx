@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { BookingWithDetails } from '@/lib/models/booking';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { formatDate } from '@/lib/utils/date.utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import type { BookingWithDetails } from '@/lib/models/booking-with-details';
 
 interface StepHistoryProps {
   bookings: BookingWithDetails[];

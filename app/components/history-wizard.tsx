@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StepOrganizationInfo } from './step-organization-info';
 import { StepHistory } from './step-history';
-import type { BookingWithDetails } from '@/lib/models/booking';
+import type { BookingWithDetails } from '@/lib/models/booking-with-details';
 
 // Define the form schema compatible with StepOrganizationInfo
 const formSchema = z.object({

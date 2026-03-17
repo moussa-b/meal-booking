@@ -1,5 +1,8 @@
 import { query, getConnection, type MysqlInsertResult } from '@/lib/db/connection';
-import type { Booking, BookingMealParticipant, BookingMenuSelection, BookingWithDetails } from '@/lib/models/booking';
+import type { Booking } from '@/lib/models/booking';
+import type { BookingMealParticipant } from '@/lib/models/booking-meal-participant';
+import type { BookingMenuSelection } from '@/lib/models/booking-menu-selection';
+import type { BookingWithDetails } from '@/lib/models/booking-with-details';
 import type { BookingSubmission } from '@/lib/models/booking-submission';
 import { PaymentStatus } from '@/lib/models/payment-status';
 import { createMealParticipant } from './meal-participant.service';
