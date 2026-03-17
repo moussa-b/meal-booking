@@ -106,6 +106,27 @@ export function StepOrganizationInfo({ onOrganizationSelect }: StepOrganizationI
           </FormItem>
         )}
       />
+
+      <FormField
+        control={control}
+        name="phone"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Téléphone{" "}
+              <span className="text-slate-400 text-sm">(optionnel)</span>
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="tel"
+                placeholder="Votre numéro de téléphone"
+                {...field}
+                className="w-full"
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      />
     </div>
   );
 }

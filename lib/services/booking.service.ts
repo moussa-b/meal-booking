@@ -15,9 +15,11 @@ interface BookingRow {
   id: number;
   created: string | Date;
   email: string;
+  phone: string | null;
   organizationId: number;
   menuId: number;
   status: string;
+  comment: string | null;
   paypalOrderId?: string | null;
   paymentEmailSentAt?: string | Date | null;
   confirmationEmailSentAt?: string | Date | null;
@@ -36,6 +38,7 @@ interface BookingMealParticipantRow {
   type: 'school' | 'company';
   feedingRegime: string | null;
   email: string;
+  phone: string | null;
 }
 
 /**
@@ -93,8 +96,8 @@ export async function createBooking(
 
     // Insert booking with default PENDING status
     const [bookingResult] = await connection.execute(
-      'INSERT INTO bookings (email, organizationId, menuId, status) VALUES (?, ?, ?, ?)',
-      [data.email, data.organizationId, data.menuId, PaymentStatus.PENDING]
+      'INSERT INTO bookings (email, phone, organizationId, menuId, status, comment) VALUES (?, ?, ?, ?, ?, ?)',
+      [data.email, data.phone ?? null, data.organizationId, data.menuId, PaymentStatus.PENDING, data.comment ?? null]
     ) as [MysqlInsertResult, FieldPacket[]];
 
     const bookingId = bookingResult.insertId;
@@ -115,12 +118,13 @@ export async function createBooking(
           type: organization.type,
           feedingRegime: mealParticipant.feedingRegime || null,
           email: data.email,
+          phone: data.phone ?? null,
         });
         savedMealParticipantId = savedMealParticipant.id;
       }
 
       const [mealParticipantResult] = await connection.execute(
-        'INSERT INTO booking_meal_participants (bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO booking_meal_participants (bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, email, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           bookingId,
           savedMealParticipantId,
@@ -130,6 +134,7 @@ export async function createBooking(
           organization.type,
           mealParticipant.feedingRegime || null,
           data.email,
+          data.phone ?? null,
         ]
       ) as [MysqlInsertResult, FieldPacket[]];
 
@@ -174,7 +179,7 @@ export async function createBooking(
  */
 export async function getBookingById(id: number): Promise<Booking | null> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, organizationId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE id = ?',
+    'SELECT id, created, email, phone, organizationId, menuId, status, comment, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE id = ?',
     [id]
   );
 
@@ -186,7 +191,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
 
   // Get all meal participants for this booking
   const mealParticipantsRows = await query<BookingMealParticipantRow[]>(
-    'SELECT id, bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, email FROM booking_meal_participants WHERE bookingId = ?',
+    'SELECT id, bookingId, mealParticipantId, lastName, firstName, class, type, feedingRegime, email, phone FROM booking_meal_participants WHERE bookingId = ?',
     [id]
   );
 
@@ -221,6 +226,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     type: mealParticipantRow.type,
     feedingRegime: mealParticipantRow.feedingRegime,
     email: mealParticipantRow.email,
+    phone: mealParticipantRow.phone,
     mealParticipant: null,
     menuSelections: selectionsByMealParticipantId.get(mealParticipantRow.id) || [],
   }));
@@ -232,8 +238,10 @@ export async function getBookingById(id: number): Promise<Booking | null> {
     id: bookingRow.id,
     created: new Date(bookingRow.created),
     email: bookingRow.email,
+    phone: bookingRow.phone ?? null,
     organizationId: bookingRow.organizationId,
     menuId: bookingRow.menuId,
+    comment: bookingRow.comment ?? null,
     status,
     mealParticipants,
     paypalOrderId: bookingRow.paypalOrderId ?? null,
@@ -247,7 +255,7 @@ export async function getBookingById(id: number): Promise<Booking | null> {
  */
 export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, organizationId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE email = ? ORDER BY created DESC',
+    'SELECT id, created, email, phone, organizationId, menuId, status, comment, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings WHERE email = ? ORDER BY created DESC',
     [email]
   );
 
@@ -405,7 +413,7 @@ export async function getTotalPaidAmountForMenu(menuId: number): Promise<number>
  */
 export async function getAllBookings(): Promise<Booking[]> {
   const bookings = await query<BookingRow[]>(
-    'SELECT id, created, email, organizationId, menuId, status, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings ORDER BY created DESC'
+    'SELECT id, created, email, phone, organizationId, menuId, status, comment, paypalOrderId, paymentEmailSentAt, confirmationEmailSentAt FROM bookings ORDER BY created DESC'
   );
 
   if (bookings.length === 0) {

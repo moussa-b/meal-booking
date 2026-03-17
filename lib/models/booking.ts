@@ -11,8 +11,10 @@ export interface Booking {
   id: number;
   created: Date;
   email: string;
+  phone?: string | null;
   organizationId: number;
   menuId: number;
+  comment?: string | null;
   mealParticipants?: BookingMealParticipant[];
   status: PaymentStatus;
   paypalOrderId?: string | null;
@@ -34,6 +36,7 @@ export interface BookingMealParticipant {
   type: OrganizationType;
   feedingRegime: string | null;
   email: string;
+  phone?: string | null;
   mealParticipant?: MealParticipant | null;
   menuSelections?: BookingMenuSelection[];
 }

@@ -11,6 +11,7 @@ interface MealParticipantRow {
   type: string | null;
   feedingRegime: string | null;
   email: string | null;
+  phone: string | null;
 }
 
 function normalizeMealParticipantType(type: string | null): OrganizationType {
@@ -27,19 +28,20 @@ function mapMealParticipantRow(row: MealParticipantRow): MealParticipant {
     type: normalizeMealParticipantType(row.type),
     feedingRegime: row.feedingRegime,
     email: row.email || undefined,
+    phone: row.phone || undefined,
   };
 }
 
 export async function getAllMealParticipants(): Promise<MealParticipant[]> {
   const results = await query<MealParticipantRow[]>(
-    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email FROM meal_participants ORDER BY created DESC'
+    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email, phone FROM meal_participants ORDER BY created DESC'
   );
   return results.map(mapMealParticipantRow);
 }
 
 export async function getMealParticipantById(id: number): Promise<MealParticipant | null> {
   const results = await query<MealParticipantRow[]>(
-    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email FROM meal_participants WHERE id = ?',
+    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email, phone FROM meal_participants WHERE id = ?',
     [id]
   );
 
@@ -52,7 +54,7 @@ export async function getMealParticipantById(id: number): Promise<MealParticipan
 
 export async function getMealParticipantsByEmail(email: string): Promise<MealParticipant[]> {
   const results = await query<MealParticipantRow[]>(
-    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email FROM meal_participants WHERE email = ? ORDER BY created DESC',
+    'SELECT id, created, lastName, firstName, class, type, feedingRegime, email, phone FROM meal_participants WHERE email = ? ORDER BY created DESC',
     [email]
   );
   return results.map(mapMealParticipantRow);
@@ -65,9 +67,10 @@ export async function createMealParticipant(data: {
   type: OrganizationType;
   feedingRegime?: string | null;
   email?: string | null;
+  phone?: string | null;
 }): Promise<MealParticipant> {
   const result = await query<MysqlInsertResult>(
-    'INSERT INTO meal_participants (lastName, firstName, class, type, feedingRegime, email) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO meal_participants (lastName, firstName, class, type, feedingRegime, email, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [
       data.lastName,
       data.firstName,
@@ -75,6 +78,7 @@ export async function createMealParticipant(data: {
       data.type,
       data.feedingRegime || null,
       data.email || null,
+      data.phone || null,
     ]
   );
 
@@ -94,6 +98,7 @@ export async function updateMealParticipant(
     type?: OrganizationType;
     feedingRegime?: string | null;
     email?: string | null;
+    phone?: string | null;
   }
 ): Promise<MealParticipant> {
   const updates: string[] = [];
@@ -122,6 +127,10 @@ export async function updateMealParticipant(
   if (data.email !== undefined) {
     updates.push('email = ?');
     values.push(data.email || null);
+  }
+  if (data.phone !== undefined) {
+    updates.push('phone = ?');
+    values.push(data.phone || null);
   }
 
   if (updates.length === 0) {

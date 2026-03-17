@@ -26,6 +26,8 @@ const bookingSubmissionSchema = z.object({
   organizationId: z.number().min(1),
   menuId: z.number().min(1),
   email: z.email(),
+  phone: z.string().max(50).optional().nullable(),
+  comment: z.string().max(2000).optional().nullable(),
   mealParticipants: z.array(mealParticipantSchema).min(1),
   menuSelections: z.record(z.string(), z.array(z.number())),
   saveChildrenInfo: z.boolean(),

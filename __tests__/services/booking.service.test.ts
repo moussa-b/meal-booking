@@ -31,6 +31,7 @@ describe('Booking Service', () => {
   // Helper function to create test booking data
   async function createTestBookingData(overrides?: {
     email?: string;
+    phone?: string | null;
     organizationId?: number;
     menuId?: number;
     mealParticipants?: Array<{
@@ -115,6 +116,7 @@ describe('Booking Service', () => {
       organizationId: organizationId!,
       menuId: menuId!,
       email: overrides?.email || `test${Date.now()}@example.com`,
+      phone: overrides?.phone ?? null,
       mealParticipants: mealParticipants.map((mealParticipant) => ({
         id: 0, // Not used in submission
         created: new Date(),
@@ -122,6 +124,7 @@ describe('Booking Service', () => {
       })),
       menuSelections,
       saveChildrenInfo: overrides?.saveChildrenInfo ?? false,
+      comment: 'Test booking comment',
     };
   }
 
@@ -136,9 +139,12 @@ describe('Booking Service', () => {
       expect(booking.organizationId).toBe(bookingData.organizationId);
       expect(booking.menuId).toBe(bookingData.menuId);
       expect(booking.status).toBe(PaymentStatus.PENDING);
+      expect(booking.phone).toBe(bookingData.phone);
+      expect(booking.comment).toBe('Test booking comment');
       expect(booking.mealParticipants).toBeDefined();
       expect(booking.mealParticipants?.length).toBe(bookingData.mealParticipants.length);
       expect(booking.mealParticipants?.[0].mealParticipantId).toBeNull(); // Should not have mealParticipantId
+      expect(booking.mealParticipants?.[0].phone).toBe(bookingData.phone);
     });
 
     it('should create a booking with saveChildrenInfo = true and create mealParticipants', async () => {
@@ -157,6 +163,10 @@ describe('Booking Service', () => {
       const mealParticipants = await getMealParticipantsByEmail(bookingData.email);
       expect(mealParticipants.length).toBeGreaterThan(0);
       expect(mealParticipants[0].email).toBe(bookingData.email);
+      if (mealParticipants[0].phone)
+        expect(mealParticipants[0].phone).toBe(bookingData.phone);
+      else
+        expect(mealParticipants[0].phone).toBeOneOf([null, undefined])
     });
 
     it('should create a booking for a company organization with an empty class', async () => {

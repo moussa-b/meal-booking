@@ -34,6 +34,7 @@ const mealParticipantSchema = z.object({
 const formSchema = z.object({
   organizationId: z.number().min(1, "L'établissement est requis"),
   email: z.email("Email invalide"),
+  phone: z.string().max(50).optional().or(z.literal("")),
   mealParticipants: z
     .array(mealParticipantSchema)
     .min(1, "Au moins un élève est requis"),
@@ -51,6 +52,7 @@ const formSchema = z.object({
       }
     ),
   saveChildrenInfo: z.boolean().optional(),
+  comment: z.string().max(2000).optional().or(z.literal("")),
 });
 
 export type BookingFormData = z.infer<typeof formSchema>;
@@ -70,6 +72,7 @@ export function BookingWizard() {
     defaultValues: {
       organizationId: 0,
       email: "",
+      phone: "",
       mealParticipants: [
         {
           lastName: "",
@@ -81,6 +84,7 @@ export function BookingWizard() {
       ],
       menuSelections: {},
       saveChildrenInfo: false,
+      comment: "",
     },
   });
 

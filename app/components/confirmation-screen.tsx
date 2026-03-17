@@ -17,7 +17,7 @@ interface ConfirmationScreenProps {
 }
 
 export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
-  const { watch } = useFormContext<BookingFormData>();
+  const { watch, setValue } = useFormContext<BookingFormData>();
   const formData = watch();
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
@@ -361,14 +361,27 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
             </div>
           </div>
           <Separator />
-          <div className="flex items-start gap-3">
-            <Mail className="h-5 w-5 text-slate-400 mt-0.5" />
-            <div>
-              <div className="text-sm text-slate-500">Email</div>
-              <div className="font-semibold text-slate-900">
-                {formData.email}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <Mail className="h-5 w-5 text-slate-400 mt-0.5" />
+              <div>
+                <div className="text-sm text-slate-500">Email</div>
+                <div className="font-semibold text-slate-900">
+                  {formData.email}
+                </div>
               </div>
             </div>
+            {formData.phone && (
+              <div className="flex items-start gap-3">
+                <Mail className="h-5 w-5 text-slate-400 mt-0.5" />
+                <div>
+                  <div className="text-sm text-slate-500">Téléphone</div>
+                  <div className="font-semibold text-slate-900">
+                    {formData.phone}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -479,54 +492,77 @@ export function ConfirmationScreen({ onSubmitted }: ConfirmationScreenProps) {
         </CardContent>
       </Card>
 
-      {/* After success: message; otherwise action buttons */}
-      <div className="pt-4">
-        {paymentSuccess ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
-            <div className="rounded-full bg-green-100 p-3">
-              <CheckCircle2 className="h-10 w-10 text-green-600" aria-hidden />
+      {/* Comment + After success: message; otherwise action buttons */}
+      <div className="pt-4 space-y-4">
+        <Card className="border-2 border-slate-200 pt-0">
+          <CardHeader className="bg-slate-50 rounded-t-xl">
+            <CardTitle className="text-lg font-semibold text-slate-900 text-center pt-2">
+              Commentaire pour la réservation (optionnel)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <textarea
+              className="w-full min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              value={formData.comment ?? ''}
+              onChange={(e) =>
+                setValue('comment', e.target.value, {
+                  shouldDirty: true,
+                  shouldValidate: false,
+                })
+              }
+              disabled={paying || savingForLater || paymentSuccess || savedForLater}
+            />
+          </CardContent>
+        </Card>
+
+        <div>
+          {paymentSuccess ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
+              <div className="rounded-full bg-green-100 p-3">
+                <CheckCircle2 className="h-10 w-10 text-green-600" aria-hidden />
+              </div>
+              <p className="font-semibold text-green-800">Paiement effectué avec succès</p>
+              <p className="text-sm text-slate-600">Vous pouvez fermer la fenêtre de paiement maintenant.</p>
             </div>
-            <p className="font-semibold text-green-800">Paiement effectué avec succès</p>
-            <p className="text-sm text-slate-600">Vous pouvez fermer la fenêtre de paiement maintenant.</p>
-          </div>
-        ) : savedForLater ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
-            <div className="rounded-full bg-green-100 p-3">
-              <CheckCircle2 className="h-10 w-10 text-green-600" aria-hidden />
+          ) : savedForLater ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-green-200 bg-green-50 p-6 text-center">
+              <div className="rounded-full bg-green-100 p-3">
+                <CheckCircle2 className="h-10 w-10 text-green-600" aria-hidden />
+              </div>
+              <p className="font-semibold text-green-800">Réservation enregistrée</p>
+              <p className="text-sm text-slate-600">Vous pourrez effectuer le paiement plus tard.</p>
             </div>
-            <p className="font-semibold text-green-800">Réservation enregistrée</p>
-            <p className="text-sm text-slate-600">Vous pourrez effectuer le paiement plus tard.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <Button
-              type="button"
-              onClick={handlePayWithPayPal}
-              disabled={paying || savingForLater || totalPrice <= 0}
-              className="w-full min-h-12 h-auto py-3 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white whitespace-normal text-center"
-            >
-              {paying ? (
-                "Enregistrement et préparation du paiement..."
-              ) : (
-                <span className="flex items-center justify-center gap-2 w-full min-w-0">
-                  <CheckCircle2 className="h-5 w-5 shrink-0" />
-                  <span className="min-w-0 text-center">Soumettre la réservation et payer avec PayPal</span>
-                </span>
-              )}
-            </Button>
-            {organization?.payLaterEnabled !== false && (
+          ) : (
+            <div className="space-y-3">
               <Button
                 type="button"
-                variant="outline"
-                onClick={handleSaveAndPayLater}
+                onClick={handlePayWithPayPal}
                 disabled={paying || savingForLater || totalPrice <= 0}
-                className="w-full h-11 text-base font-medium"
+                className="w-full min-h-12 h-auto py-3 text-base font-semibold bg-[#0070ba] hover:bg-[#005ea6] text-white whitespace-normal text-center"
               >
-                {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}
+                {paying ? (
+                  "Enregistrement et préparation du paiement..."
+                ) : (
+                  <span className="flex items-center justify-center gap-2 w-full min-w-0">
+                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                    <span className="min-w-0 text-center">Soumettre la réservation et payer avec PayPal</span>
+                  </span>
+                )}
               </Button>
-            )}
-          </div>
-        )}
+              {organization?.payLaterEnabled !== false && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSaveAndPayLater}
+                  disabled={paying || savingForLater || totalPrice <= 0}
+                  className="w-full h-11 text-base font-medium"
+                >
+                  {savingForLater ? "Enregistrement..." : "Enregistrer et payer plus tard"}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

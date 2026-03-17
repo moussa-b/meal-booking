@@ -326,6 +326,22 @@ describe('MealParticipant Service', () => {
       expect(mealParticipant.email).toBe(email);
     });
 
+    it('should create mealParticipant with phone and retrieve it', async () => {
+      const email = `parent${Date.now()}@example.com`;
+      const phone = '+33123456789';
+      const testData = createTestMealParticipantData({ email });
+      // @ts-expect-error test helper may not know about phone yet
+      testData.phone = phone;
+
+      const created = await createMealParticipant(testData as any);
+      const byId = await getMealParticipantById(created.id);
+      const byEmail = await getMealParticipantsByEmail(email);
+
+      expect(created.phone).toBe(phone);
+      expect(byId?.phone).toBe(phone);
+      expect(byEmail[0]?.phone).toBe(phone);
+    });
+
     it('should create mealParticipant without email', async () => {
       const testData = createTestMealParticipantData({ email: null });
 
@@ -411,6 +427,16 @@ describe('MealParticipant Service', () => {
 
       expect(updated.id).toBe(created.id);
       expect(updated.email).toBe(newEmail);
+    });
+
+    it('should update mealParticipant phone', async () => {
+      const created = await createMealParticipant(createTestMealParticipantData());
+      const newPhone = '+33987654321';
+
+      const updated = await updateMealParticipant(created.id, { phone: newPhone });
+
+      expect(updated.id).toBe(created.id);
+      expect(updated.phone).toBe(newPhone);
     });
 
     it('should update mealParticipant type', async () => {

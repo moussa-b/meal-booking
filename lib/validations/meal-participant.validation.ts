@@ -11,6 +11,7 @@ export const updateMealParticipantSchema = z.object({
   type: z.enum(ORGANIZATION_TYPES).optional(),
   feedingRegime: z.string().optional().nullable(),
   email: z.email('Email invalide').optional().nullable(),
+  phone: z.string().max(50).optional().nullable(),
 });
 
 export type UpdateMealParticipantInput = z.infer<typeof updateMealParticipantSchema>;
