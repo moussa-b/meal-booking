@@ -30,6 +30,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { MenuDayForm } from './menu-day-form';
+import { RequiredMark } from '@/components/ui/required-mark';
 
 interface CreateMenuDialogProps {
   meals: Meal[];
@@ -217,7 +218,9 @@ export function CreateMenuDialog({
                 name="organizationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Établissement</FormLabel>
+                    <FormLabel className="gap-0.5">
+                      Établissement<RequiredMark />
+                    </FormLabel>
                     <Select
                       onValueChange={(value) => {
                         const id = parseInt(value);
@@ -256,7 +259,9 @@ export function CreateMenuDialog({
                 name="weekStartDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date de début de semaine (Lundi)</FormLabel>
+                    <FormLabel className="gap-0.5">
+                      Date de début de semaine (Lundi)<RequiredMark />
+                    </FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl className="w-fit">

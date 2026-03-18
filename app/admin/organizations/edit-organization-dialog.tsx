@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DAY_LABELS_SHORT, DEFAULT_DAYS } from '@/lib/utils/date.utils';
+import { RequiredMark } from '@/components/ui/required-mark';
 
 interface EditOrganizationDialogProps {
   organization: Organization | null;
@@ -115,7 +116,9 @@ export function EditOrganizationDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nom</FormLabel>
+                  <FormLabel className="gap-0.5">
+                    Nom<RequiredMark />
+                  </FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Nom de l'établissement" />
                   </FormControl>
@@ -127,7 +130,9 @@ export function EditOrganizationDialog({
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
+                  <FormLabel className="gap-0.5">
+                    Type<RequiredMark />
+                  </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>

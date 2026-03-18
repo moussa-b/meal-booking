@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredMark } from '@/components/ui/required-mark';
 import { useAdminUserSetter } from '@/hooks/use-admin-user';
 
 type AdminLoginFormProps = {
@@ -73,7 +74,9 @@ function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="identifier">Identifiant ou email</Label>
+            <Label htmlFor="identifier">
+              Identifiant ou email<RequiredMark />
+            </Label>
             <Input
               id="identifier"
               type="text"
@@ -86,7 +89,9 @@ function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="password">Mot de passe</Label>
+            <Label htmlFor="password">
+              Mot de passe<RequiredMark />
+            </Label>
             <Input
               id="password"
               type="password"

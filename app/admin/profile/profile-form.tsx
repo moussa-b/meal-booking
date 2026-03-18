@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredMark } from '@/components/ui/required-mark';
 import { useAdminUserSetter } from '@/hooks/use-admin-user';
 import {
   updateProfileAction,
@@ -41,7 +42,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="firstname">Prénom</Label>
+        <Label htmlFor="firstname" className="gap-0.5">
+          Prénom<RequiredMark />
+        </Label>
         <Input
           id="firstname"
           name="firstname"
@@ -53,7 +56,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="lastname">Nom</Label>
+        <Label htmlFor="lastname" className="gap-0.5">
+          Nom<RequiredMark />
+        </Label>
         <Input
           id="lastname"
           name="lastname"
@@ -65,7 +70,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="gap-0.5">
+          Email<RequiredMark />
+        </Label>
         <Input
           id="email"
           name="email"

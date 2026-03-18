@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
+import { RequiredMark } from '@/components/ui/required-mark';
 import type { Meal } from '@/lib/models/meal';
 import { DAY_LABELS } from '@/lib/utils/date.utils';
 
@@ -44,7 +45,9 @@ export function MenuDayForm<T extends FieldValues>({
           name={mainDishFieldName}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Plat principal *</FormLabel>
+              <FormLabel className="gap-0.5">
+                Plat principal<RequiredMark />
+              </FormLabel>
               <Select
                 onValueChange={(value) => field.onChange(parseInt(value))}
                 value={field.value?.toString()}
@@ -138,7 +141,9 @@ export function MenuDayForm<T extends FieldValues>({
 
             return (
               <FormItem>
-                <FormLabel>Prix *</FormLabel>
+                <FormLabel className="gap-0.5">
+                  Prix<RequiredMark />
+                </FormLabel>
                 <FormControl>
                   <InputGroup>
                     <InputGroupInput

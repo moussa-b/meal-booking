@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RequiredMark } from '@/components/ui/required-mark';
 
 interface EditMealDialogProps {
   meal: Meal | null;
@@ -97,7 +98,9 @@ export function EditMealDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nom</FormLabel>
+                  <FormLabel className="gap-0.5">
+                    Nom<RequiredMark />
+                  </FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Nom du repas" />
                   </FormControl>
@@ -109,7 +112,9 @@ export function EditMealDialog({
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
+                  <FormLabel className="gap-0.5">
+                    Type<RequiredMark />
+                  </FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
@@ -139,7 +144,9 @@ export function EditMealDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel className="gap-0.5">
+                    Description<RequiredMark />
+                  </FormLabel>
                   <FormControl>
                     <textarea
                       {...field}

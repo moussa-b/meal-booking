@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredMark } from '@/components/ui/required-mark';
 import { useAdminUserSetter } from '@/hooks/use-admin-user';
 import { updateCredentialsAction, type CredentialsUpdateResult, } from './actions';
 
@@ -26,7 +27,7 @@ interface ChangeCredentialsDialogProps {
 function PasswordField({id, name, label, hint, autoComplete, disabled, 'aria-label': ariaLabel,}: {
   id: string;
   name: string;
-  label: string;
+  label: React.ReactNode;
   hint?: string;
   autoComplete: string;
   disabled: boolean;
@@ -35,7 +36,9 @@ function PasswordField({id, name, label, hint, autoComplete, disabled, 'aria-lab
   const [visible, setVisible] = useState(false);
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="gap-0.5">
+        {label}
+      </Label>
       <div className="relative">
         <Input
           id={id}
@@ -110,7 +113,9 @@ export function ChangeCredentialsDialog({initialUsername}: ChangeCredentialsDial
         <form action={formAction}
               className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="credentials-username">Identifiant</Label>
+            <Label htmlFor="credentials-username" className="gap-0.5">
+              Identifiant<RequiredMark />
+            </Label>
             <Input
               id="credentials-username"
               name="username"
@@ -124,7 +129,11 @@ export function ChangeCredentialsDialog({initialUsername}: ChangeCredentialsDial
           <PasswordField
             id="credentials-current-password"
             name="currentPassword"
-            label="Mot de passe actuel"
+            label={
+              <>
+                Mot de passe actuel<RequiredMark />
+              </>
+            }
             autoComplete="current-password"
             disabled={isPending}
             aria-label="Mot de passe actuel"
