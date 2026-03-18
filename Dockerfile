@@ -53,6 +53,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy Excel templates required at runtime
+COPY --from=builder --chown=nextjs:nodejs /app/excel_templates ./excel_templates
+
 # Copy lib/db for database connection (needed for seed script)
 COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
 

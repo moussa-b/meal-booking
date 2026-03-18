@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import XlsxPopulate from 'xlsx-populate';
+import path from 'path';
+import fs from 'fs';
 import { getWeeklyBookingsExportRows } from '@/lib/services/booking.service';
 import { getWeeklyMenuById } from '@/lib/services/weekly-menu.service';
 import { getOrganizationById } from '@/lib/services/organization.service';
@@ -11,7 +13,8 @@ import {
   sanitizeForFilename,
 } from '@/lib/utils/date.utils';
 
-const TEMPLATE_PATH = 'excel_templates/template.xlsx';
+const TEMPLATE_RELATIVE_PATH = path.join('excel_templates', 'template.xlsx');
+const TEMPLATE_PATH = path.resolve(process.cwd(), TEMPLATE_RELATIVE_PATH);
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -59,6 +62,19 @@ export async function GET(req: NextRequest) {
 
     const safeOrg = sanitizeForFilename(organization.name);
     const filename = `reservation_${safeOrg}_${formattedWeekStartForFile}_${formattedWeekEndForFile}.xlsx`;
+
+    if (!fs.existsSync(TEMPLATE_PATH)) {
+      console.error(
+        `Weekly export template not found at "${TEMPLATE_PATH}" (cwd: "${process.cwd()}")`
+      );
+      return NextResponse.json(
+        {
+          message:
+            'Weekly export template is missing on the server. Please contact an administrator.',
+        },
+        { status: 500 }
+      );
+    }
 
     const workbook = await XlsxPopulate.fromFileAsync(TEMPLATE_PATH);
     const sheet = workbook.sheet(0);
