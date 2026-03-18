@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { AlertTriangleIcon, CopyIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, DownloadIcon } from 'lucide-react';
+import { CopyIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, DownloadIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { WeeklyMenu } from '@/lib/models/weekly-menu';
@@ -14,7 +14,7 @@ import { type ActionResult } from './actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger, } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -318,21 +318,25 @@ export function MenusTable({
                           <CopyIcon className="h-4 w-4" />
                         </Button>
                         {menu.orderCount && menu.orderCount > 0 ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Ce menu ne peut pas être supprimé"
-                              >
-                                <AlertTriangleIcon className="h-4 w-4 text-orange-500" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="max-w-xs text-sm">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span tabIndex={0} className="inline-flex">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled
+                                  aria-disabled="true"
+                                  title="Ce menu ne peut pas être supprimé"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" align="end" className="max-w-xs text-sm">
                               Ce menu ne peut pas être supprimé car il contient déjà des réservations
                               enregistrées.
-                            </PopoverContent>
-                          </Popover>
+                            </TooltipContent>
+                          </Tooltip>
                         ) : (
                           <Button
                             variant="ghost"
