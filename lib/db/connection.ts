@@ -107,6 +107,24 @@ export async function testConnection(maxRetries = 5, delayMs = 2000): Promise<bo
   if (!pool) {
     throw new Error('DATABASE_URL environment variable is required. Pool not initialized.');
   }
+
+  const poolAsInternal = pool as unknown as {
+    pool?: {
+      config?: {
+        connectionConfig?: {
+          host?: string;
+          port?: number;
+          user?: string;
+          password?: string;
+          database?: string;
+        };
+      };
+    };
+  };
+
+  const poolConnectionConfig = poolAsInternal.pool?.config?.connectionConfig;
+  const databaseConfigForLogs = poolConnectionConfig ?? (process.env.DATABASE_URL ? parseDatabaseUrl(process.env.DATABASE_URL) : null);
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       await pool.query('SELECT 1');
@@ -114,6 +132,7 @@ export async function testConnection(maxRetries = 5, delayMs = 2000): Promise<bo
       return true;
     } catch (error) {
       console.log(`Database connection attempt ${i + 1}/${maxRetries} failed:`, error instanceof Error ? error.message : error);
+      console.log('[DB Config] Connection config at failure:', databaseConfigForLogs);
       if (i < maxRetries - 1) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
